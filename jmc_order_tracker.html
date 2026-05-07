@@ -187,7 +187,7 @@ tbody tr.row.sel{background:#EBF4FF}
     <img id="login-logo" class="login-logo-img" src="" alt="JMC Engineering">
     <h1>JMC Engineering</h1>
     <p>Client Order Portal<br>Sign in to view your orders</p>
-    <button class="ms-btn" onclick="doLogin()">
+    <button class="ms-btn" id="login-btn" onclick="doLogin()" disabled style="opacity:0.6;cursor:wait">
       <svg width="18" height="18" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
       Continue with Microsoft
     </button>
@@ -270,6 +270,7 @@ tbody tr.row.sel{background:#EBF4FF}
       <input id="f-date-to" type="date" onchange="render()" title="To date">
       <button class="xbtn" onclick="clearFilters()">✕ Clear</button>
       <button class="xbtn" onclick="doRefresh()">⟳ Refresh</button>
+      <button class="xbtn" onclick="hardRefreshImages()" title="Reload images from OneDrive">🖼 Refresh Images</button>
       <button class="xbtn xl" onclick="doExcelExport()">📊 Excel</button>
       <button class="xbtn pdf" onclick="showExportModal()">📄 PDF</button>
     </div>
@@ -434,6 +435,16 @@ const msalCfg={
   cache:{cacheLocation:'sessionStorage',storeAuthStateInCookie:false}
 };
 async function initMSAL(){
+  // Wait for MSAL library to be available
+  let attempts = 0;
+  while(typeof msal === 'undefined' && attempts < 20){
+    await new Promise(r=>setTimeout(r,200));
+    attempts++;
+  }
+  if(typeof msal === 'undefined'){
+    showErr('Loading failed','Microsoft login library could not load. Please check your internet connection and refresh.');
+    return;
+  }
   A.msal=new msal.PublicClientApplication(msalCfg);
   await A.msal.initialize();
   try{const resp=await A.msal.handleRedirectPromise(); if(resp&&resp.account){A.user=resp.account;A.token=resp.accessToken;await startApp();return;}}catch(e){console.warn(e);}
@@ -445,7 +456,18 @@ async function initMSAL(){
   }
   goLogin();
 }
-async function doLogin(){ try{await A.msal.loginRedirect({scopes:C.scopes});}catch(e){showErr('Login failed',e.message||String(e));} }
+async function doLogin(){
+  try{
+    // Wait for MSAL to initialize if not ready yet
+    if(!A.msal){
+      showErr('Login failed','App is still loading. Please wait a moment and try again.');
+      return;
+    }
+    await A.msal.loginRedirect({scopes:C.scopes});
+  }catch(e){
+    showErr('Login failed', e.message||String(e));
+  }
+}
 async function getToken(){
   try{const r=await A.msal.acquireTokenSilent({scopes:C.scopes,account:A.user});return r.accessToken;}
   catch(e){await A.msal.acquireTokenRedirect({scopes:C.scopes});return null;}
@@ -708,15 +730,45 @@ const svgUrl=s=>'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s);
 
 async function getImgUrl(sr){
   const key='sr-'+sr;
-  if(A.imgCache[key]!==undefined) return A.imgCache[key];
+  // Return cached URL if already found
+  if(A.imgCache[key]) return A.imgCache[key];
+
+  // Refresh folder cache if:
+  // 1. Never loaded, OR
+  // 2. Image not found previously (null) — re-check in case new image was added
+  if(!A.imgFolderCache || A.imgCache[key]===null){
+    try{
+      if(A.imgFolderId){
+        const fc=await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name');
+        A.imgFolderCache=(fc.value||[]);
+        console.log('📁 Folder refreshed:',A.imgFolderCache.length,'images');
+      }
+    }catch(e){console.warn('folder refresh fail:',e);}
+  }
+
   if(!A.imgFolderCache||!A.imgFolderCache.length){A.imgCache[key]=null;return null;}
-  const match=A.imgFolderCache.find(f=>f.name.match(new RegExp('^'+sr+'-','i')));
-  if(!match){A.imgCache[key]=null;return null;}
+
+  // Match by Sr number prefix — e.g. "26-" matches "26-NEW-PUNCH.png"
+  const match=A.imgFolderCache.find(f=>f.name.match(new RegExp('^'+sr+'[-_]','i'))||f.name.match(new RegExp('^0*'+sr+'[-_. ]','i')));
+  if(!match){
+    // Not found — mark as null BUT don't permanently cache
+    // so next refresh attempt will retry
+    return null;
+  }
   try{
     const info=await gapi('/drives/'+A.driveId+'/items/'+match.id);
     const url=info['@microsoft.graph.downloadUrl']||null;
     A.imgCache[key]=url; return url;
-  }catch(e){A.imgCache[key]=null;return null;}
+  }catch(e){return null;}
+}
+
+// Force clear image cache and reload all thumbnails
+async function hardRefreshImages(){
+  A.imgCache={};
+  A.imgFolderCache=null;
+  toast('Refreshing images...', 3000);
+  await loadThumbImages(getFiltered());
+  toast('Images refreshed! ✅');
 }
 
 async function loadThumbImages(orders){
@@ -724,10 +776,23 @@ async function loadThumbImages(orders){
   const p=A.perms;
   const showImg=A.isAdmin?A.adminCols.images:(p&&p.images);
   if(!showImg) return;
+
+  // ALWAYS refresh folder file list before loading images
+  // This ensures newly added images are detected automatically
+  try{
+    const fc=await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name');
+    A.imgFolderCache=(fc.value||[]);
+    // Clear cache for images that weren't found before — they might exist now
+    Object.keys(A.imgCache).forEach(k=>{ if(A.imgCache[k]===null) delete A.imgCache[k]; });
+  }catch(e){ console.warn('folder refresh:', e); }
+
   for(const o of orders){
     try{
       const url=await getImgUrl(o.sr);
-      if(url){const el=document.getElementById('thumb-'+o.sr);if(el){el.src=url;el.style.opacity='1';}}
+      if(url){
+        const el=document.getElementById('thumb-'+o.sr);
+        if(el){ el.src=url; el.style.opacity='1'; }
+      }
     }catch(e){}
   }
 }
@@ -1107,7 +1172,14 @@ async function doPDFExport(withImages){
 // ═══════════════════════════════════
 // BOOT
 // ═══════════════════════════════════
-initMSAL().catch(e=>{console.error('Init failed:',e);goLogin();});
+initMSAL().catch(e=>{
+  console.error('Init failed:',e);
+  goLogin();
+}).finally(()=>{
+  // Enable login button once MSAL is ready
+  const btn = document.getElementById('login-btn');
+  if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
+});
 </script>
 </body>
 </html>
