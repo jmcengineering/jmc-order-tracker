@@ -430,7 +430,7 @@ function toast(msg,ms=2800){
 // MSAL
 // ═══════════════════════════════════
 const msalCfg={
-  auth:{clientId:C.clientId,authority:'https://login.microsoftonline.com/common',redirectUri:window.location.origin+window.location.pathname},
+  auth:{clientId:C.clientId,authority:'https://login.microsoftonline.com/common',redirectUri:'https://jmcengineering.github.io/jmc-order-tracker/jmc_order_tracker.html'},
   cache:{cacheLocation:'sessionStorage',storeAuthStateInCookie:false}
 };
 async function initMSAL(){
