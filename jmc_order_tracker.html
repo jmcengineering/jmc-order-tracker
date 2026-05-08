@@ -771,8 +771,32 @@ async function initMSAL(){
 }
 async function doLogin(){
   if(!A.msal){showErr('Not ready','App still loading. Please wait.');return;}
-  try{await A.msal.loginRedirect({scopes:C.scopes});}
-  catch(e){showErr('Login failed',e.message||String(e));}
+  try{
+    // Clear any stuck interaction locks
+    clearMSALLocks();
+    await A.msal.loginRedirect({scopes:C.scopes});
+  }
+  catch(e){
+    if(e.message&&e.message.includes('interaction_in_progress')){
+      clearMSALLocks();
+      toast('Retrying login...',2000);
+      setTimeout(()=>A.msal.loginRedirect({scopes:C.scopes}),500);
+    } else {
+      showErr('Login failed',e.message||String(e));
+    }
+  }
+}
+
+function clearMSALLocks(){
+  // Clear all MSAL interaction locks from sessionStorage
+  const keys=Object.keys(sessionStorage).filter(k=>k.includes('msal')||k.includes('interaction'));
+  keys.forEach(k=>sessionStorage.removeItem(k));
+  // Also clear any state/nonce keys
+  Object.keys(sessionStorage).forEach(k=>{
+    if(k.startsWith('msal.')||k.includes('login.windows')||k.includes('interaction')){
+      sessionStorage.removeItem(k);
+    }
+  });
 }
 async function getToken(){
   try{const r=await A.msal.acquireTokenSilent({scopes:C.scopes,account:A.user});return r.accessToken;}
