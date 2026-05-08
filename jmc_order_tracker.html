@@ -10,7 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<!-- Google OAuth via redirect -->
 <style>
 :root{
   --navy:#0F2144;
@@ -761,6 +761,11 @@ async function initMSAL(){
     const resp=await A.msal.handleRedirectPromise();
     if(resp&&resp.account){A.user=resp.account;A.token=resp.accessToken;A.authType='ms';await startApp();return;}
   }catch(e){console.warn(e);}
+  // Check for Google OAuth callback first
+  if(window.location.hash.includes('id_token')){
+    const handled = await handleGoogleCallback();
+    if(handled) return;
+  }
   const accs=A.msal.getAllAccounts();
   if(accs.length>0){
     A.user=accs[0];
@@ -807,33 +812,49 @@ function doLogout(){
   goLogin();
 }
 
-// Google OAuth
+// Google OAuth — using redirect flow
 function doGoogleLogin(){
-  if(typeof google==='undefined'||!google.accounts){toast('Google login loading, try again in a moment');return;}
-  google.accounts.id.initialize({
-    client_id:C.googleClientId,
-    callback:handleGoogleLogin,
-    auto_select:false
-  });
-  google.accounts.id.prompt();
-}
-async function handleGoogleLogin(resp){
-  if(!resp.credential){toast('Google login failed');return;}
-  // Decode JWT to get email
-  const payload=JSON.parse(atob(resp.credential.split('.')[1]));
-  const email=(payload.email||'').toLowerCase();
-  // Store google user info
-  A.user={username:email,name:payload.name||email};
-  A.authType='google';
-  A.token=null; // Will use MS token for Graph API
-  // For Google users — they can only view (no Graph API write)
-  // Show login then redirect to MS for Graph access
-  toast('Google account verified! Now connecting to JMC data...',4000);
-  // Try MS silent login for Graph API access
   try{
-    await A.msal.loginRedirect({scopes:C.scopes,loginHint:email});
-  }catch(e){
-    showErr('Connection failed','Please use the Microsoft login button instead for full access.');
+    // Build Google OAuth URL
+    const params = new URLSearchParams({
+      client_id: C.googleClientId,
+      redirect_uri: C.redirectUri,
+      response_type: 'token id_token',
+      scope: 'email profile openid',
+      nonce: Math.random().toString(36).slice(2),
+      prompt: 'select_account'
+    });
+    window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString();
+  } catch(e){
+    showErr('Google login failed', e.message||String(e));
+  }
+}
+
+async function handleGoogleCallback(){
+  // Check if we have a Google token in the URL hash
+  const hash = window.location.hash.substring(1);
+  if(!hash) return false;
+  const params = new URLSearchParams(hash);
+  const idToken = params.get('id_token');
+  if(!idToken) return false;
+  try{
+    // Decode JWT payload to get email
+    const payload = JSON.parse(atob(idToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+    const email = (payload.email||'').toLowerCase();
+    if(!email) return false;
+    // Clear hash from URL
+    history.replaceState(null,'',window.location.pathname);
+    // Store as user
+    A.user = {username: email, name: payload.name||email};
+    A.authType = 'google';
+    toast('Google verified! Connecting to JMC data...',3000);
+    // Now get MS token for Graph API using loginHint
+    clearMSALLocks();
+    await A.msal.loginRedirect({scopes:C.scopes, loginHint:email});
+    return true;
+  } catch(e){
+    console.error('Google callback error:',e);
+    return false;
   }
 }
 
