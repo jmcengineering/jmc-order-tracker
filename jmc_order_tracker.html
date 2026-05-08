@@ -3,180 +3,331 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JMC Engineering — Order Tracker</title>
+<title>JMC Engineering — Order Management</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
+:root{
+  --navy:#0F2144;
+  --blue:#185FA5;
+  --blue-light:#2E7DD4;
+  --accent:#00C6BE;
+  --accent2:#FF6B35;
+  --bg:#F4F7FB;
+  --surface:#FFFFFF;
+  --border:#E2E8F2;
+  --text:#1A2332;
+  --text2:#5A6478;
+  --text3:#9AA3B2;
+  --success:#10B981;
+  --warning:#F59E0B;
+  --danger:#EF4444;
+  --hold:#8B5CF6;
+  --r-sm:8px;
+  --r-md:12px;
+  --r-lg:16px;
+  --r-xl:20px;
+  --shadow-sm:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 16px rgba(0,0,0,.08);
+  --shadow-lg:0 8px 32px rgba(0,0,0,.12);
+  --shadow-xl:0 20px 60px rgba(0,0,0,.16);
+}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f4f8;color:#1a1a1a}
-.screen{display:none}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+.screen{display:none!important}
 
-/* LOGIN */
-#s-login{display:flex;min-height:100vh;align-items:center;justify-content:center;background:linear-gradient(135deg,#EBF4FF,#f0f4f8)}
-.login-card{background:#fff;border-radius:20px;padding:44px 40px;width:360px;border:1px solid #dde6f0;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,0.06)}
-.login-logo-img{width:90px;height:90px;object-fit:contain;margin:0 auto 16px;display:block}
-.login-card h1{font-size:22px;font-weight:700;margin-bottom:4px}
-.login-card p{font-size:13px;color:#888;margin-bottom:28px}
-.ms-btn{width:100%;padding:12px;border-radius:10px;border:1.5px solid #dde;background:#fff;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;color:#333;transition:all .15s}
-.ms-btn:hover{border-color:#185FA5;background:#f5f9ff}
-.card-note{font-size:11px;color:#bbb;margin-top:20px}
+/* ══ LOGIN ══ */
+#s-login{
+  display:flex!important;min-height:100vh;
+  background:linear-gradient(135deg,var(--navy) 0%,#1a3a6e 50%,#0d4a7a 100%);
+  align-items:center;justify-content:center;position:relative;overflow:hidden;
+}
+#s-login::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 20% 50%,rgba(0,198,190,.08) 0%,transparent 60%),
+             radial-gradient(ellipse at 80% 20%,rgba(46,125,212,.12) 0%,transparent 50%);
+}
+.login-card{
+  background:rgba(255,255,255,.04);backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.1);border-radius:24px;
+  padding:48px 44px;width:380px;text-align:center;position:relative;z-index:1;
+  box-shadow:0 24px 80px rgba(0,0,0,.3);
+}
+.login-logo{width:80px;height:80px;border-radius:16px;margin:0 auto 20px;overflow:hidden;background:rgba(255,255,255,.1)}
+.login-logo img{width:100%;height:100%;object-fit:contain}
+.login-h{font-size:24px;font-weight:700;color:#fff;margin-bottom:4px}
+.login-sub{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+.login-divider{display:flex;align-items:center;gap:12px;margin:20px 0}
+.login-divider span{font-size:11px;color:rgba(255,255,255,.3)}
+.login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.1)}
+.btn-ms{
+  width:100%;padding:13px;border-radius:var(--r-md);border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.08);font-size:14px;font-weight:500;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;color:#fff;
+  transition:all .2s;font-family:'DM Sans',sans-serif;
+}
+.btn-ms:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);transform:translateY(-1px)}
+.btn-ms:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-google{
+  width:100%;padding:13px;border-radius:var(--r-md);border:1px solid rgba(255,255,255,.15);
+  background:rgba(255,255,255,.08);font-size:14px;font-weight:500;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:10px;color:#fff;
+  transition:all .2s;font-family:'DM Sans',sans-serif;margin-top:10px;
+}
+.btn-google:hover{background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.3);transform:translateY(-1px)}
+.login-note{font-size:11px;color:rgba(255,255,255,.25);margin-top:24px}
 
-/* LOADING */
-#s-loading{min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:14px}
-.spin{width:36px;height:36px;border:3px solid #dce8f5;border-top-color:#185FA5;border-radius:50%;animation:spin .7s linear infinite}
+/* ══ LOADING ══ */
+#s-loading{display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--bg)}
+.loader{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+#load-msg{font-size:14px;color:var(--text2);font-weight:500}
 
-/* ERROR */
-#s-error{min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px}
-.err-icon{width:64px;height:64px;background:#FCEBEB;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px}
+/* ══ ERROR / DENIED ══ */
+#s-error,#s-denied{display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;background:var(--bg)}
+.err-box{background:var(--surface);border-radius:var(--r-xl);padding:40px;max-width:480px;width:100%;text-align:center;box-shadow:var(--shadow-md);border:1px solid var(--border)}
+.err-icon{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 16px}
 
-/* DENIED */
-#s-denied{min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:24px}
-
-/* MAIN */
-#s-main{display:none;min-height:100vh;flex-direction:column}
-
-/* TOPBAR */
-.topbar{background:#185FA5;height:54px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
-.tb-left{display:flex;align-items:center;gap:10px}
-.tb-logo{width:34px;height:34px;border-radius:7px;object-fit:contain;background:#fff;padding:2px}
-.tb-name{font-size:13px;font-weight:600;color:#fff}
-.tb-sub{font-size:10px;color:#B5D4F4;margin-top:1px}
+/* ══ TOPBAR ══ */
+#s-main{display:none;flex-direction:column;min-height:100vh}
+.topbar{
+  background:var(--navy);height:56px;padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.15);
+}
+.tb-left{display:flex;align-items:center;gap:12px}
+.tb-logo{width:32px;height:32px;border-radius:7px;overflow:hidden;background:rgba(255,255,255,.1);flex-shrink:0}
+.tb-logo img{width:100%;height:100%;object-fit:contain}
+.tb-brand{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.3px}
+.tb-sub{font-size:10px;color:rgba(255,255,255,.4);margin-top:1px}
 .tb-right{display:flex;align-items:center;gap:8px}
-.tb-av{width:28px;height:28px;border-radius:50%;background:#0C447C;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#B5D4F4}
-.tb-uname{font-size:11px;color:#fff;font-weight:500}
-.tb-role{font-size:9px;color:#B5D4F4}
-.out-btn{font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.3);background:transparent;color:#fff;cursor:pointer}
-.admin-btn{font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.5);background:rgba(255,255,255,.15);color:#fff;cursor:pointer;font-weight:500}
-.admin-btn:hover{background:rgba(255,255,255,.25)}
+.tb-chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border-radius:20px;padding:4px 12px 4px 4px}
+.tb-av{width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--navy)}
+.tb-uname{font-size:12px;color:#fff;font-weight:500}
+.tb-role{font-size:9px;color:rgba(255,255,255,.4);margin-top:0px}
+.btn-topbar{height:28px;padding:0 12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.7);font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-topbar:hover{background:rgba(255,255,255,.1);color:#fff}
+.btn-admin{background:rgba(0,198,190,.15);border-color:rgba(0,198,190,.4);color:var(--accent)}
+.btn-admin:hover{background:rgba(0,198,190,.25)}
 
-/* WRAP */
-.wrap{padding:16px 20px;flex:1}
+/* ══ MAIN LAYOUT ══ */
+.main-layout{display:flex;flex:1;overflow:hidden;height:calc(100vh - 56px)}
+.table-area{flex:1;overflow-y:auto;padding:20px 24px}
+.side-panel{width:420px;background:var(--surface);border-left:1px solid var(--border);overflow-y:auto;flex-shrink:0;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);position:relative}
+.side-panel.open{transform:translateX(0)}
 
-/* METRICS */
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
-.met{background:#fff;border-radius:12px;padding:12px 16px;border:1px solid #e8eef4}
-.mv{font-size:26px;font-weight:700}
-.ml{font-size:11px;color:#888;margin-top:2px}
+/* ══ METRICS ══ */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.met{background:var(--surface);border-radius:var(--r-lg);padding:14px 18px;border:1px solid var(--border);box-shadow:var(--shadow-sm);transition:transform .15s}
+.met:hover{transform:translateY(-1px)}
+.mv{font-size:28px;font-weight:700;line-height:1}
+.ml{font-size:11px;color:var(--text2);margin-top:4px;font-weight:500}
+.met-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px}
 
-/* TOOLBAR */
-.toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center}
-.toolbar input,.toolbar select{height:32px;padding:0 10px;border-radius:8px;border:1.5px solid #dde6f0;font-size:12px;background:#fff;outline:none;color:#333}
-.toolbar input{flex:1;min-width:120px}
-.toolbar input:focus,.toolbar select:focus{border-color:#185FA5}
-.toolbar input[type=date]{min-width:110px;flex:none}
-.xbtn{height:32px;padding:0 12px;border-radius:8px;border:1.5px solid #dde6f0;background:#fff;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;color:#333}
-.xbtn:hover{background:#f5f9ff}
-.xbtn.xl{color:#27500A;border-color:#b8d98d}.xbtn.xl:hover{background:#EAF3DE}
-.xbtn.pdf{color:#791F1F;border-color:#f0a0a0}.xbtn.pdf:hover{background:#FCEBEB}
+/* ══ TOOLBAR ══ */
+.toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.srch-wrap{flex:1;min-width:180px;position:relative}
+.srch-wrap input{width:100%;height:34px;padding:0 12px 0 36px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);font-size:12px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s}
+.srch-wrap input:focus{border-color:var(--blue)}
+.srch-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3)}
+.tbar-select{height:34px;padding:0 10px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);font-size:12px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;cursor:pointer}
+.tbar-select:focus{border-color:var(--blue)}
+input[type=date].tbar-date{height:34px;padding:0 10px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);font-size:12px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none}
+.btn-tb{height:34px;padding:0 14px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text);display:flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s}
+.btn-tb:hover{background:var(--bg);border-color:var(--blue);color:var(--blue)}
+.btn-add{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600}
+.btn-add:hover{background:var(--blue-light);border-color:var(--blue-light);color:#fff}
+.btn-xl{color:#059669;border-color:#A7F3D0}.btn-xl:hover{background:#ECFDF5}
+.btn-pdf{color:#DC2626;border-color:#FECACA}.btn-pdf:hover{background:#FEF2F2}
 
-/* TABS */
-.tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}
-.tab{font-size:12px;padding:5px 14px;border-radius:8px;border:1.5px solid #dde6f0;background:#fff;color:#666;cursor:pointer}
-.tab.on{background:#185FA5;color:#fff;border-color:#185FA5}
+/* ══ TABS ══ */
+.tabs{display:flex;gap:4px;margin-bottom:12px;background:var(--surface);padding:4px;border-radius:var(--r-md);border:1px solid var(--border);width:fit-content}
+.tab{font-size:12px;font-weight:500;padding:5px 16px;border-radius:var(--r-sm);border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.tab.on{background:var(--navy);color:#fff;box-shadow:var(--shadow-sm)}
 
-/* TABLE */
-.tbl-box{background:#fff;border-radius:14px;border:1px solid #e8eef4;overflow:hidden}
-table{width:100%;border-collapse:collapse;table-layout:fixed}
-thead th{background:#EBF4FF;color:#0C447C;font-size:11px;font-weight:600;padding:9px 12px;text-align:left;border-bottom:2px solid #C5DEFA;white-space:nowrap}
-tbody td{font-size:12px;padding:8px 12px;border-bottom:1px solid #f0f4f8;vertical-align:middle}
+/* ══ TABLE ══ */
+.tbl-wrap{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden}
+.tbl-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;table-layout:auto}
+thead th{background:#F8FAFD;color:var(--text2);font-size:11px;font-weight:600;padding:10px 14px;text-align:left;border-bottom:1.5px solid var(--border);white-space:nowrap;letter-spacing:.3px;text-transform:uppercase}
+tbody td{font-size:12px;padding:0 14px;border-bottom:1px solid #F0F4FA;color:var(--text);vertical-align:middle;height:52px}
 tbody tr:last-child td{border-bottom:none}
-tbody tr.row{cursor:pointer}
-tbody tr.row:hover{background:#f5f9ff}
+tbody tr.row{cursor:pointer;transition:background .1s}
+tbody tr.row:hover{background:#F8FAFD}
 tbody tr.row.sel{background:#EBF4FF}
-.empty{padding:40px;text-align:center;color:#bbb;font-size:13px}
+tbody tr.row.sel td{border-bottom-color:#D1E9FF}
+.empty-state{padding:60px 24px;text-align:center;color:var(--text3)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-msg{font-size:14px;font-weight:500}
 
-/* BADGES */
-.b{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;white-space:nowrap;display:inline-block}
-.b-std{background:#E6F1FB;color:#0C447C}
-.b-pri{background:#EEEDFE;color:#3C3489}
-.b-rwk{background:#FAEEDA;color:#633806}
-.b-fix{background:#E1F5EE;color:#085041}
-.b-oth{background:#F1EFE8;color:#5F5E5A}
-.s-del{background:#EAF3DE;color:#27500A}
-.s-prg{background:#E6F1FB;color:#0C447C}
-.s-hld{background:#FAEEDA;color:#854F0B}
-.s-unk{background:#f0f0f0;color:#888}
-.b-client{background:#F0E6FB;color:#4A0C8C;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;white-space:nowrap;display:inline-block}
+/* ══ BADGES ══ */
+.badge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px;letter-spacing:.2px}
+.b-std{background:#EBF4FF;color:#1D5FA8}
+.b-pri{background:#F3F0FF;color:#5B21B6}
+.b-rwk{background:#FFF7ED;color:#C2410C}
+.b-fix{background:#ECFDF5;color:#065F46}
+.b-oth{background:#F9FAFB;color:#374151}
+.s-del{background:#D1FAE5;color:#065F46}
+.s-prg{background:#DBEAFE;color:#1E40AF}
+.s-hld{background:#FEF3C7;color:#92400E}
+.s-unk{background:#F3F4F6;color:#6B7280}
+.s-done{background:#D1FAE5;color:#065F46}
+.b-client{background:#F0FFFE;color:#0F7272;border:1px solid #99F6E4;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600}
 
-/* THUMB */
-.thumb{width:38px;height:38px;border-radius:7px;border:1.5px solid #dde6f0;background:#f5f9ff;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:border-color .15s}
-.thumb:hover{border-color:#185FA5;transform:scale(1.05)}
-.thumb img{width:34px;height:34px;object-fit:contain;transition:opacity .3s}
+/* ══ THUMB ══ */
+.thumb{width:40px;height:40px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:all .15s;position:relative}
+.thumb:hover{border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,.1)}
+.thumb img{width:36px;height:36px;object-fit:contain}
+.thumb-pdf{width:32px;height:32px;border-radius:6px;background:#FEE2E2;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid #FECACA;transition:all .15s;font-size:10px;font-weight:700;color:#DC2626}
+.thumb-pdf:hover{background:#FEF2F2;box-shadow:0 0 0 3px rgba(220,38,38,.1)}
 
-/* DETAIL PANEL */
-.dp{border-top:2.5px solid #185FA5;background:#EBF4FF;padding:14px 20px}
-.dp-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
-.dp-title{font-size:13px;font-weight:600;color:#0C447C}
-.dp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:10px}
-.dp-card{background:#fff;border-radius:9px;padding:9px 12px;border:1px solid #dce8f5}
-.dp-lbl{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
-.dp-val{font-size:12px;font-weight:600}
-.stg-lbl{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
-.stg-row{display:flex;gap:5px;flex-wrap:wrap}
-.ch{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:500}
-.ch-done{background:#EAF3DE;color:#27500A}
-.ch-pend{background:#FAEEDA;color:#854F0B}
-.ch-hold{background:#FCEBEB;color:#A32D2D}
-.ch-na{background:#f0f0f0;color:#999}
-.close-btn{font-size:11px;padding:3px 10px;border-radius:7px;border:1.5px solid #ccc;background:transparent;color:#666;cursor:pointer}
+/* ══ STAGE DOT ══ */
+.stage-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:1px}
+.sd-done{background:var(--success)}
+.sd-pend{background:var(--warning)}
+.sd-hold{background:var(--danger)}
+.sd-na{background:var(--border)}
 
-/* IMAGE MODAL */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px}
-.modal-inner{background:#fff;border-radius:18px;padding:26px;max-width:420px;width:100%;text-align:center}
-.modal-img{width:260px;height:260px;object-fit:contain;border-radius:12px;background:#f5f9ff;padding:12px;display:block;margin:0 auto 12px}
-.modal-name{font-size:14px;font-weight:700;margin-bottom:4px}
-.modal-type{font-size:12px;color:#888;margin-bottom:16px}
+/* ══ SIDE PANEL ══ */
+.sp-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:10}
+.sp-title{font-size:16px;font-weight:700;color:var(--navy)}
+.sp-sub{font-size:11px;color:var(--text2);margin-top:2px}
+.sp-close{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:16px;transition:all .15s}
+.sp-close:hover{background:var(--bg);color:var(--text)}
+.sp-body{padding:20px 24px}
+.sp-section{margin-bottom:24px}
+.sp-sec-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.sp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sp-grid-1{display:grid;grid-template-columns:1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;font-weight:600;color:var(--text2)}
+.field input,.field select,.field textarea{
+  padding:8px 10px;border-radius:var(--r-sm);border:1.5px solid var(--border);
+  font-size:12px;color:var(--text);font-family:'DM Sans',sans-serif;
+  background:var(--surface);outline:none;transition:border-color .15s;
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,.08)}
+.field textarea{resize:vertical;min-height:60px}
+.field input[readonly]{background:#F8FAFD;color:var(--text2)}
+.stage-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stage-field{display:flex;flex-direction:column;gap:3px}
+.stage-field label{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.3px}
+.stage-field select{padding:6px 8px;border-radius:6px;border:1.5px solid var(--border);font-size:11px;font-family:'DM Sans',sans-serif;color:var(--text);background:var(--surface);outline:none}
+.stage-field select:focus{border-color:var(--blue)}
 
-/* ADMIN PANEL */
-.admin-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:flex;align-items:flex-start;justify-content:flex-end}
-.admin-panel{background:#fff;width:400px;height:100vh;overflow-y:auto;padding:24px;border-left:1px solid #e8eef4;box-shadow:-4px 0 24px rgba(0,0,0,.1)}
-.ap-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
-.ap-title{font-size:16px;font-weight:700;color:#0C447C}
-.ap-close{font-size:18px;cursor:pointer;color:#888;background:none;border:none;padding:4px 8px}
-.ap-section{margin-bottom:20px}
-.ap-sec-title{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #f0f0f0}
-.ap-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f8f8f8}
-.ap-label{font-size:13px;color:#333}
-.ap-sub{font-size:11px;color:#888;margin-top:1px}
-.toggle{position:relative;width:40px;height:22px;flex-shrink:0}
-.toggle input{opacity:0;width:0;height:0}
-.toggle-slider{position:absolute;inset:0;background:#ccc;border-radius:22px;cursor:pointer;transition:.2s}
-.toggle input:checked+.toggle-slider{background:#185FA5}
-.toggle-slider:before{content:'';position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
-.toggle input:checked+.toggle-slider:before{transform:translateX(18px)}
-.client-row{background:#f8f9fc;border-radius:10px;padding:12px;margin-bottom:10px;border:1px solid #e8eef4}
-.client-email{font-size:12px;color:#333;font-weight:500;margin-bottom:4px}
-.client-sheet{font-size:11px;color:#888;margin-bottom:8px}
-.client-perms{display:flex;flex-wrap:wrap;gap:4px}
-.perm-tag{font-size:10px;padding:2px 8px;border-radius:20px;background:#EBF4FF;color:#0C447C;font-weight:500}
-.perm-tag.off{background:#f0f0f0;color:#aaa;text-decoration:line-through}
-.ap-input{width:100%;padding:8px 10px;border-radius:8px;border:1.5px solid #dde6f0;font-size:12px;margin-bottom:8px;outline:none}
-.ap-input:focus{border-color:#185FA5}
-.ap-btn{padding:8px 16px;border-radius:8px;border:none;font-size:12px;font-weight:600;cursor:pointer}
-.ap-btn-primary{background:#185FA5;color:#fff}
-.ap-btn-primary:hover{background:#0C447C}
-.ap-btn-danger{background:#FCEBEB;color:#791F1F;border:1px solid #f0a0a0}
+/* Upload zones */
+.upload-zone{border:2px dashed var(--border);border-radius:var(--r-md);padding:16px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg)}
+.upload-zone:hover{border-color:var(--blue);background:#F0F7FF}
+.upload-zone.has-file{border-color:var(--success);background:#F0FFF4}
+.upload-zone input{display:none}
+.upload-label{font-size:12px;color:var(--text2);margin-top:4px}
+.upload-name{font-size:11px;color:var(--success);font-weight:600;margin-top:4px;font-family:'DM Mono',monospace}
 
-/* EXPORT MODAL */
-.exp-modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px}
-.exp-inner{background:#fff;border-radius:16px;padding:28px;width:340px}
-.exp-title{font-size:16px;font-weight:700;margin-bottom:6px}
-.exp-sub{font-size:13px;color:#888;margin-bottom:20px}
+/* SP footer */
+.sp-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:8px;position:sticky;bottom:0;background:var(--surface)}
+.btn-save{flex:1;padding:10px;border-radius:var(--r-sm);border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-save:hover{background:var(--blue-light)}
+.btn-cancel{padding:10px 16px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-cancel:hover{background:var(--bg)}
+.btn-del{padding:10px 14px;border-radius:var(--r-sm);border:1.5px solid #FECACA;background:#FEF2F2;color:#DC2626;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-del:hover{background:#FEE2E2}
+
+/* ══ DETAIL PANEL (bottom) ══ */
+.detail-bar{border-top:2px solid var(--blue);background:#F0F7FF;padding:16px 24px}
+.detail-bar-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.detail-bar-title{font-size:13px;font-weight:700;color:var(--navy)}
+.detail-bar-actions{display:flex;gap:6px}
+.btn-sm{height:28px;padding:0 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;border:1.5px solid transparent;transition:all .15s}
+.btn-edit{background:var(--blue);color:#fff;border-color:var(--blue)}
+.btn-edit:hover{background:var(--blue-light)}
+.btn-view-pdf{background:#FEF2F2;color:#DC2626;border-color:#FECACA}
+.btn-view-pdf:hover{background:#FEE2E2}
+.btn-close-det{background:var(--bg);color:var(--text2);border-color:var(--border)}
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px}
+.dc{background:var(--surface);border-radius:var(--r-sm);padding:10px 12px;border:1px solid var(--border)}
+.dc-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;font-weight:600}
+.dc-val{font-size:12px;font-weight:600;color:var(--text)}
+.stages-strip{display:flex;gap:5px;flex-wrap:wrap}
+.sch{font-size:10px;padding:3px 9px;border-radius:20px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.sch-done{background:#D1FAE5;color:#065F46}
+.sch-pend{background:#FEF3C7;color:#92400E}
+.sch-hold{background:#FEE2E2;color:#991B1B}
+.sch-na{background:#F3F4F6;color:#9CA3AF}
+
+/* ══ IMAGE MODAL ══ */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(4px)}
+.modal-box{background:var(--surface);border-radius:var(--r-xl);padding:28px;max-width:480px;width:100%;text-align:center;box-shadow:var(--shadow-xl)}
+.modal-img{width:280px;height:280px;object-fit:contain;border-radius:var(--r-md);background:var(--bg);padding:16px;display:block;margin:0 auto 16px;border:1px solid var(--border)}
+.modal-name{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.modal-type{font-size:12px;color:var(--text2);margin-bottom:20px}
+
+/* ══ PDF MODAL ══ */
+.pdf-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;flex-direction:column;z-index:1000;backdrop-filter:blur(4px)}
+.pdf-modal-top{background:var(--navy);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.pdf-modal-title{font-size:14px;font-weight:600;color:#fff}
+.pdf-iframe{flex:1;border:none;background:#525659}
+
+/* ══ EXPORT MODAL ══ */
+.exp-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:900;backdrop-filter:blur(4px)}
+.exp-box{background:var(--surface);border-radius:var(--r-xl);padding:28px;width:360px;box-shadow:var(--shadow-xl)}
+.exp-title{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:6px}
+.exp-sub{font-size:13px;color:var(--text2);margin-bottom:20px}
 .exp-opt{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
-.exp-card{padding:14px;border-radius:10px;border:1.5px solid #dde6f0;cursor:pointer;transition:all .15s}
-.exp-card:hover{border-color:#185FA5;background:#f5f9ff}
-.exp-card h4{font-size:13px;font-weight:600;margin-bottom:3px}
-.exp-card p{font-size:11px;color:#888}
-.exp-btns{display:flex;gap:8px;justify-content:flex-end}
+.exp-card{padding:14px 16px;border-radius:var(--r-md);border:1.5px solid var(--border);cursor:pointer;transition:all .15s}
+.exp-card:hover{border-color:var(--blue);background:#F0F7FF}
+.exp-card h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.exp-card p{font-size:11px;color:var(--text2)}
 
-/* TOAST */
-.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;font-size:12px;padding:8px 18px;border-radius:20px;z-index:9999;white-space:nowrap}
-.ghost-btn{padding:8px 20px;border-radius:10px;border:1.5px solid #dde;background:#fff;font-size:13px;cursor:pointer;color:#666}
+/* ══ ADMIN PANEL ══ */
+.admin-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;backdrop-filter:blur(2px)}
+.admin-drawer{position:fixed;right:0;top:0;bottom:0;width:400px;background:var(--surface);border-left:1px solid var(--border);box-shadow:var(--shadow-xl);overflow-y:auto;z-index:501;display:flex;flex-direction:column}
+.adm-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface)}
+.adm-title{font-size:16px;font-weight:700;color:var(--navy)}
+.adm-body{padding:20px 24px;flex:1}
+.adm-section{margin-bottom:24px}
+.adm-sec-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #F8FAFD}
+.toggle-label{font-size:13px;color:var(--text)}
+.toggle{position:relative;width:38px;height:20px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.tslider{position:absolute;inset:0;background:#D1D5DB;border-radius:20px;cursor:pointer;transition:.2s}
+.toggle input:checked+.tslider{background:var(--blue)}
+.tslider:before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked+.tslider:before{transform:translateX(18px)}
+.client-card{background:var(--bg);border-radius:var(--r-md);padding:12px 14px;margin-bottom:8px;border:1px solid var(--border)}
+.client-card-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.client-card-info{font-size:11px;color:var(--text2);margin-bottom:8px}
+.client-perms{display:flex;flex-wrap:wrap;gap:4px}
+.perm-tag{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--bg);border:1px solid var(--border);color:var(--text2);font-weight:500}
+.perm-tag.on{background:#EBF4FF;color:var(--blue);border-color:#BDDEFF}
+.adm-input{width:100%;padding:8px 10px;border-radius:var(--r-sm);border:1.5px solid var(--border);font-size:12px;font-family:'DM Sans',sans-serif;margin-bottom:8px;outline:none;color:var(--text)}
+.adm-input:focus{border-color:var(--blue)}
+.adm-check-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.adm-check-row label{font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text2)}
+.btn-adm{padding:8px 14px;border-radius:var(--r-sm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;border:1.5px solid transparent;transition:all .15s}
+.btn-adm-primary{background:var(--blue);color:#fff}
+.btn-adm-primary:hover{background:var(--blue-light)}
+.btn-adm-danger{background:#FEF2F2;color:#DC2626;border-color:#FECACA}
+.btn-adm-sync{width:100%;padding:10px;border-radius:var(--r-sm);background:var(--navy);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;border:none}
 
-@media(max-width:600px){.metrics{grid-template-columns:repeat(2,1fr)}.tb-sub,.tb-role{display:none}.wrap{padding:10px}.admin-panel{width:100vw}}
+/* ══ TOAST ══ */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;font-size:12px;font-weight:500;padding:10px 20px;border-radius:20px;z-index:9999;white-space:nowrap;box-shadow:var(--shadow-lg);animation:toastIn .2s ease}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+.ghost-btn{padding:8px 18px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:transparent;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text2);transition:all .15s}
+.ghost-btn:hover{background:var(--bg)}
+
+@media(max-width:768px){
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  .side-panel{width:100%;position:fixed;inset:56px 0 0 0;z-index:200}
+  .tb-sub,.tb-role{display:none}
+  .table-area{padding:12px}
+}
 </style>
 </head>
 <body>
@@ -184,340 +335,550 @@ tbody tr.row.sel{background:#EBF4FF}
 <!-- LOGIN -->
 <div id="s-login">
   <div class="login-card">
-    <img id="login-logo" class="login-logo-img" src="" alt="JMC Engineering">
-    <h1>JMC Engineering</h1>
-    <p>Client Order Portal<br>Sign in to view your orders</p>
-    <button class="ms-btn" id="login-btn" onclick="doLogin()" disabled style="opacity:0.6;cursor:wait">
+    <div class="login-logo"><img id="login-logo" src="" alt="JMC"></div>
+    <div class="login-h">JMC Engineering</div>
+    <div class="login-sub">Order Management Portal</div>
+    <button class="btn-ms" id="login-btn" onclick="doLogin()" disabled>
       <svg width="18" height="18" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
       Continue with Microsoft
     </button>
-    <div class="card-note">Authorized users only · Contact info@jmcengg.com</div>
+    <div class="login-divider"><span>or</span></div>
+    <button class="btn-google" id="google-btn" onclick="doGoogleLogin()">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Continue with Google
+    </button>
+    <div class="login-note">Authorized users only · info@jmcengg.com</div>
   </div>
 </div>
 
 <!-- LOADING -->
-<div id="s-loading" class="screen" style="flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:14px">
-  <div class="spin"></div>
-  <div id="load-msg" style="font-size:14px;color:#666">Loading...</div>
+<div id="s-loading" style="display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--bg)">
+  <div class="loader"></div>
+  <div id="load-msg" style="font-size:14px;color:var(--text2);font-weight:500">Loading...</div>
 </div>
 
 <!-- ERROR -->
-<div id="s-error" class="screen" style="flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:12px;padding:24px">
-  <div class="err-icon">⚠️</div>
-  <div id="err-title" style="font-size:20px;font-weight:700">Error</div>
-  <div id="err-msg" style="font-size:12px;color:#555;text-align:center;max-width:500px;background:#f8f8f8;padding:12px 16px;border-radius:10px;font-family:monospace;word-break:break-all;line-height:1.7"></div>
-  <button class="ghost-btn" onclick="goLogin()">← Back to login</button>
+<div id="s-error" style="display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;background:var(--bg)">
+  <div class="err-box">
+    <div class="err-icon" style="background:#FEF2F2">⚠️</div>
+    <div id="err-title" style="font-size:20px;font-weight:700;margin-bottom:8px">Error</div>
+    <div id="err-msg" style="font-size:12px;color:var(--text2);background:var(--bg);padding:12px;border-radius:var(--r-sm);font-family:'DM Mono',monospace;word-break:break-all;line-height:1.7;text-align:left;margin-bottom:16px"></div>
+    <button class="ghost-btn" onclick="goLogin()">← Back to login</button>
+  </div>
 </div>
 
 <!-- DENIED -->
-<div id="s-denied" class="screen" style="flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:10px;padding:24px">
-  <div style="width:60px;height:60px;background:#FCEBEB;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px">🚫</div>
-  <div style="font-size:20px;font-weight:700">Access Denied</div>
-  <div style="font-size:13px;color:#666;text-align:center;max-width:300px">Your account is not authorized. Contact JMC Engineering to request access.</div>
-  <div id="denied-email" style="font-size:11px;background:#E6F1FB;color:#185FA5;padding:4px 14px;border-radius:20px;margin-top:4px"></div>
-  <button class="ghost-btn" onclick="doLogout()">Sign out</button>
+<div id="s-denied" style="display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;background:var(--bg)">
+  <div class="err-box">
+    <div class="err-icon" style="background:#FEF2F2">🚫</div>
+    <div style="font-size:20px;font-weight:700;margin-bottom:8px">Access Denied</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:12px">Your account is not authorized. Contact JMC Engineering to request access.</div>
+    <div id="denied-email" style="font-size:11px;background:#EBF4FF;color:var(--blue);padding:4px 14px;border-radius:20px;margin-bottom:16px;font-family:'DM Mono',monospace"></div>
+    <button class="ghost-btn" onclick="doLogout()">Sign out</button>
+  </div>
 </div>
 
 <!-- MAIN APP -->
-<div id="s-main" class="screen" style="flex-direction:column">
+<div id="s-main" style="display:none;flex-direction:column;min-height:100vh">
   <div class="topbar">
     <div class="tb-left">
-      <img id="tb-logo" class="tb-logo" src="" alt="JMC">
+      <div class="tb-logo"><img id="tb-logo" src="" alt="JMC"></div>
       <div>
-        <div class="tb-name">JMC Engineering</div>
-        <div class="tb-sub" id="tb-sub">Order Tracker</div>
+        <div class="tb-brand">JMC Engineering</div>
+        <div class="tb-sub" id="tb-sub">Order Management</div>
       </div>
     </div>
     <div class="tb-right">
-      <div style="text-align:right">
-        <div class="tb-uname" id="tb-uname"></div>
-        <div class="tb-role" id="tb-role"></div>
+      <div class="tb-chip">
+        <div class="tb-av" id="tb-av">?</div>
+        <div>
+          <div class="tb-uname" id="tb-uname"></div>
+          <div class="tb-role" id="tb-role"></div>
+        </div>
       </div>
-      <div class="tb-av" id="tb-av">?</div>
-      <button id="admin-panel-btn" class="admin-btn" onclick="openAdminPanel()" style="display:none">⚙ Admin</button>
-      <button class="out-btn" onclick="doLogout()">Sign out</button>
+      <button id="admin-btn" class="btn-topbar btn-admin" onclick="openAdmin()" style="display:none">⚙ Admin</button>
+      <button class="btn-topbar" onclick="doLogout()">Sign out</button>
     </div>
   </div>
 
-  <div class="wrap">
-    <div class="metrics">
-      <div class="met"><div class="mv" id="m-tot">0</div><div class="ml">Total</div></div>
-      <div class="met"><div class="mv" style="color:#185FA5" id="m-prg">0</div><div class="ml">In progress</div></div>
-      <div class="met"><div class="mv" style="color:#27500A" id="m-del">0</div><div class="ml">Delivered</div></div>
-      <div class="met"><div class="mv" style="color:#854F0B" id="m-hld">0</div><div class="ml">On hold</div></div>
-    </div>
-
-    <div class="toolbar">
-      <input id="f-srch" type="text" placeholder="Search product / tool name..." oninput="render()">
-      <select id="f-cat" onchange="render()">
-        <option value="">All categories</option>
-        <option>Standard Order</option>
-        <option>Priority Order</option>
-        <option>Rework</option>
-        <option>Whole Fixture</option>
-        <option>Other</option>
-      </select>
-      <select id="f-st" onchange="render()">
-        <option value="">All statuses</option>
-        <option>Delivered</option>
-        <option>In Progress</option>
-        <option>On Hold</option>
-      </select>
-      <select id="f-client" onchange="render()" style="display:none">
-        <option value="">All clients</option>
-      </select>
-      <input id="f-date-from" type="date" onchange="render()" title="From date">
-      <input id="f-date-to" type="date" onchange="render()" title="To date">
-      <button class="xbtn" onclick="clearFilters()">✕ Clear</button>
-      <button class="xbtn" onclick="doRefresh()">⟳ Refresh</button>
-      <button class="xbtn" onclick="hardRefreshImages()" title="Reload images from OneDrive">🖼 Refresh Images</button>
-      <button class="xbtn xl" onclick="doExcelExport()">📊 Excel</button>
-      <button class="xbtn pdf" onclick="showExportModal()">📄 PDF</button>
-    </div>
-
-    <div class="tabs">
-      <div class="tab on" onclick="setTab('all',this)">All</div>
-      <div class="tab" onclick="setTab('prg',this)">In progress</div>
-      <div class="tab" onclick="setTab('del',this)">Delivered</div>
-      <div class="tab" onclick="setTab('hld',this)">On hold</div>
-    </div>
-
-    <div class="tbl-box">
-      <div style="overflow-x:auto">
-        <table><thead><tr id="t-head"></tr></thead><tbody id="t-body"></tbody></table>
+  <div class="main-layout">
+    <div class="table-area" id="table-area">
+      <div class="metrics">
+        <div class="met"><div class="mv" id="m-tot">0</div><div class="ml">Total orders</div></div>
+        <div class="met"><div class="mv" style="color:var(--blue)" id="m-prg">0</div><div class="ml"><span class="met-dot" style="background:var(--blue)"></span>In progress</div></div>
+        <div class="met"><div class="mv" style="color:var(--success)" id="m-del">0</div><div class="ml"><span class="met-dot" style="background:var(--success)"></span>Delivered</div></div>
+        <div class="met"><div class="mv" style="color:var(--warning)" id="m-hld">0</div><div class="ml"><span class="met-dot" style="background:var(--warning)"></span>On hold</div></div>
       </div>
-      <div id="t-dp" style="display:none" class="dp">
-        <div class="dp-top">
-          <div class="dp-title" id="dp-ttl"></div>
-          <button class="close-btn" onclick="closeDP()">Close</button>
+      <div class="toolbar">
+        <div class="srch-wrap">
+          <svg class="srch-icon" width="14" height="14" fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <input id="f-srch" type="text" placeholder="Search product, tool name, PO..." oninput="render()">
         </div>
-        <div class="dp-grid" id="dp-grid"></div>
-        <div id="dp-stg" style="display:none">
-          <div class="stg-lbl">Manufacturing stages</div>
-          <div class="stg-row" id="stg-row"></div>
+        <select class="tbar-select" id="f-cat" onchange="render()">
+          <option value="">All categories</option>
+          <option>Standard Order</option>
+          <option>Priority Order</option>
+          <option>Rework</option>
+          <option>Whole Fixture</option>
+          <option>Other</option>
+        </select>
+        <select class="tbar-select" id="f-st" onchange="render()">
+          <option value="">All statuses</option>
+          <option>Delivered</option>
+          <option>In Progress</option>
+          <option>On Hold</option>
+          <option>Done</option>
+        </select>
+        <select class="tbar-select" id="f-client" onchange="render()" style="display:none">
+          <option value="">All clients</option>
+        </select>
+        <input class="tbar-date" id="f-df" type="date" onchange="render()" title="From date">
+        <input class="tbar-date" id="f-dt" type="date" onchange="render()" title="To date">
+        <button class="btn-tb" onclick="clearFilters()">✕ Clear</button>
+        <button class="btn-tb" onclick="doRefresh()">⟳ Refresh</button>
+        <button class="btn-tb btn-xl" onclick="doExcelExport()">📊 Excel</button>
+        <button class="btn-tb btn-pdf" onclick="showExpModal()">📄 PDF</button>
+        <button id="btn-add" class="btn-tb btn-add" onclick="openAddOrder()" style="display:none">+ Add Order</button>
+      </div>
+      <div class="tabs">
+        <button class="tab on" onclick="setTab('all',this)">All</button>
+        <button class="tab" onclick="setTab('prg',this)">In progress</button>
+        <button class="tab" onclick="setTab('del',this)">Delivered</button>
+        <button class="tab" onclick="setTab('hld',this)">On hold</button>
+      </div>
+      <div class="tbl-wrap">
+        <div class="tbl-scroll">
+          <table><thead><tr id="t-head"></tr></thead><tbody id="t-body"></tbody></table>
         </div>
+        <div id="t-det" style="display:none" class="detail-bar">
+          <div class="detail-bar-top">
+            <div>
+              <div class="detail-bar-title" id="det-title"></div>
+              <div style="font-size:11px;color:var(--text2);margin-top:2px" id="det-sub"></div>
+            </div>
+            <div class="detail-bar-actions">
+              <button id="det-edit-btn" class="btn-sm btn-edit" onclick="openEditOrder()" style="display:none">✏ Edit</button>
+              <button id="det-pdf-btn" class="btn-sm btn-view-pdf" onclick="viewOrderPDF()" style="display:none">📄 View Drawing</button>
+              <button class="btn-sm btn-close-det" onclick="closeDet()">✕</button>
+            </div>
+          </div>
+          <div class="detail-grid" id="det-grid"></div>
+          <div id="det-stages" style="display:none">
+            <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Manufacturing stages</div>
+            <div class="stages-strip" id="stages-strip"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDE PANEL (Add/Edit) -->
+    <div class="side-panel" id="side-panel">
+      <div class="sp-header">
+        <div>
+          <div class="sp-title" id="sp-title">New Order</div>
+          <div class="sp-sub" id="sp-sub">Fill in order details</div>
+        </div>
+        <button class="sp-close" onclick="closeSP()">✕</button>
+      </div>
+      <div class="sp-body">
+        <!-- Basic Info -->
+        <div class="sp-section">
+          <div class="sp-sec-label">Basic Information</div>
+          <div class="sp-grid">
+            <div class="field"><label>Sr No</label><input id="f-sr" type="text" readonly placeholder="Auto-assigned"></div>
+            <div class="field"><label>Order Date</label><input id="f-date" type="date"></div>
+            <div class="field"><label>Client PO No.</label><input id="f-po" type="text" placeholder="e.g. RT2727"></div>
+            <div class="field"><label>Qty</label><input id="f-qty" type="number" placeholder="1" min="1"></div>
+          </div>
+          <div class="sp-grid-1" style="margin-top:10px">
+            <div class="field"><label>Product / Tool Name</label><input id="f-name" type="text" placeholder="e.g. RT 2727 - 201 - Die Insert"></div>
+            <div class="field"><label>Category</label>
+              <select id="f-cat2">
+                <option>Standard Order</option>
+                <option>Priority Order</option>
+                <option>Rework</option>
+                <option>Whole Fixture</option>
+                <option>Other</option>
+              </select>
+            </div>
+            <div class="field"><label>Tool Type</label><input id="f-type" type="text" placeholder="e.g. Die Insert, Punch, Locator"></div>
+          </div>
+        </div>
+
+        <!-- Order Status -->
+        <div class="sp-section">
+          <div class="sp-sec-label">Order Status</div>
+          <div class="sp-grid">
+            <div class="field"><label>Quoted</label>
+              <select id="f-quoted"><option>No</option><option>Yes</option></select>
+            </div>
+            <div class="field"><label>Client PO Received</label>
+              <select id="f-po-rec"><option>No</option><option>Yes</option></select>
+            </div>
+            <div class="field"><label>Approval to Start</label>
+              <select id="f-approval"><option>No</option><option>Yes</option></select>
+            </div>
+            <div class="field"><label>Target Delivery</label><input id="f-tgt" type="date"></div>
+          </div>
+        </div>
+
+        <!-- Manufacturing Stages -->
+        <div class="sp-section">
+          <div class="sp-sec-label">Manufacturing Stages</div>
+          <div class="stage-grid">
+            <div class="stage-field"><label>Raw Material</label>
+              <select id="st-rm"><option>—</option><option>Pending</option><option>Done</option><option>NA</option><option>Hold</option></select>
+            </div>
+            <div class="stage-field"><label>Shaping/Milling</label>
+              <select id="st-shape"><option>—</option><option>Pending</option><option>Done</option><option>NA</option><option>Hold</option></select>
+            </div>
+            <div class="stage-field"><label>Surface/CG Grinding</label>
+              <select id="st-grind"><option>—</option><option>Pending</option><option>Done</option><option>NA</option><option>Hold</option></select>
+            </div>
+            <div class="stage-field"><label>Wirecut/VMC</label>
+              <select id="st-wire"><option>—</option><option>Pending</option><option>Done</option><option>NA</option><option>Hold</option></select>
+            </div>
+            <div class="stage-field"><label>Jig Boring/Lathe</label>
+              <select id="st-lathe"><option>—</option><option>Pending</option><option>Done</option><option>NA</option><option>Hold</option></select>
+            </div>
+            <div class="stage-field"><label>Heat Treatment</label>
+              <select id="st-ht"><option>—</option><option>Pending</option><option>Done</option><option>NA</option><option>Hold</option></select>
+            </div>
+            <div class="stage-field"><label>Final Inspection</label>
+              <select id="st-insp"><option>—</option><option>Pending</option><option>Done</option><option>NA</option><option>Hold</option></select>
+            </div>
+            <div class="stage-field"><label>Dispatch</label>
+              <select id="st-disp"><option>—</option><option>Pending</option><option>Done</option><option>NA</option><option>Hold</option></select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Final -->
+        <div class="sp-section">
+          <div class="sp-sec-label">Final Status & Notes</div>
+          <div class="sp-grid-1">
+            <div class="field"><label>Overall Status</label>
+              <select id="f-status">
+                <option>In Progress</option>
+                <option>Delivered</option>
+                <option>On Hold</option>
+                <option>Done</option>
+              </select>
+            </div>
+            <div class="field"><label>Remarks / Hold Reason</label>
+              <textarea id="f-remarks" placeholder="Any notes or hold reason..."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tool Image Upload -->
+        <div class="sp-section">
+          <div class="sp-sec-label">Tool Image</div>
+          <div class="upload-zone" id="img-zone" onclick="document.getElementById('img-file').click()">
+            <div style="font-size:24px">🖼</div>
+            <div class="upload-label">Click to upload tool image</div>
+            <div class="upload-label" style="font-size:10px;margin-top:2px">PNG, JPG — screenshot or CAD image</div>
+            <div class="upload-name" id="img-name"></div>
+            <input type="file" id="img-file" accept="image/*" onchange="handleImgFile(this)">
+          </div>
+        </div>
+
+        <!-- Drawing PDF Upload -->
+        <div class="sp-section">
+          <div class="sp-sec-label">Engineering Drawing (PDF)</div>
+          <div class="upload-zone" id="pdf-zone" onclick="document.getElementById('pdf-file').click()">
+            <div style="font-size:24px">📄</div>
+            <div class="upload-label">Click to upload drawing PDF</div>
+            <div class="upload-label" style="font-size:10px;margin-top:2px">Up to 50 pages — stored securely on OneDrive</div>
+            <div class="upload-name" id="pdf-name"></div>
+            <input type="file" id="pdf-file" accept=".pdf" onchange="handlePDFFile(this)">
+          </div>
+        </div>
+      </div>
+      <div class="sp-footer">
+        <button class="btn-cancel" onclick="closeSP()">Cancel</button>
+        <button id="btn-del-order" class="btn-del" onclick="deleteOrder()" style="display:none">🗑 Delete</button>
+        <button class="btn-save" onclick="saveOrder()">💾 Save Order</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- IMAGE MODAL -->
-<div id="img-modal" style="display:none" class="modal-bg" onclick="if(event.target===this)closeModal()">
-  <div class="modal-inner">
+<div id="img-modal" style="display:none" class="modal-bg" onclick="if(event.target===this)closeImgModal()">
+  <div class="modal-box">
     <img id="m-img" class="modal-img" src="" alt="tool">
     <div id="m-name" class="modal-name"></div>
     <div id="m-type" class="modal-type"></div>
-    <button class="ghost-btn" onclick="closeModal()">Close</button>
+    <button class="ghost-btn" onclick="closeImgModal()">Close</button>
+  </div>
+</div>
+
+<!-- PDF MODAL -->
+<div id="pdf-modal" style="display:none" class="pdf-modal-bg">
+  <div class="pdf-modal-top">
+    <div class="pdf-modal-title" id="pdf-modal-title">Engineering Drawing</div>
+    <button class="btn-topbar" onclick="closePDFModal()">✕ Close</button>
+  </div>
+  <iframe id="pdf-iframe" class="pdf-iframe" src=""></iframe>
+</div>
+
+<!-- EXPORT MODAL -->
+<div id="exp-modal" style="display:none" class="exp-bg" onclick="if(event.target===this)closeExpModal()">
+  <div class="exp-box">
+    <div class="exp-title">Export PDF</div>
+    <div class="exp-sub">Export <strong id="exp-count">0</strong> visible orders</div>
+    <div class="exp-opt">
+      <div class="exp-card" onclick="doPDF(false)">
+        <h4>⚡ Fast Export</h4>
+        <p>Table only — instant download, no images</p>
+      </div>
+      <div class="exp-card" onclick="doPDF(true)">
+        <h4>🖼 Full Export with Images</h4>
+        <p>Includes real tool images — up to 30 seconds</p>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end">
+      <button class="ghost-btn" onclick="closeExpModal()">Cancel</button>
+    </div>
   </div>
 </div>
 
 <!-- ADMIN PANEL -->
-<div id="admin-overlay" style="display:none" class="admin-overlay" onclick="if(event.target===this)closeAdminPanel()">
-  <div class="admin-panel">
-    <div class="ap-header">
-      <div class="ap-title">⚙ Admin Control Panel</div>
-      <button class="ap-close" onclick="closeAdminPanel()">✕</button>
-    </div>
-
-    <div class="ap-section">
-      <div class="ap-sec-title">My Column Visibility</div>
-      <div id="ap-col-toggles"></div>
-    </div>
-
-    <div class="ap-section">
-      <div class="ap-sec-title">Client Access List</div>
-      <div id="ap-clients"></div>
-      <div style="margin-top:12px;background:#f8f9fc;border-radius:10px;padding:14px;border:1px solid #e8eef4">
-        <div style="font-size:12px;font-weight:600;margin-bottom:10px;color:#0C447C">+ Add New Client</div>
-        <input class="ap-input" id="new-email" placeholder="Email address" type="email">
-        <input class="ap-input" id="new-name" placeholder="Client name (e.g. Rane)">
-        <input class="ap-input" id="new-sheet" placeholder="Sheet name (exact match)">
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
-          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="nc-stages" checked> Stages</label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="nc-images" checked> Images</label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="nc-qty" checked> Qty</label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="nc-target" checked> Target</label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="nc-po"> PO No</label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:4px"><input type="checkbox" id="nc-remarks"> Remarks</label>
-        </div>
-        <button class="ap-btn ap-btn-primary" onclick="addClient()">Add Client</button>
-      </div>
-    </div>
-
-    <div class="ap-section">
-      <div class="ap-sec-title">Sync to Excel</div>
-      <p style="font-size:12px;color:#888;margin-bottom:10px">Push all access list changes back to your Excel file on OneDrive.</p>
-      <button class="ap-btn ap-btn-primary" onclick="syncToExcel()" style="width:100%">⬆ Sync Access List to Excel</button>
-    </div>
-  </div>
+<div id="admin-overlay" style="display:none" class="admin-overlay" onclick="if(event.target===this)closeAdmin()">
 </div>
-
-<!-- EXPORT MODAL -->
-<div id="exp-modal" style="display:none" class="exp-modal" onclick="if(event.target===this)closeExportModal()">
-  <div class="exp-inner">
-    <div class="exp-title">Export PDF</div>
-    <div class="exp-sub">Choose export type for <strong id="exp-count">0</strong> visible orders</div>
-    <div class="exp-opt">
-      <div class="exp-card" onclick="doPDFExport(false)">
-        <h4>⚡ Fast Export (5-10 sec)</h4>
-        <p>Current filtered view — no images, instant download</p>
-      </div>
-      <div class="exp-card" onclick="doPDFExport(true)">
-        <h4>🖼 Full Export with Images (up to 30 sec)</h4>
-        <p>Current filtered view — includes real tool images</p>
+<div id="admin-drawer" style="display:none" class="admin-drawer">
+  <div class="adm-header">
+    <div class="adm-title">⚙ Admin Control Panel</div>
+    <button class="sp-close" onclick="closeAdmin()">✕</button>
+  </div>
+  <div class="adm-body">
+    <div class="adm-section">
+      <div class="adm-sec-label">My Column Visibility</div>
+      <div id="adm-cols"></div>
+    </div>
+    <div class="adm-section">
+      <div class="adm-sec-label">Client Access</div>
+      <div id="adm-clients"></div>
+      <div style="background:var(--bg);border-radius:var(--r-md);padding:14px;border:1px solid var(--border);margin-top:10px">
+        <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:10px">+ Add New Client</div>
+        <input class="adm-input" id="nc-email" placeholder="Email address" type="email">
+        <input class="adm-input" id="nc-name" placeholder="Client name (e.g. Rane)">
+        <input class="adm-input" id="nc-sheet" placeholder="Sheet name (exact match)">
+        <div class="adm-check-row">
+          <label><input type="checkbox" id="nc-stages" checked> Stages</label>
+          <label><input type="checkbox" id="nc-images" checked> Images</label>
+          <label><input type="checkbox" id="nc-qty" checked> Qty</label>
+          <label><input type="checkbox" id="nc-target" checked> Target</label>
+          <label><input type="checkbox" id="nc-po"> PO No</label>
+          <label><input type="checkbox" id="nc-remarks"> Remarks</label>
+        </div>
+        <button class="btn-adm btn-adm-primary" onclick="addClient()">Add Client</button>
       </div>
     </div>
-    <div class="exp-btns">
-      <button class="ghost-btn" onclick="closeExportModal()">Cancel</button>
+    <div class="adm-section">
+      <div class="adm-sec-label">Sync to Excel</div>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Push access list changes to your Excel on OneDrive.</p>
+      <button class="btn-adm-sync" onclick="syncToExcel()">⬆ Sync Access List to Excel</button>
     </div>
   </div>
 </div>
 
 <script>
-// ═══════════════════════════════════
+// ═══════════════════════════════════════
 // CONFIG
-// ═══════════════════════════════════
+// ═══════════════════════════════════════
 const C = {
-  clientId:   '248daf88-bf2b-4f29-9295-ab2e707fa3ef',
-  tenantId:   'ae273161-7bde-4004-9e52-0ebbee8e3c0d',
-  scopes:     ['Files.Read','Files.ReadWrite','Sites.Read.All','User.Read'],
-  driveId:    'b!jceebB-yv06JofmpaCD0YV43KWvC7BxKt4YoJXGPaaXaE0_L5fJdT4sWiVQE6BXZ',
-  fileSearch: 'JMC_Order_Tracker copy test',
-  imgFolder:  'tool_images',
-  logoFile:   'jmc_logo.png',
-  accSheet:   'Access List',
-  adminEmail: 'info@jmcengg.com',
-  skipSheets: ['order tracker','access list','archive','dashboard','sheet1','sheet2']
+  clientId:    '248daf88-bf2b-4f29-9295-ab2e707fa3ef',
+  tenantId:    'ae273161-7bde-4004-9e52-0ebbee8e3c0d',
+  scopes:      ['Files.Read','Files.ReadWrite','Sites.Read.All','User.Read'],
+  driveId:     'b!jceebB-yv06JofmpaCD0YV43KWvC7BxKt4YoJXGPaaXaE0_L5fJdT4sWiVQE6BXZ',
+  fileSearch:  'JMC_Order_Tracker copy test',
+  imgFolder:   'tool_images',
+  pdfFolder:   'drawings',
+  logoFile:    'jmc_logo.png',
+  accSheet:    'Access List',
+  adminEmail:  'info@jmcengg.com',
+  googleClientId: 'YOUR_GOOGLE_CLIENT_ID',
+  skipSheets:  ['order tracker','access list','archive','dashboard','sheet1','sheet2'],
+  redirectUri: 'https://jmcengineering.github.io/jmc-order-tracker/jmc_order_tracker.html'
 };
 
-// ═══════════════════════════════════
+// ═══════════════════════════════════════
 // STATE
-// ═══════════════════════════════════
+// ═══════════════════════════════════════
 let A = {
-  msal:null, user:null, token:null,
-  fileId:null, driveId:null, imgFolderId:null, logoUrl:null,
-  imgCache:{}, imgFolderCache:null,
-  perms:null, accessList:[],
-  orders:[], allOrders:[],
-  tab:'all', sel:null, isAdmin:false,
-  clientSheets:[], // [{name, sheet}]
-  adminCols:{ po:true, images:true, qty:true, target:true, remarks:true, client:true, stages:true }
+  msal:null, user:null, token:null, authType:null,
+  fileId:null, driveId:null,
+  imgFolderId:null, pdfFolderId:null, imgFolderCache:null,
+  logoUrl:null, imgCache:{},
+  perms:null, accessList:[], orders:[], allOrders:[],
+  tab:'all', selOrder:null, editOrder:null, isAdmin:false,
+  adminCols:{po:true,images:true,qty:true,target:true,remarks:true,client:true,stages:true,quoted:true,approval:true},
+  pendingImgFile:null, pendingPDFFile:null,
+  pdfCache:{}
 };
 
-// ═══════════════════════════════════
-// SCREEN MANAGER
-// ═══════════════════════════════════
-const SCREENS = ['s-login','s-loading','s-error','s-denied','s-main'];
-function go(id, msg){
+// ═══════════════════════════════════════
+// SCREENS
+// ═══════════════════════════════════════
+const SCREENS=['s-login','s-loading','s-error','s-denied','s-main'];
+function go(id,msg){
   SCREENS.forEach(s=>{
     const el=document.getElementById(s);
-    el.style.display=(s===id)?'flex':'none';
+    if(!el) return;
+    if(s===id){el.style.display='flex';}
+    else{el.style.display='none';}
   });
   if(id==='s-loading'&&msg) document.getElementById('load-msg').textContent=msg;
 }
-function goLogin(){ go('s-login'); }
-function showErr(title,msg){ document.getElementById('err-title').textContent=title; document.getElementById('err-msg').textContent=msg; go('s-error'); }
-
-// ═══════════════════════════════════
-// TOAST
-// ═══════════════════════════════════
-function toast(msg,ms=2800){
+function goLogin(){go('s-login');}
+function showErr(t,m){
+  document.getElementById('err-title').textContent=t;
+  document.getElementById('err-msg').textContent=m;
+  go('s-error');
+}
+function toast(msg,ms=3000){
   document.querySelectorAll('.toast').forEach(t=>t.remove());
-  const t=document.createElement('div'); t.className='toast'; t.textContent=msg;
-  document.body.appendChild(t); setTimeout(()=>t.remove(),ms);
+  const t=document.createElement('div');t.className='toast';t.textContent=msg;
+  document.body.appendChild(t);setTimeout(()=>t.remove(),ms);
 }
 
-// ═══════════════════════════════════
-// MSAL
-// ═══════════════════════════════════
+// ═══════════════════════════════════════
+// MSAL AUTH
+// ═══════════════════════════════════════
 const msalCfg={
-  auth:{clientId:C.clientId,authority:'https://login.microsoftonline.com/common',redirectUri:'https://jmcengineering.github.io/jmc-order-tracker/jmc_order_tracker.html'},
+  auth:{clientId:C.clientId,authority:'https://login.microsoftonline.com/common',redirectUri:C.redirectUri},
   cache:{cacheLocation:'sessionStorage',storeAuthStateInCookie:false}
 };
 async function initMSAL(){
-  // Wait for MSAL library to be available
-  let attempts = 0;
-  while(typeof msal === 'undefined' && attempts < 20){
-    await new Promise(r=>setTimeout(r,200));
-    attempts++;
-  }
-  if(typeof msal === 'undefined'){
-    showErr('Loading failed','Microsoft login library could not load. Please check your internet connection and refresh.');
-    return;
-  }
+  let attempts=0;
+  while(typeof msal==='undefined'&&attempts<20){await new Promise(r=>setTimeout(r,250));attempts++;}
+  if(typeof msal==='undefined'){showErr('Load failed','Microsoft login library failed to load. Check your internet and refresh.');return;}
   A.msal=new msal.PublicClientApplication(msalCfg);
   await A.msal.initialize();
-  try{const resp=await A.msal.handleRedirectPromise(); if(resp&&resp.account){A.user=resp.account;A.token=resp.accessToken;await startApp();return;}}catch(e){console.warn(e);}
+  try{
+    const resp=await A.msal.handleRedirectPromise();
+    if(resp&&resp.account){A.user=resp.account;A.token=resp.accessToken;A.authType='ms';await startApp();return;}
+  }catch(e){console.warn(e);}
   const accs=A.msal.getAllAccounts();
   if(accs.length>0){
     A.user=accs[0];
-    try{const r=await A.msal.acquireTokenSilent({scopes:C.scopes,account:A.user});A.token=r.accessToken;await startApp();return;}
+    try{const r=await A.msal.acquireTokenSilent({scopes:C.scopes,account:A.user});A.token=r.accessToken;A.authType='ms';await startApp();return;}
     catch(e){console.warn('silent fail');}
   }
   goLogin();
 }
 async function doLogin(){
-  try{
-    // Wait for MSAL to initialize if not ready yet
-    if(!A.msal){
-      showErr('Login failed','App is still loading. Please wait a moment and try again.');
-      return;
-    }
-    await A.msal.loginRedirect({scopes:C.scopes});
-  }catch(e){
-    showErr('Login failed', e.message||String(e));
-  }
+  if(!A.msal){showErr('Not ready','App still loading. Please wait.');return;}
+  try{await A.msal.loginRedirect({scopes:C.scopes});}
+  catch(e){showErr('Login failed',e.message||String(e));}
 }
 async function getToken(){
   try{const r=await A.msal.acquireTokenSilent({scopes:C.scopes,account:A.user});return r.accessToken;}
   catch(e){await A.msal.acquireTokenRedirect({scopes:C.scopes});return null;}
 }
-function doLogout(){try{A.msal.logoutRedirect();}catch(e){}goLogin();}
+function doLogout(){
+  try{if(A.authType==='ms')A.msal.logoutRedirect();}catch(e){}
+  goLogin();
+}
 
-// ═══════════════════════════════════
+// Google OAuth
+function doGoogleLogin(){
+  if(typeof google==='undefined'||!google.accounts){toast('Google login loading, try again in a moment');return;}
+  google.accounts.id.initialize({
+    client_id:C.googleClientId,
+    callback:handleGoogleLogin,
+    auto_select:false
+  });
+  google.accounts.id.prompt();
+}
+async function handleGoogleLogin(resp){
+  if(!resp.credential){toast('Google login failed');return;}
+  // Decode JWT to get email
+  const payload=JSON.parse(atob(resp.credential.split('.')[1]));
+  const email=(payload.email||'').toLowerCase();
+  // Store google user info
+  A.user={username:email,name:payload.name||email};
+  A.authType='google';
+  A.token=null; // Will use MS token for Graph API
+  // For Google users — they can only view (no Graph API write)
+  // Show login then redirect to MS for Graph access
+  toast('Google account verified! Now connecting to JMC data...',4000);
+  // Try MS silent login for Graph API access
+  try{
+    await A.msal.loginRedirect({scopes:C.scopes,loginHint:email});
+  }catch(e){
+    showErr('Connection failed','Please use the Microsoft login button instead for full access.');
+  }
+}
+
+// ═══════════════════════════════════════
 // GRAPH API
-// ═══════════════════════════════════
-async function gapi(path, opts={}){
-  const tok=await getToken(); if(!tok) return null;
+// ═══════════════════════════════════════
+async function gapi(path,opts={}){
+  const tok=await getToken();if(!tok)return null;
   const r=await fetch('https://graph.microsoft.com/v1.0'+path,{
-    headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},
+    headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json',...(opts.headers||{})},
     ...opts
   });
-  if(!r.ok){const txt=await r.text();throw new Error('Graph '+r.status+': '+path.slice(0,60)+'\n'+txt.slice(0,200));}
-  if(r.status===204) return null;
+  if(!r.ok){const txt=await r.text();throw new Error('Graph '+r.status+': '+path.slice(0,80)+'\n'+txt.slice(0,300));}
+  if(r.status===204)return null;
   return r.json();
 }
 
+async function gapiUpload(path,data,contentType){
+  const tok=await getToken();if(!tok)return null;
+  const r=await fetch('https://graph.microsoft.com/v1.0'+path,{
+    method:'PUT',
+    headers:{Authorization:'Bearer '+tok,'Content-Type':contentType||'application/octet-stream'},
+    body:data
+  });
+  if(!r.ok){const txt=await r.text();throw new Error('Upload '+r.status+': '+txt.slice(0,200));}
+  return r.json();
+}
+
+// ═══════════════════════════════════════
+// FIND FILE + FOLDERS
+// ═══════════════════════════════════════
 async function findFile(){
   A.driveId=C.driveId;
   const res=await gapi('/drives/'+A.driveId+'/root/search(q=\''+C.fileSearch+'\')');
-  if(!res||!res.value||!res.value.length) throw new Error('Excel file not found: "'+C.fileSearch+'"');
+  if(!res||!res.value||!res.value.length)throw new Error('Excel file not found: "'+C.fileSearch+'"');
   const f=res.value.find(x=>x.name.match(/\.(xlsm|xlsx)$/i));
-  if(!f) throw new Error('No Excel file matching: '+C.fileSearch);
+  if(!f)throw new Error('No Excel file matching: '+C.fileSearch);
   A.fileId=f.id;
-  console.log('✅ File:',f.name);
-  // Find tool_images folder & logo
+  const parentId=f.parentReference.id;
+  // Get siblings
   try{
-    const parentId=f.parentReference.id;
-    const children=await gapi('/drives/'+A.driveId+'/items/'+parentId+'/children');
-    const items=children.value||[];
+    const ch=await gapi('/drives/'+A.driveId+'/items/'+parentId+'/children');
+    const items=ch.value||[];
     const imgF=items.find(x=>x.name===C.imgFolder&&x.folder);
-    if(imgF){A.imgFolderId=imgF.id;console.log('✅ tool_images folder:',imgF.id);}
-    // Load folder file list once
-    if(A.imgFolderId){
-      const fc=await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name');
-      A.imgFolderCache=(fc.value||[]);
-      console.log('✅ Images in folder:',A.imgFolderCache.length);
-    }
-    // Find logo
-    const logoF=items.find(x=>x.name===C.logoFile&&!x.folder);
+    if(imgF)A.imgFolderId=imgF.id;
+    let pdfF=items.find(x=>x.name===C.pdfFolder&&x.folder);
+    if(!pdfF){
+      // Create drawings folder
+      try{
+        const created=await gapi('/drives/'+A.driveId+'/items/'+parentId+'/children',{
+          method:'POST',body:JSON.stringify({name:C.pdfFolder,folder:{},['@microsoft.graph.conflictBehavior']:'rename'})
+        });
+        if(created)A.pdfFolderId=created.id;
+      }catch(e){console.warn('Could not create drawings folder:',e);}
+    } else {A.pdfFolderId=pdfF.id;}
+    // Logo
+    const logoF=items.find(x=>x.name===C.logoFile);
     if(logoF){
-      const info=await gapi('/drives/'+A.driveId+'/items/'+logoF.id);
-      A.logoUrl=info['@microsoft.graph.downloadUrl']||null;
+      const li=await gapi('/drives/'+A.driveId+'/items/'+logoF.id);
+      A.logoUrl=li['@microsoft.graph.downloadUrl']||null;
       if(A.logoUrl){
         document.getElementById('login-logo').src=A.logoUrl;
         document.getElementById('tb-logo').src=A.logoUrl;
       }
+    }
+    // Load image folder cache
+    if(A.imgFolderId){
+      const fc=await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name');
+      A.imgFolderCache=fc.value||[];
     }
   }catch(e){console.warn('folder scan:',e);}
 }
@@ -531,50 +892,77 @@ async function allSheetNames(){
   return(d.value||[]).map(s=>s.name);
 }
 
-// ═══════════════════════════════════
+// ═══════════════════════════════════════
+// WRITE TO EXCEL
+// ═══════════════════════════════════════
+async function writeOrderToExcel(order, rowNum){
+  const row=[
+    order.sr, order.date, order.po, order.name, order.cat, order.type,
+    order.qty||'', order.quoted||'No', order.poRec||'No', order.approval||'No',
+    order.tgt||'', order.stRM||'—', order.stShape||'—', order.stGrind||'—',
+    order.stWire||'—', order.stLathe||'—', order.stHT||'—',
+    order.stInsp||'—', order.stDisp||'—', order.status||'In Progress',
+    order.remarks||'', order.imgFile||'', order.pdfFile||''
+  ];
+  const range='A'+rowNum+':W'+rowNum;
+  await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(A.perms.sheet)+'/range(address=\''+range+'\')',{
+    method:'PATCH',body:JSON.stringify({values:[row]})
+  });
+}
+
+async function getNextSrNo(){
+  const rows=await readSheet(A.perms.sheet);
+  let max=0;
+  rows.forEach(r=>{
+    const v=parseInt(r[0]);
+    if(!isNaN(v)&&v>max)max=v;
+  });
+  return max+1;
+}
+
+async function getRowForSr(sr){
+  const rows=await readSheet(A.perms.sheet);
+  for(let i=0;i<rows.length;i++){
+    if(parseInt(rows[i][0])===parseInt(sr))return i+1;
+  }
+  return null;
+}
+
+// ═══════════════════════════════════════
 // START APP
-// ═══════════════════════════════════
+// ═══════════════════════════════════════
 async function startApp(){
   try{
     go('s-loading','Finding your Excel file...');
     await findFile();
-
     go('s-loading','Reading access list...');
     let aRows=[];
     try{aRows=await readSheet(C.accSheet);}
-    catch(e){throw new Error('Could not find "Access List" sheet.\nPlease create it with columns: Email, Client Name, Sheet Name, Stages, Images, Qty, Target, PO No, Remarks');}
-
-    // Parse access list
+    catch(e){throw new Error('Could not find "Access List" sheet.\nPlease create it in Excel with columns:\nEmail | Client Name | Sheet Name | Stages | Images | Qty | Target | PO No | Remarks');}
     A.accessList=[];
     const yn=v=>(v||'').toString().trim().toUpperCase()!=='NO'&&(v||'').toString().trim()!=='';
     for(let i=1;i<aRows.length;i++){
-      const r=aRows[i];
-      if(!r[0]) continue;
+      const r=aRows[i];if(!r[0])continue;
       A.accessList.push({
         email:(r[0]||'').toString().toLowerCase().trim(),
-        clientName:r[1]||'Client',
-        sheet:r[2]||'Order Tracker',
+        clientName:r[1]||'Client',sheet:r[2]||'Order Tracker',
         stages:(r[3]||'').toString().toUpperCase().trim(),
         images:yn(r[4]),qty:yn(r[5]),target:yn(r[6]),po:yn(r[7]),remarks:yn(r[8])
       });
     }
-
     const email=(A.user.username||'').toLowerCase().trim();
     const ur=A.accessList.find(x=>x.email===email);
     if(!ur){document.getElementById('denied-email').textContent=email;go('s-denied');return;}
-
-    A.perms=ur;
-    A.isAdmin=email===C.adminEmail.toLowerCase();
-
-    // Update topbar
+    A.perms=ur;A.isAdmin=email===C.adminEmail.toLowerCase();
     const ini=ur.clientName.replace(/[^A-Z]/gi,'').slice(0,2).toUpperCase()||'?';
     document.getElementById('tb-uname').textContent=ur.clientName;
     document.getElementById('tb-role').textContent=A.isAdmin?'Admin':'Client';
     document.getElementById('tb-av').textContent=ini;
     document.getElementById('tb-sub').textContent=A.isAdmin?'Admin — all orders':ur.sheet+' orders';
-    if(A.isAdmin) document.getElementById('admin-panel-btn').style.display='inline-flex';
-
-    // Load orders
+    if(A.isAdmin){
+      document.getElementById('admin-btn').style.display='inline-flex';
+      document.getElementById('btn-add').style.display='inline-flex';
+    }
     if(A.isAdmin){
       go('s-loading','Loading all client sheets...');
       await loadAllSheets();
@@ -583,265 +971,265 @@ async function startApp(){
       const rows=await readSheet(ur.sheet);
       const orders=parseOrders(rows);
       orders.forEach(o=>o.client=ur.clientName);
-      A.orders=orders; A.allOrders=orders;
+      A.orders=orders;A.allOrders=orders;
     }
-
-    buildHead();
-    render();
-    go('s-main');
-    loadThumbImages(A.orders);
-  }catch(e){
-    console.error('startApp:',e);
-    showErr('Failed to load',e.message||String(e));
-  }
+    buildHead();render();go('s-main');
+    setTimeout(()=>loadThumbImages(A.orders),300);
+  }catch(e){console.error(e);showErr('Failed to load',e.message||String(e));}
 }
 
-// ═══════════════════════════════════
-// LOAD ALL SHEETS (ADMIN)
-// ═══════════════════════════════════
 async function loadAllSheets(){
   const sheets=await allSheetNames();
-  const skip=C.skipSheets;
-  const clientSheets=sheets.filter(s=>!skip.includes(s.toLowerCase()));
-  A.clientSheets=clientSheets;
-
-  // Update client filter dropdown
+  const clientSheets=sheets.filter(s=>!C.skipSheets.includes(s.toLowerCase()));
   const cf=document.getElementById('f-client');
   cf.innerHTML='<option value="">All clients</option>';
-  clientSheets.forEach(s=>{
-    const opt=document.createElement('option');
-    opt.value=s; opt.textContent=s;
-    cf.appendChild(opt);
-  });
+  clientSheets.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;cf.appendChild(o);});
   cf.style.display='block';
-
   A.allOrders=[];
   for(const sheet of clientSheets){
     try{
       const rows=await readSheet(sheet);
       const orders=parseOrders(rows);
-      // Find client name from access list
       const ac=A.accessList.find(x=>x.sheet===sheet);
       const clientName=ac?ac.clientName:sheet;
-      orders.forEach(o=>{ o.client=clientName; o.sheet=sheet; });
+      orders.forEach(o=>{o.client=clientName;o.sheet=sheet;});
       A.allOrders.push(...orders);
-    }catch(e){console.warn('Could not read sheet:',sheet,e);}
+    }catch(e){console.warn('Sheet read fail:',sheet);}
   }
-
-  // Also load master Order Tracker
-  try{
-    const rows=await readSheet('Order Tracker');
-    const orders=parseOrders(rows);
-    const hasClient=A.allOrders.some(o=>o.client);
-    if(!hasClient){
-      orders.forEach(o=>o.client='All');
+  if(!A.allOrders.length){
+    try{
+      const rows=await readSheet('Order Tracker');
+      const orders=parseOrders(rows);
+      orders.forEach(o=>{o.client='JMC';o.sheet='Order Tracker';});
       A.allOrders=orders;
-    }
-  }catch(e){}
-
-  if(A.allOrders.length===0){
-    // Fallback to Order Tracker sheet
-    const rows=await readSheet('Order Tracker');
-    const orders=parseOrders(rows);
-    orders.forEach(o=>o.client='JMC');
-    A.allOrders=orders;
+    }catch(e){}
   }
   A.orders=A.allOrders;
+  A.perms.sheet=A.perms.sheet||'Order Tracker';
 }
 
 async function doRefresh(){
-  if(!A.fileId){toast('Not connected');return;}
   go('s-loading','Refreshing...');
   try{
-    if(A.isAdmin) await loadAllSheets();
+    A.imgCache={};A.imgFolderCache=null;
+    if(A.imgFolderId){
+      const fc=await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name');
+      A.imgFolderCache=fc.value||[];
+    }
+    if(A.isAdmin)await loadAllSheets();
     else{
       const rows=await readSheet(A.perms.sheet);
       const orders=parseOrders(rows);
       orders.forEach(o=>o.client=A.perms.clientName);
-      A.orders=orders; A.allOrders=orders;
+      A.orders=orders;A.allOrders=orders;
     }
-    render(); go('s-main'); toast('Refreshed from Excel!');
+    render();go('s-main');toast('Refreshed!');
     loadThumbImages(A.orders);
   }catch(e){showErr('Refresh failed',e.message||String(e));}
 }
 
-// ═══════════════════════════════════
+// ═══════════════════════════════════════
 // PARSE ORDERS
-// ═══════════════════════════════════
+// ═══════════════════════════════════════
 function parseOrders(rows){
   const orders=[];
   let hi=-1;
   for(let i=0;i<rows.length;i++){
     if(rows[i].some(c=>c&&/product|tool name|sr.{0,4}no/i.test(c.toString()))){hi=i;break;}
   }
-  if(hi<0) return orders;
+  if(hi<0)return orders;
   const h=rows[hi].map(v=>(v||'').toString().toLowerCase());
   const col=(...kws)=>{for(const k of kws){const i=h.findIndex(x=>x.includes(k));if(i>=0)return i;}return -1;};
   const cc={
     sr:col('sr','no'),date:col('order date','date'),po:col('client po','po no'),
     name:col('product','tool name'),cat:col('category'),type:col('tool type'),
-    qty:col('qty','quantity'),tgt:col('target'),
-    rm:col('raw material','rm'),shape:col('shaping','milling','shape'),
-    grind:col('grinding','grind'),wire:col('wirecut','wire','vmc'),
-    lathe:col('jig boring','lathe'),ht:col('heat treat','heat','ht'),
+    qty:col('qty','quantity'),quoted:col('quoted'),poRec:col('po received','received'),
+    approval:col('approval'),tgt:col('target'),
+    rm:col('raw material','rm'),shape:col('shaping','milling'),
+    grind:col('grinding','grind','surface'),wire:col('wirecut','wire','vmc'),
+    lathe:col('jig boring','lathe'),ht:col('heat'),
     inspect:col('inspection','inspect'),dispatch:col('dispatch'),
-    status:col('overall status','status'),remarks:col('remarks')
+    status:col('overall status','status'),remarks:col('remarks'),
+    imgFile:col('image file','img file'),pdfFile:col('pdf file','drawing')
   };
   const fmt=v=>{
-    if(!v||v==='—') return '—';
+    if(!v||v==='—')return '—';
     if(typeof v==='number'){const d=new Date((v-25569)*86400000);return d.getDate().toString().padStart(2,'0')+'-'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+'-'+String(d.getFullYear()).slice(-2);}
     return String(v);
   };
   const fmtISO=v=>{
-    if(!v||v==='—') return null;
+    if(!v)return null;
     if(typeof v==='number'){const d=new Date((v-25569)*86400000);return d.toISOString().slice(0,10);}
-    // Try parse dd-Mon-yy
     const m=String(v).match(/(\d{2})-([A-Za-z]{3})-(\d{2,4})/);
-    if(m){const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};const yr=m[3].length===2?2000+parseInt(m[3]):parseInt(m[3]);return new Date(yr,months[m[2]],parseInt(m[1])).toISOString().slice(0,10);}
+    if(m){const mo={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};const yr=m[3].length===2?2000+parseInt(m[3]):parseInt(m[3]);return new Date(yr,mo[m[2]],parseInt(m[1])).toISOString().slice(0,10);}
     return null;
   };
   for(let i=hi+1;i<rows.length;i++){
     const r=rows[i];
-    if(!r[cc.name]&&!r[cc.sr]) continue;
+    if(!r[cc.name]&&!r[cc.sr])continue;
     orders.push({
       sr:r[cc.sr]||i-hi,date:fmt(r[cc.date]),dateISO:fmtISO(r[cc.date]),
       po:r[cc.po]||'—',name:r[cc.name]||'—',cat:r[cc.cat]||'—',
-      type:r[cc.type]||'',qty:cc.qty>=0?r[cc.qty]:'—',tgt:fmt(r[cc.tgt]),
-      status:r[cc.status]||'In Progress',remarks:r[cc.remarks]||'',client:'',
-      stages:{RM:cc.rm>=0?r[cc.rm]:null,Shape:cc.shape>=0?r[cc.shape]:null,Grind:cc.grind>=0?r[cc.grind]:null,'Wire/VMC':cc.wire>=0?r[cc.wire]:null,Lathe:cc.lathe>=0?r[cc.lathe]:null,HT:cc.ht>=0?r[cc.ht]:null,Inspect:cc.inspect>=0?r[cc.inspect]:null,Dispatch:cc.dispatch>=0?r[cc.dispatch]:null}
+      type:r[cc.type]||'',qty:cc.qty>=0?r[cc.qty]:'',
+      quoted:r[cc.quoted]||'No',poRec:cc.poRec>=0?r[cc.poRec]:'No',
+      approval:cc.approval>=0?r[cc.approval]:'No',
+      tgt:fmt(r[cc.tgt]),
+      stRM:cc.rm>=0?r[cc.rm]:'—',stShape:cc.shape>=0?r[cc.shape]:'—',
+      stGrind:cc.grind>=0?r[cc.grind]:'—',stWire:cc.wire>=0?r[cc.wire]:'—',
+      stLathe:cc.lathe>=0?r[cc.lathe]:'—',stHT:cc.ht>=0?r[cc.ht]:'—',
+      stInsp:cc.inspect>=0?r[cc.inspect]:'—',stDisp:cc.dispatch>=0?r[cc.dispatch]:'—',
+      status:r[cc.status]||'In Progress',remarks:r[cc.remarks]||'',
+      imgFile:cc.imgFile>=0?r[cc.imgFile]:'',
+      pdfFile:cc.pdfFile>=0?r[cc.pdfFile]:'',
+      client:'',sheet:''
     });
   }
   return orders;
 }
 
-// ═══════════════════════════════════
-// IMAGE HANDLING
-// ═══════════════════════════════════
+// ═══════════════════════════════════════
+// IMAGES
+// ═══════════════════════════════════════
 function toolSVG(n){
   n=(n||'').toLowerCase();
-  if(n.includes('die')||n.includes('insert')) return`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="12" width="40" height="24" rx="3" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/><rect x="12" y="17" width="24" height="14" rx="2" fill="#fff" stroke="#378ADD" stroke-width="1.2"/><circle cx="18" cy="24" r="2.5" fill="#185FA5"/><circle cx="30" cy="24" r="2.5" fill="#185FA5"/></svg>`;
-  if(n.includes('punch')) return`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="17" y="4" width="14" height="26" rx="3" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/><polygon points="17,30 31,30 28,44 20,44" fill="#B5D4F4" stroke="#185FA5" stroke-width="1.2"/><rect x="13" y="7" width="22" height="7" rx="2" fill="#185FA5"/></svg>`;
-  if(n.includes('gauge')||n.includes('guage')) return`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="19" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/><circle cx="24" cy="24" r="11" fill="#fff" stroke="#378ADD" stroke-width="1.2"/><circle cx="24" cy="24" r="3" fill="#185FA5"/><line x1="24" y1="13" x2="24" y2="18" stroke="#185FA5" stroke-width="2"/></svg>`;
-  if(n.includes('locator')||n.includes('nest')||n.includes('locating')) return`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="16" width="40" height="22" rx="3" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/><circle cx="16" cy="27" r="5" fill="#fff" stroke="#185FA5" stroke-width="1.5"/><circle cx="32" cy="27" r="5" fill="#fff" stroke="#185FA5" stroke-width="1.5"/><circle cx="16" cy="27" r="2" fill="#185FA5"/><circle cx="32" cy="27" r="2" fill="#185FA5"/></svg>`;
-  if(n.includes('fixture')) return`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="16" width="44" height="26" rx="3" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/><rect x="8" y="6" width="11" height="12" rx="2" fill="#B5D4F4" stroke="#185FA5" stroke-width="1.2"/><rect x="29" y="6" width="11" height="12" rx="2" fill="#B5D4F4" stroke="#185FA5" stroke-width="1.2"/></svg>`;
-  return`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="6" width="36" height="36" rx="4" fill="#E6F1FB" stroke="#185FA5" stroke-width="1.5"/><path d="M16 24h16M24 16v16" stroke="#185FA5" stroke-width="2" stroke-linecap="round"/></svg>`;
+  if(n.includes('die')||n.includes('insert'))return`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="12" width="40" height="24" rx="3" fill="#EBF4FF" stroke="#185FA5" stroke-width="1.5"/><rect x="12" y="17" width="24" height="14" rx="2" fill="#fff" stroke="#2E7DD4" stroke-width="1.2"/><circle cx="18" cy="24" r="2.5" fill="#185FA5"/><circle cx="30" cy="24" r="2.5" fill="#185FA5"/></svg>`;
+  if(n.includes('punch'))return`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="17" y="4" width="14" height="26" rx="3" fill="#EBF4FF" stroke="#185FA5" stroke-width="1.5"/><polygon points="17,30 31,30 28,44 20,44" fill="#BDDEFF" stroke="#185FA5" stroke-width="1.2"/><rect x="13" y="7" width="22" height="7" rx="2" fill="#185FA5"/></svg>`;
+  if(n.includes('gauge')||n.includes('guage'))return`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><circle cx="24" cy="24" r="19" fill="#EBF4FF" stroke="#185FA5" stroke-width="1.5"/><circle cx="24" cy="24" r="11" fill="#fff" stroke="#2E7DD4" stroke-width="1.2"/><circle cx="24" cy="24" r="3" fill="#185FA5"/><line x1="24" y1="13" x2="24" y2="18" stroke="#185FA5" stroke-width="2"/></svg>`;
+  if(n.includes('locator')||n.includes('nest'))return`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="16" width="40" height="22" rx="3" fill="#EBF4FF" stroke="#185FA5" stroke-width="1.5"/><circle cx="16" cy="27" r="5" fill="#fff" stroke="#185FA5" stroke-width="1.5"/><circle cx="32" cy="27" r="5" fill="#fff" stroke="#185FA5" stroke-width="1.5"/><circle cx="16" cy="27" r="2" fill="#185FA5"/><circle cx="32" cy="27" r="2" fill="#185FA5"/></svg>`;
+  if(n.includes('fixture'))return`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="16" width="44" height="26" rx="3" fill="#EBF4FF" stroke="#185FA5" stroke-width="1.5"/><rect x="8" y="6" width="11" height="12" rx="2" fill="#BDDEFF" stroke="#185FA5" stroke-width="1.2"/><rect x="29" y="6" width="11" height="12" rx="2" fill="#BDDEFF" stroke="#185FA5" stroke-width="1.2"/></svg>`;
+  return`<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="6" width="36" height="36" rx="4" fill="#EBF4FF" stroke="#185FA5" stroke-width="1.5"/><path d="M16 24h16M24 16v16" stroke="#185FA5" stroke-width="2" stroke-linecap="round"/></svg>`;
 }
 const svgUrl=s=>'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(s);
 
 async function getImgUrl(sr){
   const key='sr-'+sr;
-  // Return cached URL if already found
-  if(A.imgCache[key]) return A.imgCache[key];
-
-  // Refresh folder cache if:
-  // 1. Never loaded, OR
-  // 2. Image not found previously (null) — re-check in case new image was added
-  if(!A.imgFolderCache || A.imgCache[key]===null){
-    try{
-      if(A.imgFolderId){
-        const fc=await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name');
-        A.imgFolderCache=(fc.value||[]);
-        console.log('📁 Folder refreshed:',A.imgFolderCache.length,'images');
-      }
-    }catch(e){console.warn('folder refresh fail:',e);}
-  }
-
-  if(!A.imgFolderCache||!A.imgFolderCache.length){A.imgCache[key]=null;return null;}
-
-  // Match by Sr number prefix — e.g. "26-" matches "26-NEW-PUNCH.png"
-  const match=A.imgFolderCache.find(f=>f.name.match(new RegExp('^'+sr+'[-_]','i'))||f.name.match(new RegExp('^0*'+sr+'[-_. ]','i')));
-  if(!match){
-    // Not found — mark as null BUT don't permanently cache
-    // so next refresh attempt will retry
-    return null;
-  }
+  if(A.imgCache[key])return A.imgCache[key];
+  if(!A.imgFolderCache){A.imgCache[key]=null;return null;}
+  const match=A.imgFolderCache.find(f=>f.name.match(new RegExp('^0*'+sr+'[-_. ]','i')));
+  if(!match){A.imgCache[key]=null;return null;}
   try{
     const info=await gapi('/drives/'+A.driveId+'/items/'+match.id);
     const url=info['@microsoft.graph.downloadUrl']||null;
-    A.imgCache[key]=url; return url;
-  }catch(e){return null;}
-}
-
-// Force clear image cache and reload all thumbnails
-async function hardRefreshImages(){
-  A.imgCache={};
-  A.imgFolderCache=null;
-  toast('Refreshing images...', 3000);
-  await loadThumbImages(getFiltered());
-  toast('Images refreshed! ✅');
+    A.imgCache[key]=url;return url;
+  }catch(e){A.imgCache[key]=null;return null;}
 }
 
 async function loadThumbImages(orders){
-  if(!A.imgFolderId) return;
-  const p=A.perms;
-  const showImg=A.isAdmin?A.adminCols.images:(p&&p.images);
-  if(!showImg) return;
-
-  // ALWAYS refresh folder file list before loading images
-  // This ensures newly added images are detected automatically
+  if(!A.imgFolderId)return;
+  const p=colsToShow();if(!p.images)return;
+  // Refresh folder cache
   try{
     const fc=await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name');
-    A.imgFolderCache=(fc.value||[]);
-    // Clear cache for images that weren't found before — they might exist now
-    Object.keys(A.imgCache).forEach(k=>{ if(A.imgCache[k]===null) delete A.imgCache[k]; });
-  }catch(e){ console.warn('folder refresh:', e); }
-
+    A.imgFolderCache=fc.value||[];
+    Object.keys(A.imgCache).forEach(k=>{if(A.imgCache[k]===null)delete A.imgCache[k];});
+  }catch(e){}
   for(const o of orders){
     try{
       const url=await getImgUrl(o.sr);
-      if(url){
-        const el=document.getElementById('thumb-'+o.sr);
-        if(el){ el.src=url; el.style.opacity='1'; }
-      }
+      if(url){const el=document.getElementById('thumb-'+o.sr);if(el){el.src=url;el.style.opacity='1';}}
     }catch(e){}
   }
 }
 
-async function openModal(sr,name,type){
+async function openImgModal(sr,name,type){
   const imgEl=document.getElementById('m-img');
   imgEl.src=svgUrl(toolSVG(type||name));
   document.getElementById('m-name').textContent=name;
   document.getElementById('m-type').textContent=type||'Tool';
   document.getElementById('img-modal').style.display='flex';
   const url=await getImgUrl(sr);
-  if(url) imgEl.src=url;
+  if(url)imgEl.src=url;
 }
-function closeModal(){document.getElementById('img-modal').style.display='none';}
+function closeImgModal(){document.getElementById('img-modal').style.display='none';}
 
-// ═══════════════════════════════════
+// ═══════════════════════════════════════
+// PDF VIEWING
+// ═══════════════════════════════════════
+async function viewOrderPDF(){
+  if(!A.selOrder)return;
+  const o=A.selOrder;
+  if(!o.pdfFile){toast('No drawing PDF uploaded for this order');return;}
+  toast('Loading drawing PDF...',5000);
+  try{
+    // Find PDF in drawings folder
+    if(!A.pdfFolderId){toast('Drawings folder not found');return;}
+    const ch=await gapi('/drives/'+A.driveId+'/items/'+A.pdfFolderId+'/children?$select=id,name');
+    const files=ch.value||[];
+    const match=files.find(f=>f.name===o.pdfFile||f.name.startsWith(o.sr+'-'));
+    if(!match){toast('Drawing file not found on OneDrive');return;}
+    const info=await gapi('/drives/'+A.driveId+'/items/'+match.id);
+    const url=info['@microsoft.graph.downloadUrl'];
+    document.getElementById('pdf-modal-title').textContent='Drawing: '+o.name;
+    document.getElementById('pdf-iframe').src=url;
+    document.getElementById('pdf-modal').style.display='flex';
+  }catch(e){toast('Could not load PDF: '+e.message,5000);}
+}
+function closePDFModal(){
+  document.getElementById('pdf-modal').style.display='none';
+  document.getElementById('pdf-iframe').src='';
+}
+
+// ═══════════════════════════════════════
 // BADGES
-// ═══════════════════════════════════
-function catB(v){const l=(v||'').toLowerCase();if(l.includes('standard'))return`<span class="b b-std">${v}</span>`;if(l.includes('priority'))return`<span class="b b-pri">${v}</span>`;if(l.includes('rework'))return`<span class="b b-rwk">${v}</span>`;if(l.includes('fixture'))return`<span class="b b-fix">${v}</span>`;return`<span class="b b-oth">${v||'—'}</span>`;}
-function stB(v){const l=(v||'').toLowerCase();if(l.includes('deliver'))return`<span class="b s-del">${v}</span>`;if(l.includes('progress'))return`<span class="b s-prg">${v}</span>`;if(l.includes('hold'))return`<span class="b s-hld">${v}</span>`;return`<span class="b s-unk">${v||'—'}</span>`;}
+// ═══════════════════════════════════════
+function catB(v){
+  const l=(v||'').toLowerCase();
+  if(l.includes('standard'))return`<span class="badge b-std">${v}</span>`;
+  if(l.includes('priority'))return`<span class="badge b-pri">⚡ ${v}</span>`;
+  if(l.includes('rework'))return`<span class="badge b-rwk">🔄 ${v}</span>`;
+  if(l.includes('fixture'))return`<span class="badge b-fix">${v}</span>`;
+  return`<span class="badge b-oth">${v||'—'}</span>`;
+}
+function stB(v){
+  const l=(v||'').toLowerCase();
+  if(l.includes('deliver'))return`<span class="badge s-del">✓ ${v}</span>`;
+  if(l.includes('progress'))return`<span class="badge s-prg">● ${v}</span>`;
+  if(l.includes('hold'))return`<span class="badge s-hld">⏸ ${v}</span>`;
+  if(l.includes('done'))return`<span class="badge s-done">✓ ${v}</span>`;
+  return`<span class="badge s-unk">${v||'—'}</span>`;
+}
+function stagesDots(o){
+  const stages=[o.stRM,o.stShape,o.stGrind,o.stWire,o.stLathe,o.stHT,o.stInsp,o.stDisp];
+  return stages.map(s=>{
+    const v=(s||'').toString().toLowerCase();
+    const cl=v==='done'?'sd-done':v==='pending'?'sd-pend':v.includes('hold')?'sd-hold':'sd-na';
+    return`<span class="stage-dot ${cl}" title="${s||'—'}"></span>`;
+  }).join('');
+}
 
-// ═══════════════════════════════════
+// ═══════════════════════════════════════
 // TABLE
-// ═══════════════════════════════════
+// ═══════════════════════════════════════
 function colsToShow(){
-  const p=A.perms; const ad=A.adminCols;
+  const p=A.perms;const ad=A.adminCols;
   return{
-    po:     A.isAdmin?ad.po:(p&&p.po),
-    images: A.isAdmin?ad.images:(p&&p.images),
-    qty:    A.isAdmin?ad.qty:(p&&p.qty),
-    target: A.isAdmin?ad.target:(p&&p.target),
+    po:A.isAdmin?ad.po:(p&&p.po),
+    images:A.isAdmin?ad.images:(p&&p.images),
+    qty:A.isAdmin?ad.qty:(p&&p.qty),
+    target:A.isAdmin?ad.target:(p&&p.target),
     remarks:A.isAdmin?ad.remarks:(p&&p.remarks),
-    client: A.isAdmin&&ad.client,
-    stages: A.isAdmin?(ad.stages?'FULL':'NO'):(p?p.stages:'NO')
+    client:A.isAdmin&&ad.client,
+    stages:A.isAdmin?(ad.stages?'FULL':'NO'):(p?p.stages:'NO'),
+    quoted:A.isAdmin?ad.quoted:false,
+    approval:A.isAdmin?ad.approval:false,
+    pdf:true
   };
 }
 
 function buildHead(){
-  const p=colsToShow(); const r=document.getElementById('t-head'); r.innerHTML='';
+  const p=colsToShow();const r=document.getElementById('t-head');r.innerHTML='';
   const cols=['Sr','Date'];
-  if(p.po) cols.push('PO No.');
+  if(p.po)cols.push('PO No.');
   cols.push('Product / Tool name','Category');
-  if(p.images) cols.push('Image');
-  if(p.qty) cols.push('Qty');
-  if(p.target) cols.push('Target');
+  if(p.images)cols.push('Image','PDF');
+  if(p.qty)cols.push('Qty');
+  if(p.target)cols.push('Target');
+  if(p.quoted)cols.push('Quoted');
+  if(p.stages!=='NO')cols.push('Stages');
   cols.push('Status');
-  if(p.client) cols.push('Client');
-  if(p.remarks) cols.push('Remarks');
-  const ws={'Sr':'32px','Date':'88px','PO No.':'86px','Category':'114px','Image':'52px','Qty':'42px','Target':'86px','Status':'96px','Client':'90px'};
+  if(p.client)cols.push('Client');
+  if(p.remarks)cols.push('Remarks');
+  const ws={'Sr':'34px','Date':'90px','PO No.':'88px','Category':'120px','Image':'48px','PDF':'40px','Qty':'42px','Target':'90px','Quoted':'60px','Status':'110px','Client':'90px'};
   cols.forEach(c=>{const th=document.createElement('th');th.textContent=c;if(ws[c])th.style.width=ws[c];r.appendChild(th);});
 }
 
@@ -850,51 +1238,67 @@ function getFiltered(){
   const fc=document.getElementById('f-cat').value;
   const fs=document.getElementById('f-st').value;
   const fcl=document.getElementById('f-client').value;
-  const fd=document.getElementById('f-date-from').value;
-  const td=document.getElementById('f-date-to').value;
+  const fd=document.getElementById('f-df').value;
+  const td=document.getElementById('f-dt').value;
   const t=A.tab;
   return A.orders.filter(o=>{
-    if(s&&!o.name.toLowerCase().includes(s)&&!o.po.toLowerCase().includes(s)) return false;
-    if(fc&&!o.cat.includes(fc)) return false;
-    if(fs&&o.status!==fs) return false;
-    if(fcl&&o.client!==fcl&&o.sheet!==fcl) return false;
-    if(fd&&o.dateISO&&o.dateISO<fd) return false;
-    if(td&&o.dateISO&&o.dateISO>td) return false;
+    if(s&&!o.name.toLowerCase().includes(s)&&!(o.po||'').toLowerCase().includes(s)&&!(o.type||'').toLowerCase().includes(s))return false;
+    if(fc&&!o.cat.includes(fc))return false;
+    if(fs&&o.status!==fs)return false;
+    if(fcl&&o.client!==fcl&&o.sheet!==fcl)return false;
+    if(fd&&o.dateISO&&o.dateISO<fd)return false;
+    if(td&&o.dateISO&&o.dateISO>td)return false;
     const sl=o.status.toLowerCase();
-    if(t==='prg'&&!sl.includes('progress')) return false;
-    if(t==='del'&&!sl.includes('deliver')) return false;
-    if(t==='hld'&&!sl.includes('hold')) return false;
+    if(t==='prg'&&!sl.includes('progress'))return false;
+    if(t==='del'&&!sl.includes('deliver')&&!sl.includes('done'))return false;
+    if(t==='hld'&&!sl.includes('hold'))return false;
     return true;
   });
 }
 
 function render(){
-  const p=colsToShow(); if(!A.perms) return;
+  const p=colsToShow();if(!A.perms)return;
   const list=getFiltered();
   document.getElementById('m-tot').textContent=list.length;
   document.getElementById('m-prg').textContent=list.filter(o=>o.status.toLowerCase().includes('progress')).length;
-  document.getElementById('m-del').textContent=list.filter(o=>o.status.toLowerCase().includes('deliver')).length;
+  document.getElementById('m-del').textContent=list.filter(o=>o.status.toLowerCase().includes('deliver')||o.status.toLowerCase()==='done').length;
   document.getElementById('m-hld').textContent=list.filter(o=>o.status.toLowerCase().includes('hold')).length;
-  const tb=document.getElementById('t-body'); tb.innerHTML='';
-  if(!list.length){tb.innerHTML='<tr><td colspan="20" class="empty">No orders found</td></tr>';return;}
+  const tb=document.getElementById('t-body');tb.innerHTML='';
+  if(!list.length){
+    tb.innerHTML='<tr><td colspan="20"><div class="empty-state"><div class="empty-icon">📋</div><div class="empty-msg">No orders found</div></div></td></tr>';
+    return;
+  }
   list.forEach(o=>{
-    const tr=document.createElement('tr'); tr.className='row'+(A.sel===o.sr?' sel':'');
-    const s2=svgUrl(toolSVG(o.type||o.name));
+    const tr=document.createElement('tr');tr.className='row'+(A.selOrder&&A.selOrder.sr===o.sr?' sel':'');
+    const svgD=svgUrl(toolSVG(o.type||o.name));
     const ne=o.name.replace(/"/g,'&quot;').replace(/'/g,"\\'");
     const te=(o.type||'').replace(/"/g,'&quot;').replace(/'/g,"\\'");
-    let h=`<td style="color:#bbb;font-size:10px">${o.sr}</td><td style="font-size:11px">${o.date}</td>`;
-    if(p.po) h+=`<td style="font-size:11px;color:#999">${o.po}</td>`;
-    h+=`<td style="font-weight:${A.sel===o.sr?600:400}">${o.name}</td><td>${catB(o.cat)}</td>`;
-    if(p.images) h+=`<td style="text-align:center"><div class="thumb" onclick="event.stopPropagation();openModal(${o.sr},'${ne}','${te}')"><img id="thumb-${o.sr}" src="${s2}" alt="tool" style="opacity:0.4"></div></td>`;
-    if(p.qty) h+=`<td style="text-align:center;font-size:11px">${o.qty||'—'}</td>`;
-    if(p.target) h+=`<td style="font-size:11px">${o.tgt}</td>`;
+    let h=`<td style="color:var(--text3);font-size:11px;font-family:'DM Mono',monospace">${o.sr}</td>`;
+    h+=`<td style="font-size:11px;color:var(--text2)">${o.date}</td>`;
+    if(p.po)h+=`<td style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text2)">${o.po}</td>`;
+    h+=`<td style="font-weight:${A.selOrder&&A.selOrder.sr===o.sr?600:400};max-width:240px">${o.name}</td>`;
+    h+=`<td>${catB(o.cat)}</td>`;
+    if(p.images){
+      h+=`<td style="text-align:center"><div class="thumb" onclick="event.stopPropagation();openImgModal(${o.sr},'${ne}','${te}')"><img id="thumb-${o.sr}" src="${svgD}" alt="tool" style="opacity:.4"></div></td>`;
+      h+=`<td style="text-align:center"><div class="thumb-pdf" onclick="event.stopPropagation();quickViewPDF(${o.sr})" title="${o.pdfFile||'No drawing'}">${o.pdfFile?'PDF':'—'}</div></td>`;
+    }
+    if(p.qty)h+=`<td style="text-align:center;font-size:12px">${o.qty||'—'}</td>`;
+    if(p.target)h+=`<td style="font-size:11px;color:var(--text2)">${o.tgt}</td>`;
+    if(p.quoted)h+=`<td><span class="badge ${o.quoted==='Yes'?'s-del':'s-unk'}">${o.quoted||'No'}</span></td>`;
+    if(p.stages!=='NO')h+=`<td>${stagesDots(o)}</td>`;
     h+=`<td>${stB(o.status)}</td>`;
-    if(p.client) h+=`<td><span class="b-client">${o.client||'—'}</span></td>`;
-    if(p.remarks) h+=`<td style="font-size:11px;color:#999">${o.remarks}</td>`;
-    tr.innerHTML=h; tr.onclick=()=>showDP(o); tb.appendChild(tr);
+    if(p.client)h+=`<td><span class="b-client">${o.client||'—'}</span></td>`;
+    if(p.remarks)h+=`<td style="font-size:11px;color:var(--text2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.remarks||''}</td>`;
+    tr.innerHTML=h;tr.onclick=()=>showDet(o);tb.appendChild(tr);
   });
-  // Load real images
   setTimeout(()=>loadThumbImages(list),100);
+}
+
+async function quickViewPDF(sr){
+  const o=A.orders.find(x=>x.sr==sr);
+  if(!o||!o.pdfFile){toast('No drawing uploaded for this order');return;}
+  A.selOrder=o;
+  await viewOrderPDF();
 }
 
 function clearFilters(){
@@ -902,118 +1306,280 @@ function clearFilters(){
   document.getElementById('f-cat').value='';
   document.getElementById('f-st').value='';
   document.getElementById('f-client').value='';
-  document.getElementById('f-date-from').value='';
-  document.getElementById('f-date-to').value='';
+  document.getElementById('f-df').value='';
+  document.getElementById('f-dt').value='';
   A.tab='all';
-  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
-  document.querySelectorAll('.tab')[0].classList.add('on');
+  document.querySelectorAll('.tab').forEach((x,i)=>{x.classList.toggle('on',i===0);});
   render();
 }
+function setTab(t,el){A.tab=t;A.selOrder=null;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));el.classList.add('on');document.getElementById('t-det').style.display='none';render();}
 
-function setTab(t,el){A.tab=t;A.sel=null;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));el.classList.add('on');document.getElementById('t-dp').style.display='none';render();}
-
-// ═══════════════════════════════════
-// DETAIL PANEL
-// ═══════════════════════════════════
-function showDP(o){
-  A.sel=o.sr; const p=colsToShow();
-  document.getElementById('dp-ttl').textContent='Order #'+o.sr+' — '+o.name;
-  document.getElementById('t-dp').style.display='block';
-  const g=document.getElementById('dp-grid'); g.innerHTML='';
-  const card=(l,v)=>{const d=document.createElement('div');d.className='dp-card';d.innerHTML=`<div class="dp-lbl">${l}</div><div class="dp-val">${v||'—'}</div>`;g.appendChild(d);};
-  card('Product',o.name);card('Order date',o.date);card('Category',o.cat);
-  if(p.qty) card('Qty',o.qty);
-  if(p.target) card('Target',o.tgt);
-  if(p.po) card('PO No.',o.po);
-  if(p.client&&o.client) card('Client',`<span class="b-client">${o.client}</span>`);
-  card('Status',stB(o.status));
-  if(p.remarks&&o.remarks) card('Remarks',o.remarks);
-  const sd=document.getElementById('dp-stg');
-  const sr=document.getElementById('stg-row'); sr.innerHTML='';
-  const sp=p.stages;
-  if(sp==='FULL'||sp==='YES'){
+// ═══════════════════════════════════════
+// DETAIL BAR
+// ═══════════════════════════════════════
+function showDet(o){
+  A.selOrder=o;const p=colsToShow();
+  document.getElementById('det-title').textContent='Order #'+o.sr+' — '+o.name;
+  document.getElementById('det-sub').textContent=o.date+' · '+o.cat+' · '+o.client;
+  document.getElementById('t-det').style.display='block';
+  document.getElementById('det-edit-btn').style.display=A.isAdmin?'inline-flex':'none';
+  document.getElementById('det-pdf-btn').style.display=o.pdfFile?'inline-flex':'none';
+  const g=document.getElementById('det-grid');g.innerHTML='';
+  const dc=(l,v)=>{const d=document.createElement('div');d.className='dc';d.innerHTML=`<div class="dc-lbl">${l}</div><div class="dc-val">${v||'—'}</div>`;g.appendChild(d);};
+  dc('Product',o.name);dc('Order date',o.date);dc('Category',o.cat);
+  if(p.qty)dc('Qty',o.qty);
+  if(p.target)dc('Target delivery',o.tgt);
+  if(p.po)dc('PO No.',o.po);
+  if(A.isAdmin){dc('Quoted',o.quoted);dc('PO Received',o.poRec);dc('Approval',o.approval);}
+  dc('Status',stB(o.status));
+  if(o.client)dc('Client',`<span class="b-client">${o.client}</span>`);
+  if(p.remarks&&o.remarks)dc('Remarks',o.remarks);
+  const sd=document.getElementById('det-stages');
+  const ss=document.getElementById('stages-strip');ss.innerHTML='';
+  if(p.stages!=='NO'){
     sd.style.display='block';
-    Object.entries(o.stages).forEach(([l,v])=>{if(!v)return;const vs=v.toString();const cl=vs.toLowerCase()==='done'?'ch-done':vs.toLowerCase()==='pending'?'ch-pend':vs.toLowerCase().includes('hold')?'ch-hold':'ch-na';sr.innerHTML+=`<span class="ch ${cl}">${l}: ${vs}</span>`;});
-  } else if(sp==='STATUS'){sd.style.display='block';const sl=o.status.toLowerCase();sr.innerHTML=`<span class="ch ${sl.includes('deliver')?'ch-done':sl.includes('hold')?'ch-hold':'ch-pend'}">${o.status}</span>`;}
-  else sd.style.display='none';
+    const stgs=[['RM',o.stRM],['Shape',o.stShape],['Grind',o.stGrind],['Wire/VMC',o.stWire],['Lathe',o.stLathe],['HT',o.stHT],['Inspect',o.stInsp],['Dispatch',o.stDisp]];
+    stgs.forEach(([l,v])=>{
+      if(!v||v==='—')return;
+      const vs=v.toString();
+      const cl=vs.toLowerCase()==='done'?'sch-done':vs.toLowerCase()==='pending'?'sch-pend':vs.toLowerCase().includes('hold')?'sch-hold':'sch-na';
+      ss.innerHTML+=`<span class="sch ${cl}">${l}: ${vs}</span>`;
+    });
+  }else sd.style.display='none';
   render();
 }
-function closeDP(){A.sel=null;document.getElementById('t-dp').style.display='none';render();}
+function closeDet(){A.selOrder=null;document.getElementById('t-det').style.display='none';render();}
 
-// ═══════════════════════════════════
-// ADMIN PANEL
-// ═══════════════════════════════════
-function openAdminPanel(){
-  if(!A.isAdmin) return;
-  // Build column toggles
-  const ct=document.getElementById('ap-col-toggles'); ct.innerHTML='';
-  const cols=[['po','Show PO No. column'],['images','Show tool images'],['qty','Show Qty column'],['target','Show Target date'],['client','Show Client column'],['remarks','Show Remarks'],['stages','Show manufacturing stages']];
-  cols.forEach(([key,label])=>{
-    const div=document.createElement('div'); div.className='ap-row';
-    div.innerHTML=`<div class="ap-label">${label}</div><label class="toggle"><input type="checkbox" ${A.adminCols[key]?'checked':''} onchange="A.adminCols['${key}']=this.checked;buildHead();render()"><span class="toggle-slider"></span></label>`;
-    ct.appendChild(div);
+// ═══════════════════════════════════════
+// ADD / EDIT ORDER
+// ═══════════════════════════════════════
+function openAddOrder(){
+  A.editOrder=null;A.pendingImgFile=null;A.pendingPDFFile=null;
+  document.getElementById('sp-title').textContent='New Order';
+  document.getElementById('sp-sub').textContent='Fill in order details';
+  document.getElementById('btn-del-order').style.display='none';
+  clearForm();
+  // Auto Sr No
+  const maxSr=A.allOrders.length?Math.max(...A.allOrders.map(o=>parseInt(o.sr)||0)):0;
+  document.getElementById('f-sr').value=maxSr+1;
+  document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
+  openSP();
+}
+
+function openEditOrder(){
+  if(!A.selOrder)return;
+  const o=A.selOrder;
+  A.editOrder=o;A.pendingImgFile=null;A.pendingPDFFile=null;
+  document.getElementById('sp-title').textContent='Edit Order #'+o.sr;
+  document.getElementById('sp-sub').textContent=o.name;
+  document.getElementById('btn-del-order').style.display='inline-flex';
+  fillForm(o);
+  openSP();
+}
+
+function clearForm(){
+  ['f-sr','f-date','f-po','f-qty','f-name','f-type','f-tgt','f-remarks'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
   });
-  // Build client list
-  const cl=document.getElementById('ap-clients'); cl.innerHTML='';
-  A.accessList.forEach((ac,i)=>{
-    const div=document.createElement('div'); div.className='client-row';
-    const perms=['stages','images','qty','target','po','remarks'].filter(k=>ac[k]&&ac[k]!=='NO');
-    div.innerHTML=`
-      <div class="client-email">${ac.clientName} ${ac.email===C.adminEmail?'👑':''}</div>
-      <div class="client-sheet">Sheet: ${ac.sheet} · ${ac.email}</div>
-      <div class="client-perms">${perms.map(p=>`<span class="perm-tag">${p}</span>`).join('')}</div>
-      ${ac.email!==C.adminEmail?`<button class="ap-btn ap-btn-danger" style="margin-top:8px;font-size:11px;padding:4px 10px" onclick="removeClient(${i})">Remove</button>`:''}`;
-    cl.appendChild(div);
+  ['f-cat2','f-quoted','f-po-rec','f-approval','f-status'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.selectedIndex=0;
   });
-  document.getElementById('admin-overlay').style.display='flex';
-}
-function closeAdminPanel(){document.getElementById('admin-overlay').style.display='none';}
-
-function addClient(){
-  const email=document.getElementById('new-email').value.trim().toLowerCase();
-  const name=document.getElementById('new-name').value.trim();
-  const sheet=document.getElementById('new-sheet').value.trim();
-  if(!email||!name||!sheet){toast('Please fill all fields');return;}
-  const yn=id=>document.getElementById(id).checked?'YES':'NO';
-  A.accessList.push({email,clientName:name,sheet,stages:document.getElementById('nc-stages').checked?'FULL':'NO',images:document.getElementById('nc-images').checked,qty:document.getElementById('nc-qty').checked,target:document.getElementById('nc-target').checked,po:document.getElementById('nc-po').checked,remarks:document.getElementById('nc-remarks').checked});
-  document.getElementById('new-email').value='';
-  document.getElementById('new-name').value='';
-  document.getElementById('new-sheet').value='';
-  toast('Client added! Click "Sync to Excel" to save.');
-  openAdminPanel();
+  ['st-rm','st-shape','st-grind','st-wire','st-lathe','st-ht','st-insp','st-disp'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.selectedIndex=0;
+  });
+  document.getElementById('img-name').textContent='';
+  document.getElementById('pdf-name').textContent='';
+  document.getElementById('img-zone').classList.remove('has-file');
+  document.getElementById('pdf-zone').classList.remove('has-file');
 }
 
-function removeClient(i){
-  if(A.accessList[i].email===C.adminEmail){toast('Cannot remove admin!');return;}
-  A.accessList.splice(i,1);
-  toast('Removed. Click "Sync to Excel" to save.');
-  openAdminPanel();
+function fillForm(o){
+  document.getElementById('f-sr').value=o.sr;
+  document.getElementById('f-date').value=o.dateISO||'';
+  document.getElementById('f-po').value=o.po==='—'?'':o.po;
+  document.getElementById('f-qty').value=o.qty||'';
+  document.getElementById('f-name').value=o.name;
+  document.getElementById('f-type').value=o.type||'';
+  document.getElementById('f-tgt').value='';
+  document.getElementById('f-remarks').value=o.remarks||'';
+  setSelect('f-cat2',o.cat);
+  setSelect('f-quoted',o.quoted);
+  setSelect('f-po-rec',o.poRec);
+  setSelect('f-approval',o.approval);
+  setSelect('f-status',o.status);
+  setSelect('st-rm',o.stRM);setSelect('st-shape',o.stShape);
+  setSelect('st-grind',o.stGrind);setSelect('st-wire',o.stWire);
+  setSelect('st-lathe',o.stLathe);setSelect('st-ht',o.stHT);
+  setSelect('st-insp',o.stInsp);setSelect('st-disp',o.stDisp);
+  if(o.imgFile){document.getElementById('img-name').textContent=o.imgFile;document.getElementById('img-zone').classList.add('has-file');}
+  if(o.pdfFile){document.getElementById('pdf-name').textContent=o.pdfFile;document.getElementById('pdf-zone').classList.add('has-file');}
 }
 
-async function syncToExcel(){
-  toast('Syncing to Excel...', 8000);
+function setSelect(id,val){
+  const el=document.getElementById(id);if(!el)return;
+  for(let i=0;i<el.options.length;i++){if(el.options[i].value===val||el.options[i].text===val){el.selectedIndex=i;return;}}
+}
+
+function getVal(id){return(document.getElementById(id)||{}).value||'';}
+function getFormOrder(){
+  return{
+    sr:getVal('f-sr'),date:getVal('f-date'),po:getVal('f-po')||'—',
+    name:getVal('f-name'),cat:getVal('f-cat2'),type:getVal('f-type'),
+    qty:getVal('f-qty'),quoted:getVal('f-quoted'),
+    poRec:getVal('f-po-rec'),approval:getVal('f-approval'),
+    tgt:getVal('f-tgt'),remarks:getVal('f-remarks'),status:getVal('f-status'),
+    stRM:getVal('st-rm'),stShape:getVal('st-shape'),stGrind:getVal('st-grind'),
+    stWire:getVal('st-wire'),stLathe:getVal('st-lathe'),stHT:getVal('st-ht'),
+    stInsp:getVal('st-insp'),stDisp:getVal('st-disp'),
+    imgFile:A.editOrder?A.editOrder.imgFile:'',
+    pdfFile:A.editOrder?A.editOrder.pdfFile:''
+  };
+}
+
+// File handling
+function handleImgFile(input){
+  if(!input.files.length)return;
+  A.pendingImgFile=input.files[0];
+  document.getElementById('img-name').textContent=A.pendingImgFile.name;
+  document.getElementById('img-zone').classList.add('has-file');
+}
+function handlePDFFile(input){
+  if(!input.files.length)return;
+  A.pendingPDFFile=input.files[0];
+  document.getElementById('pdf-name').textContent=A.pendingPDFFile.name;
+  document.getElementById('pdf-zone').classList.add('has-file');
+}
+
+async function saveOrder(){
+  const o=getFormOrder();
+  if(!o.name||!o.sr){toast('Product name and Sr No are required');return;}
+  toast('Saving order...',8000);
   try{
-    const rows=[['Email','Client Name','Sheet Name','Stages','Images','Qty','Target','PO No','Remarks']];
-    A.accessList.forEach(ac=>{
-      rows.push([ac.email,ac.clientName,ac.sheet,ac.stages,ac.images?'YES':'NO',ac.qty?'YES':'NO',ac.target?'YES':'NO',ac.po?'YES':'NO',ac.remarks?'YES':'NO']);
-    });
-    // Clear existing sheet and write new data
-    await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.accSheet)+'/range(address=\'A1:I'+(rows.length+5)+'\')/clear','',{method:'POST',body:JSON.stringify({applyTo:'Contents'})});
-    const range='A1:I'+rows.length;
-    await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.accSheet)+'/range(address=\''+range+'\')',{method:'PATCH',body:JSON.stringify({values:rows})});
-    toast('✅ Synced to Excel successfully!');
-  }catch(e){toast('Sync failed: '+e.message,5000);console.error(e);}
+    const sr=parseInt(o.sr);
+    // Build clean names
+    const cleanName=o.name.toUpperCase().replace(/[^A-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,40);
+
+    // Upload image if new file selected
+    if(A.pendingImgFile&&A.imgFolderId){
+      const imgFileName=sr+'-'+cleanName+'.'+A.pendingImgFile.name.split('.').pop();
+      const buf=await A.pendingImgFile.arrayBuffer();
+      await gapiUpload('/drives/'+A.driveId+'/items/'+A.imgFolderId+':/'+imgFileName+':/content',buf,A.pendingImgFile.type);
+      o.imgFile=imgFileName;
+      // Refresh folder cache
+      const fc=await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name');
+      A.imgFolderCache=fc.value||[];
+      delete A.imgCache['sr-'+sr];
+      toast('Image uploaded! ✅',2000);
+    }
+
+    // Upload PDF if new file selected
+    if(A.pendingPDFFile&&A.pdfFolderId){
+      const sheet=A.perms.sheet||'Order Tracker';
+      const ac=A.accessList.find(x=>x.sheet===sheet);
+      const clientName=(ac?ac.clientName:sheet).replace(/[^A-Za-z0-9]/g,'-');
+      // Create client subfolder
+      let clientFolderId=null;
+      try{
+        const cf=await gapi('/drives/'+A.driveId+'/items/'+A.pdfFolderId+'/children?$select=id,name');
+        const existing=(cf.value||[]).find(x=>x.name===clientName&&x.folder);
+        if(existing){clientFolderId=existing.id;}
+        else{
+          const created=await gapi('/drives/'+A.driveId+'/items/'+A.pdfFolderId+'/children',{
+            method:'POST',body:JSON.stringify({name:clientName,folder:{},['@microsoft.graph.conflictBehavior']:'rename'})
+          });
+          clientFolderId=created.id;
+        }
+      }catch(e){clientFolderId=A.pdfFolderId;}
+      const pdfFileName=sr+'-'+cleanName+'.pdf';
+      const buf=await A.pendingPDFFile.arrayBuffer();
+      await gapiUpload('/drives/'+A.driveId+'/items/'+clientFolderId+':/'+pdfFileName+':/content',buf,'application/pdf');
+      o.pdfFile=pdfFileName;
+      toast('PDF uploaded! ✅',2000);
+    }
+
+    // Find row in Excel
+    const rows=await readSheet(A.perms.sheet);
+    let rowNum=null;
+    let hi=-1;
+    for(let i=0;i<rows.length;i++){
+      if(rows[i].some(c=>c&&/product|tool name|sr.{0,4}no/i.test(c.toString()))){hi=i;break;}
+    }
+    if(A.editOrder){
+      // Find existing row
+      for(let i=hi+1;i<rows.length;i++){
+        if(parseInt(rows[i][0])===sr){rowNum=i+1;break;}
+      }
+    }
+    if(!rowNum){
+      // New row — append after last data row
+      let lastDataRow=hi+1;
+      for(let i=hi+1;i<rows.length;i++){if(rows[i].some(v=>v))lastDataRow=i+1;}
+      rowNum=lastDataRow+1;
+    }
+
+    await writeOrderToExcel(o,rowNum);
+
+    // Update local state
+    if(A.editOrder){
+      const idx=A.allOrders.findIndex(x=>x.sr==sr);
+      if(idx>=0){
+        Object.assign(A.allOrders[idx],o,{
+          date:o.date,dateISO:o.date,client:A.allOrders[idx].client,
+          sheet:A.allOrders[idx].sheet
+        });
+      }
+    } else {
+      const newO={...o,dateISO:o.date,client:A.perms.clientName,sheet:A.perms.sheet};
+      A.allOrders.push(newO);
+    }
+    A.orders=A.allOrders;
+    closeSP();render();
+    toast('✅ Order saved to Excel!');
+    loadThumbImages(getFiltered());
+  }catch(e){toast('Save failed: '+e.message,6000);console.error(e);}
 }
 
-// ═══════════════════════════════════
+async function deleteOrder(){
+  if(!A.editOrder)return;
+  if(!confirm('Delete Order #'+A.editOrder.sr+' — '+A.editOrder.name+'?\n\nThis will clear the row in Excel.'))return;
+  toast('Deleting...',4000);
+  try{
+    const sr=parseInt(A.editOrder.sr);
+    const rows=await readSheet(A.perms.sheet);
+    let rowNum=null;
+    for(let i=0;i<rows.length;i++){if(parseInt(rows[i][0])===sr){rowNum=i+1;break;}}
+    if(rowNum){
+      // Clear the row
+      const range='A'+rowNum+':W'+rowNum;
+      await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(A.perms.sheet)+'/range(address=\''+range+'\')/clear',{method:'POST',body:JSON.stringify({applyTo:'Contents'})});
+    }
+    A.allOrders=A.allOrders.filter(o=>o.sr!=sr);
+    A.orders=A.allOrders;
+    A.selOrder=null;A.editOrder=null;
+    document.getElementById('t-det').style.display='none';
+    closeSP();render();
+    toast('✅ Order deleted!');
+  }catch(e){toast('Delete failed: '+e.message,5000);}
+}
+
+function openSP(){
+  document.getElementById('side-panel').classList.add('open');
+  document.getElementById('table-area').style.marginRight='420px';
+}
+function closeSP(){
+  document.getElementById('side-panel').classList.remove('open');
+  document.getElementById('table-area').style.marginRight='0';
+  A.editOrder=null;A.pendingImgFile=null;A.pendingPDFFile=null;
+}
+
+// ═══════════════════════════════════════
 // EXPORT
-// ═══════════════════════════════════
-function showExportModal(){
-  const list=getFiltered();
-  document.getElementById('exp-count').textContent=list.length;
+// ═══════════════════════════════════════
+function showExpModal(){
+  document.getElementById('exp-count').textContent=getFiltered().length;
   document.getElementById('exp-modal').style.display='flex';
 }
-function closeExportModal(){document.getElementById('exp-modal').style.display='none';}
+function closeExpModal(){document.getElementById('exp-modal').style.display='none';}
 
 function getExportData(){
   const p=colsToShow();
@@ -1022,6 +1588,7 @@ function getExportData(){
   h.push('Product / Tool Name','Category');
   if(p.qty)h.push('Qty');
   if(p.target)h.push('Target Delivery');
+  if(p.quoted)h.push('Quoted');
   h.push('Overall Status');
   if(p.client)h.push('Client');
   if(p.remarks)h.push('Remarks');
@@ -1032,6 +1599,7 @@ function getExportData(){
     r.push(o.name,o.cat);
     if(p.qty)r.push(o.qty||'');
     if(p.target)r.push(o.tgt);
+    if(p.quoted)r.push(o.quoted||'No');
     r.push(o.status);
     if(p.client)r.push(o.client||'');
     if(p.remarks)r.push(o.remarks||'');
@@ -1052,133 +1620,114 @@ function doExcelExport(){
   }catch(e){toast('Export failed: '+e.message);}
 }
 
-async function doPDFExport(withImages){
-  closeExportModal();
+async function doPDF(withImages){
+  closeExpModal();
   const{jsPDF}=window.jspdf;
   const{h,rows,list}=getExportData();
-  toast(withImages?'Loading images for PDF... please wait':'Generating PDF...',15000);
-
+  toast(withImages?'Preparing PDF with images...':'Generating PDF...',15000);
   try{
-    // Pre-fetch all images first if needed
     const imgDataMap={};
     if(withImages){
       for(const o of list){
-        // Ensure image is cached
-        const url = await getImgUrl(o.sr);
+        const url=await getImgUrl(o.sr);
         if(url){
-          try{
-            const resp=await fetch(url);
-            const blob=await resp.blob();
-            const du=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(blob);});
-            imgDataMap[o.sr]=du;
-          }catch(e){ console.warn('img fetch fail sr'+o.sr,e); }
+          try{const resp=await fetch(url);const blob=await resp.blob();const du=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(blob);});imgDataMap[o.sr]=du;}
+          catch(e){}
         }
       }
     }
-
     const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-    const PW=287, ML=10, MT=10;
-
-    // ── LOGO + HEADER ──
-    let headerY=MT;
+    const ML=10,MT=10,PW=287;
     if(A.logoUrl){
-      try{
-        const resp=await fetch(A.logoUrl);
-        const blob=await resp.blob();
-        const du=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(blob);});
-        doc.addImage(du,'PNG',ML,MT,18,18);
-        headerY=MT+2;
-      }catch(e){}
+      try{const resp=await fetch(A.logoUrl);const blob=await resp.blob();const du=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(blob);});doc.addImage(du,'PNG',ML,MT,16,16);}catch(e){}
     }
-    doc.setFontSize(15);doc.setTextColor(24,95,165);doc.setFont(undefined,'bold');
-    doc.text('JMC Engineering — Order Tracker',ML+22,headerY+7);
-    doc.setFontSize(9);doc.setTextColor(100);doc.setFont(undefined,'normal');
-    doc.text(A.perms.clientName+' · '+list.length+' orders · Exported: '+new Date().toLocaleDateString('en-IN'),ML+22,headerY+13);
-    doc.setDrawColor(24,95,165);doc.setLineWidth(0.5);doc.line(ML,MT+20,PW,MT+20);
-
+    doc.setFontSize(14);doc.setTextColor(15,33,68);doc.setFont(undefined,'bold');
+    doc.text('JMC Engineering — Order Tracker',ML+20,MT+7);
+    doc.setFontSize(9);doc.setTextColor(90,100,120);doc.setFont(undefined,'normal');
+    doc.text(A.perms.clientName+' · '+list.length+' orders · '+new Date().toLocaleDateString('en-IN'),ML+20,MT+13);
+    doc.setDrawColor(24,95,165);doc.setLineWidth(.5);doc.line(ML,MT+18,PW,MT+18);
     if(!withImages){
-      // Fast: use autoTable
-      doc.autoTable({
-        head:[h],body:rows,startY:MT+24,
-        styles:{fontSize:8,cellPadding:3},
-        headStyles:{fillColor:[24,95,165],textColor:255,fontStyle:'bold'},
-        alternateRowStyles:{fillColor:[245,250,255]},
-        margin:{left:ML,right:ML}
-      });
+      doc.autoTable({head:[h],body:rows,startY:MT+22,styles:{fontSize:8,cellPadding:3,font:'helvetica'},headStyles:{fillColor:[15,33,68],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[244,247,251]},margin:{left:ML,right:ML}});
     } else {
-      // With images: manual table
-      const ROW_H=26, IMG_SZ=20;
-      const colW=[10,20,20,75,32,IMG_SZ+4,12,22,22,28];
-      const totalW=colW.reduce((a,b)=>a+b,0);
-      const scale=Math.min(1,(PW-ML*2)/totalW);
-      const scaledW=colW.map(w=>w*scale);
-
-      let y=MT+24;
-
-      // Table header
-      doc.setFillColor(24,95,165);
-      doc.rect(ML,y,PW-ML*2,8,'F');
+      const ROW_H=24,IMG_SZ=18;
+      let y=MT+22;
+      doc.setFillColor(15,33,68);doc.rect(ML,y,PW-ML*2,8,'F');
       doc.setTextColor(255);doc.setFontSize(7.5);doc.setFont(undefined,'bold');
       let hx=ML;
-      h.forEach((col,i)=>{
-        doc.text(String(col).slice(0,14),hx+1.5,y+5.5);
-        hx+=scaledW[i]||18;
-      });
-      y+=9;
-
-      // Rows
+      h.forEach((col,i)=>{doc.text(col.slice(0,16),hx+1.5,y+5.5);hx+=i===h.indexOf('Product / Tool Name')?70:i===h.indexOf('Date')?20:i===h.indexOf('Category')?28:18;});
+      y+=10;
       list.forEach((o,ri)=>{
-        if(y+ROW_H>200){doc.addPage();y=15;}
-        // Alternating row bg
-        if(ri%2===0){doc.setFillColor(245,250,255);doc.rect(ML,y,PW-ML*2,ROW_H,'F');}
-        doc.setTextColor(30);doc.setFontSize(7);doc.setFont(undefined,'normal');
-        const r=rows[ri];
-        let rx=ML;
-        r.forEach((val,ci)=>{
-          // Skip image col — we'll draw the image
-          if(h[ci]==='Image'){rx+=scaledW[ci]||18;return;}
-          if(val!==undefined&&val!==null){
-            const txt=String(val).slice(0,22);
-            doc.text(txt,rx+1.5,y+5);
-          }
-          rx+=scaledW[ci]||18;
-        });
-        // Draw real image
-        const imgIdx=h.indexOf('Image');
-        if(imgIdx>=0&&imgDataMap[o.sr]){
-          let ix=ML;
-          for(let k=0;k<imgIdx;k++) ix+=scaledW[k]||18;
-          try{doc.addImage(imgDataMap[o.sr],'PNG',ix+1,y+2,IMG_SZ,IMG_SZ);}catch(e){}
-        }
-        // Row border
-        doc.setDrawColor(220,228,240);doc.setLineWidth(0.3);
-        doc.line(ML,y+ROW_H,PW-ML,y+ROW_H);
+        if(y+ROW_H>195){doc.addPage();y=15;}
+        if(ri%2===0){doc.setFillColor(244,247,251);doc.rect(ML,y,PW-ML*2,ROW_H,'F');}
+        doc.setTextColor(26,35,50);doc.setFontSize(7);doc.setFont(undefined,'normal');
+        const r=rows[ri];let rx=ML;
+        r.forEach((val,ci)=>{if(val!==undefined){doc.text(String(val).slice(0,24),rx+1.5,y+5);}rx+=ci===2?70:ci===3?28:18;});
+        if(imgDataMap[o.sr]){try{doc.addImage(imgDataMap[o.sr],'PNG',PW-ML-IMG_SZ-2,y+2,IMG_SZ,IMG_SZ);}catch(e){}}
+        doc.setDrawColor(220,228,240);doc.setLineWidth(.3);doc.line(ML,y+ROW_H,PW-ML,y+ROW_H);
         y+=ROW_H;
       });
     }
-
-    // Footer
     const pages=doc.internal.getNumberOfPages();
-    for(let i=1;i<=pages;i++){
-      doc.setPage(i);doc.setFontSize(8);doc.setTextColor(160);
-      doc.text('JMC Engineering · Confidential · Page '+i+' of '+pages,ML,205);
-    }
-
+    for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(7.5);doc.setTextColor(160);doc.text('JMC Engineering · Confidential · Page '+i+' of '+pages,ML,205);}
     doc.save('JMC_Orders_'+new Date().toISOString().slice(0,10)+'.pdf');
     toast('✅ PDF downloaded!');
-  }catch(e){toast('PDF failed: '+e.message,6000);console.error('PDF error:',e);}
+  }catch(e){toast('PDF failed: '+e.message,6000);console.error(e);}
 }
 
-// ═══════════════════════════════════
+// ═══════════════════════════════════════
+// ADMIN PANEL
+// ═══════════════════════════════════════
+function openAdmin(){
+  if(!A.isAdmin)return;
+  const ct=document.getElementById('adm-cols');ct.innerHTML='';
+  const cols=[['po','PO No. column'],['images','Tool images'],['qty','Qty column'],['target','Target date'],['client','Client column'],['remarks','Remarks column'],['quoted','Quoted/Approval columns'],['stages','Manufacturing stages']];
+  cols.forEach(([key,label])=>{
+    const d=document.createElement('div');d.className='toggle-row';
+    d.innerHTML=`<span class="toggle-label">${label}</span><label class="toggle"><input type="checkbox" ${A.adminCols[key]?'checked':''} onchange="A.adminCols['${key}']=this.checked;buildHead();render()"><span class="tslider"></span></label>`;
+    ct.appendChild(d);
+  });
+  const cl=document.getElementById('adm-clients');cl.innerHTML='';
+  A.accessList.forEach((ac,i)=>{
+    const d=document.createElement('div');d.className='client-card';
+    const perms=['stages','images','qty','target','po','remarks'].map(k=>`<span class="perm-tag ${ac[k]&&ac[k]!=='NO'?'on':''}">${k}</span>`).join('');
+    d.innerHTML=`<div class="client-card-name">${ac.clientName} ${ac.email===C.adminEmail?'👑':''}</div><div class="client-card-info">${ac.email} · Sheet: ${ac.sheet}</div><div class="client-perms">${perms}</div>${ac.email!==C.adminEmail?`<button class="btn-adm btn-adm-danger" style="margin-top:8px;font-size:11px;padding:4px 10px" onclick="removeClient(${i})">Remove</button>`:''}`;
+    cl.appendChild(d);
+  });
+  document.getElementById('admin-overlay').style.display='block';
+  document.getElementById('admin-drawer').style.display='flex';
+}
+function closeAdmin(){document.getElementById('admin-overlay').style.display='none';document.getElementById('admin-drawer').style.display='none';}
+function addClient(){
+  const email=document.getElementById('nc-email').value.trim().toLowerCase();
+  const name=document.getElementById('nc-name').value.trim();
+  const sheet=document.getElementById('nc-sheet').value.trim();
+  if(!email||!name||!sheet){toast('Please fill all fields');return;}
+  A.accessList.push({email,clientName:name,sheet,stages:document.getElementById('nc-stages').checked?'FULL':'NO',images:document.getElementById('nc-images').checked,qty:document.getElementById('nc-qty').checked,target:document.getElementById('nc-target').checked,po:document.getElementById('nc-po').checked,remarks:document.getElementById('nc-remarks').checked});
+  ['nc-email','nc-name','nc-sheet'].forEach(id=>document.getElementById(id).value='');
+  toast('Client added! Click Sync to save.');
+  openAdmin();
+}
+function removeClient(i){
+  if(A.accessList[i].email===C.adminEmail){toast('Cannot remove admin!');return;}
+  A.accessList.splice(i,1);toast('Removed. Click Sync to save.');openAdmin();
+}
+async function syncToExcel(){
+  toast('Syncing to Excel...',8000);
+  try{
+    const rows=[['Email','Client Name','Sheet Name','Stages','Images','Qty','Target','PO No','Remarks']];
+    A.accessList.forEach(ac=>rows.push([ac.email,ac.clientName,ac.sheet,ac.stages,ac.images?'YES':'NO',ac.qty?'YES':'NO',ac.target?'YES':'NO',ac.po?'YES':'NO',ac.remarks?'YES':'NO']));
+    const range='A1:I'+rows.length;
+    await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.accSheet)+'/range(address=\''+range+'\')',{method:'PATCH',body:JSON.stringify({values:rows})});
+    toast('✅ Synced to Excel!');
+  }catch(e){toast('Sync failed: '+e.message,5000);}
+}
+
+// ═══════════════════════════════════════
 // BOOT
-// ═══════════════════════════════════
-initMSAL().catch(e=>{
-  console.error('Init failed:',e);
-  goLogin();
-}).finally(()=>{
-  // Enable login button once MSAL is ready
-  const btn = document.getElementById('login-btn');
-  if(btn){ btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
+// ═══════════════════════════════════════
+initMSAL().catch(e=>{console.error(e);goLogin();}).finally(()=>{
+  const btn=document.getElementById('login-btn');
+  if(btn){btn.disabled=false;btn.style.opacity='1';}
 });
 </script>
 </body>
