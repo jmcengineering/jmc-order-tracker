@@ -342,11 +342,12 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
       <svg width="18" height="18" viewBox="0 0 21 21"><rect x="1" y="1" width="9" height="9" fill="#f25022"/><rect x="11" y="1" width="9" height="9" fill="#7fba00"/><rect x="1" y="11" width="9" height="9" fill="#00a4ef"/><rect x="11" y="11" width="9" height="9" fill="#ffb900"/></svg>
       Continue with Microsoft
     </button>
-    <div class="login-divider"><span>or</span></div>
+    <div class="login-divider"><span>or sign in with Gmail</span></div>
     <button class="btn-google" id="google-btn" onclick="doGoogleLogin()">
       <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-      Continue with Google
+      Continue with Gmail
     </button>
+    <div style="font-size:10px;color:rgba(255,255,255,.25);margin-top:8px;text-align:center">Gmail users: you'll also approve Microsoft access for data</div>
     <div class="login-note">Authorized users only · info@jmcengg.com</div>
   </div>
 </div>
@@ -812,47 +813,69 @@ function doLogout(){
   goLogin();
 }
 
-// Google OAuth — using redirect flow
+// Google OAuth Flow
+// Step 1: User clicks Gmail → Google verifies email
+// Step 2: Store Gmail in sessionStorage
+// Step 3: Microsoft login with Gmail as hint
+// Step 4: App checks Gmail against Access List
+
 function doGoogleLogin(){
   try{
-    // Build Google OAuth URL
+    // Store intent so we know it's a Google login after redirect
+    sessionStorage.setItem('jmc_login_type','google');
+    // Build Google OAuth URL — just to verify email identity
     const params = new URLSearchParams({
       client_id: C.googleClientId,
       redirect_uri: C.redirectUri,
-      response_type: 'token id_token',
+      response_type: 'id_token',
       scope: 'email profile openid',
       nonce: Math.random().toString(36).slice(2),
-      prompt: 'select_account'
+      prompt: 'select_account',
+      response_mode: 'fragment'
     });
-    window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params.toString();
-  } catch(e){
-    showErr('Google login failed', e.message||String(e));
+    window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?'+params.toString();
+  }catch(e){
+    showErr('Google login failed',e.message||String(e));
   }
 }
 
 async function handleGoogleCallback(){
-  // Check if we have a Google token in the URL hash
-  const hash = window.location.hash.substring(1);
-  if(!hash) return false;
-  const params = new URLSearchParams(hash);
-  const idToken = params.get('id_token');
-  if(!idToken) return false;
+  const hash=window.location.hash.substring(1);
+  if(!hash)return false;
+  const params=new URLSearchParams(hash);
+  const idToken=params.get('id_token');
+  if(!idToken)return false;
   try{
-    // Decode JWT payload to get email
-    const payload = JSON.parse(atob(idToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-    const email = (payload.email||'').toLowerCase();
-    if(!email) return false;
-    // Clear hash from URL
+    // Decode Google JWT to get email
+    const b64=idToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    const payload=JSON.parse(atob(b64));
+    const email=(payload.email||'').toLowerCase();
+    if(!email)return false;
+    console.log('✅ Google email verified:',email);
+    // Clear hash
     history.replaceState(null,'',window.location.pathname);
-    // Store as user
-    A.user = {username: email, name: payload.name||email};
-    A.authType = 'google';
-    toast('Google verified! Connecting to JMC data...',3000);
-    // Now get MS token for Graph API using loginHint
+    // Store Google email for after MS redirect
+    sessionStorage.setItem('jmc_google_email',email);
+    sessionStorage.setItem('jmc_login_type','google');
+    toast('Gmail verified ✅ Connecting to JMC...',3000);
+    // Now do Microsoft login with Gmail as hint
+    // This gets Graph API access for OneDrive
     clearMSALLocks();
-    await A.msal.loginRedirect({scopes:C.scopes, loginHint:email});
+    setTimeout(async()=>{
+      try{
+        await A.msal.loginRedirect({
+          scopes:C.scopes,
+          loginHint:email,
+          prompt:'select_account'
+        });
+      }catch(e){
+        showErr('Microsoft connection failed',
+          'Your Gmail ('+email+') needs a linked Microsoft account.\n\n'+
+          'Please ask JMC admin to add your Microsoft account email to the access list instead.');
+      }
+    },1000);
     return true;
-  } catch(e){
+  }catch(e){
     console.error('Google callback error:',e);
     return false;
   }
@@ -1024,7 +1047,10 @@ async function startApp(){
         images:yn(r[4]),qty:yn(r[5]),target:yn(r[6]),po:yn(r[7]),remarks:yn(r[8])
       });
     }
-    const email=(A.user.username||'').toLowerCase().trim();
+    // Check if Gmail login — use stored Google email
+    const googleEmail=sessionStorage.getItem('jmc_google_email');
+    const email=googleEmail||(A.user.username||'').toLowerCase().trim();
+    if(googleEmail) sessionStorage.removeItem('jmc_google_email');
     const ur=A.accessList.find(x=>x.email===email);
     if(!ur){document.getElementById('denied-email').textContent=email;go('s-denied');return;}
     A.perms=ur;A.isAdmin=email===C.adminEmail.toLowerCase();
