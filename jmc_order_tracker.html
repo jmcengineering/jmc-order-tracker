@@ -94,7 +94,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .err-icon{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 16px}
 
 /* ══ TOPBAR ══ */
-#s-main{display:none;flex-direction:column;min-height:100vh}
+#s-main{display:none;flex-direction:column;min-height:100vh;overflow:auto}
 .topbar{
   background:var(--navy);height:56px;padding:0 24px;
   display:flex;align-items:center;justify-content:space-between;
@@ -151,8 +151,8 @@ input[type=date].tbar-date{height:34px;padding:0 10px;border-radius:var(--r-sm);
 .tab.on{background:var(--navy);color:#fff;box-shadow:var(--shadow-sm)}
 
 /* ══ TABLE ══ */
-.tbl-wrap{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden}
-.tbl-scroll{overflow:auto;max-height:calc(100vh - 280px)}
+.tbl-wrap{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.tbl-scroll{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 260px);border-radius:var(--r-lg)}
 table{width:100%;border-collapse:collapse;table-layout:auto}
 thead th{background:#F8FAFD;color:var(--text2);font-size:11px;font-weight:600;padding:10px 14px;text-align:left;border-bottom:1.5px solid var(--border);white-space:nowrap;letter-spacing:.3px;text-transform:uppercase;position:sticky;top:0;z-index:10;box-shadow:0 1px 0 var(--border)}
 tbody td{font-size:12px;padding:0 14px;border-bottom:1px solid #F0F4FA;color:var(--text);vertical-align:middle;height:52px}
@@ -450,37 +450,37 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
         <div class="tbl-scroll">
           <table><thead><tr id="t-head"></tr></thead><tbody id="t-body"></tbody></table>
         </div>
-        <div id="t-det" style="display:none" class="detail-bar">
-          <div class="detail-bar-top">
-            <div>
-              <div class="detail-bar-title" id="det-title"></div>
-              <div style="font-size:11px;color:var(--text2);margin-top:2px" id="det-sub"></div>
-            </div>
-            <div class="detail-bar-actions">
-              <button id="det-edit-btn" class="btn-sm btn-edit" onclick="openEditOrder()" style="display:none">✏ Edit</button>
-              <button id="det-pdf-btn" class="btn-sm btn-view-pdf" onclick="viewOrderPDF()" style="display:none">📄 View Drawing</button>
-              <button class="btn-sm btn-close-det" onclick="closeDet()">✕</button>
-            </div>
-          </div>
-          <div class="detail-grid" id="det-grid"></div>
-          <div id="det-stages" style="display:none">
-            <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Manufacturing stages</div>
-            <div class="stages-strip" id="stages-strip"></div>
-          </div>
-        </div>
+
       </div>
     </div>
 
     <!-- SIDE PANEL (Add/Edit) -->
     <div class="side-panel" id="side-panel">
       <div class="sp-header">
-        <div>
+        <div style="flex:1">
           <div class="sp-title" id="sp-title">New Order</div>
           <div class="sp-sub" id="sp-sub">Fill in order details</div>
         </div>
-        <button class="sp-close" onclick="closeSP()">✕</button>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button id="sp-edit-btn" class="btn-sm btn-edit" onclick="switchToEdit()" style="display:none">✏ Edit</button>
+          <button id="sp-pdf-btn" class="btn-sm btn-view-pdf" onclick="viewOrderPDF()" style="display:none">📄 Drawing</button>
+          <button class="sp-close" onclick="closeSP()">✕</button>
+        </div>
       </div>
-      <div class="sp-body">
+      <!-- VIEW MODE -->
+      <div id="sp-view" style="display:none;padding:20px 24px">
+        <div class="detail-grid" id="det-grid" style="margin-bottom:16px"></div>
+        <div id="det-stages" style="display:none;margin-bottom:16px">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Manufacturing stages</div>
+          <div class="stages-strip" id="stages-strip"></div>
+        </div>
+        <div id="sp-files" style="display:none;margin-top:8px">
+          <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Files</div>
+          <div id="sp-files-list"></div>
+        </div>
+      </div>
+      <!-- EDIT MODE -->
+      <div id="sp-edit" class="sp-body">
         <!-- Basic Info -->
         <div class="sp-section">
           <div class="sp-sec-label">Basic Information</div>
@@ -619,10 +619,14 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
           </div>
         </div>
       </div>
-      <div class="sp-footer">
+      </div><!-- end sp-edit -->
+      <div class="sp-footer" id="sp-footer-edit" style="display:none">
         <button class="btn-cancel" onclick="closeSP()">Cancel</button>
         <button id="btn-del-order" class="btn-del" onclick="deleteOrder()" style="display:none">🗑 Delete</button>
         <button class="btn-save" onclick="saveOrder()">💾 Save Order</button>
+      </div>
+      <div class="sp-footer" id="sp-footer-view" style="display:none">
+        <button class="btn-cancel" onclick="closeSP()">Close</button>
       </div>
     </div>
   </div>
@@ -1022,15 +1026,18 @@ async function startApp(){
       A.orders=orders;A.allOrders=orders;
     }
     buildHead();render();go('s-main');
-    // Auto scroll to table area
-    setTimeout(()=>{
-      const tbl=document.getElementById('table-area');
-      if(tbl){
-        tbl.scrollTop=0;
-        tbl.scrollIntoView({behavior:'smooth',block:'start'});
-      }
-      window.scrollTo({top:0,behavior:'smooth'});
-    },400);
+    // Scroll to show data after login
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        const ta=document.getElementById('table-area');
+        if(ta) ta.scrollTop=0;
+        // Also ensure main screen is at top
+        const sm=document.getElementById('s-main');
+        if(sm) sm.scrollTop=0;
+        document.documentElement.scrollTop=0;
+        document.body.scrollTop=0;
+      });
+    });
     setTimeout(()=>loadThumbImages(A.orders),300);
   }catch(e){console.error(e);showErr('Failed to load',e.message||String(e));}
 }
@@ -1404,11 +1411,18 @@ function setTab(t,el){A.tab=t;A.selOrder=null;document.querySelectorAll('.tab').
 // ═══════════════════════════════════════
 function showDet(o){
   A.selOrder=o;const p=colsToShow();
-  document.getElementById('det-title').textContent='Order #'+o.sr+' — '+o.name;
-  document.getElementById('det-sub').textContent=o.date+' · '+o.cat+' · '+o.client;
-  document.getElementById('t-det').style.display='block';
-  document.getElementById('det-edit-btn').style.display=A.isAdmin?'inline-flex':'none';
-  document.getElementById('det-pdf-btn').style.display=o.pdfFile?'inline-flex':'none';
+  // Update panel title
+  document.getElementById('sp-title').textContent='Order #'+o.sr+' — '+o.name;
+  document.getElementById('sp-sub').textContent=o.date+' · '+o.cat+(o.client?' · '+o.client:'');
+  // Show/hide action buttons
+  document.getElementById('sp-edit-btn').style.display=A.isAdmin?'inline-flex':'none';
+  const hasPdf=o.pdfFile&&o.pdfFile.toString().trim()!==''&&o.pdfFile!=='—';
+  document.getElementById('sp-pdf-btn').style.display=hasPdf?'inline-flex':'none';
+  // Hide edit form, show view
+  document.getElementById('sp-edit').style.display='none';
+  document.getElementById('sp-view').style.display='block';
+  document.getElementById('btn-del-order').style.display='none';
+  // Build detail grid
   const g=document.getElementById('det-grid');g.innerHTML='';
   const dc=(l,v)=>{const d=document.createElement('div');d.className='dc';d.innerHTML=`<div class="dc-lbl">${l}</div><div class="dc-val">${v||'—'}</div>`;g.appendChild(d);};
   dc('Product',o.name);dc('Order date',o.date);dc('Category',o.cat);
@@ -1419,6 +1433,7 @@ function showDet(o){
   dc('Status',stB(o.status));
   if(o.client)dc('Client',`<span class="b-client">${o.client}</span>`);
   if(p.remarks&&o.remarks)dc('Remarks',o.remarks);
+  // Manufacturing stages
   const sd=document.getElementById('det-stages');
   const ss=document.getElementById('stages-strip');ss.innerHTML='';
   if(p.stages!=='NO'){
@@ -1430,10 +1445,17 @@ function showDet(o){
       const cl=vs.toLowerCase()==='done'?'sch-done':vs.toLowerCase()==='pending'?'sch-pend':vs.toLowerCase().includes('hold')?'sch-hold':'sch-na';
       ss.innerHTML+=`<span class="sch ${cl}">${l}: ${vs}</span>`;
     });
-  }else sd.style.display='none';
+  } else sd.style.display='none';
+  // Files section
+  const fl=document.getElementById('sp-files-list');
+  fl.innerHTML='';
+  if(hasPdf) fl.innerHTML+=`<div style="font-size:12px;padding:6px 10px;background:var(--bg);border-radius:6px;margin-bottom:4px;cursor:pointer;color:#DC2626" onclick="viewOrderPDF()">📄 ${o.pdfFile}</div>`;
+  document.getElementById('sp-files').style.display=hasPdf?'block':'none';
+  // Open panel
+  openSP('view');
   render();
 }
-function closeDet(){A.selOrder=null;document.getElementById('t-det').style.display='none';render();}
+function closeDet(){A.selOrder=null;closeSP();render();}
 
 // ═══════════════════════════════════════
 // ADD / EDIT ORDER
@@ -1448,21 +1470,26 @@ function openAddOrder(){
   const maxSr=A.allOrders.length?Math.max(...A.allOrders.map(o=>parseInt(o.sr)||0)):0;
   document.getElementById('f-sr').value=maxSr+1;
   document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
-  openSP();
+  openSP('edit');
 }
 
 function openEditOrder(){
+  if(!A.selOrder)return;
+  switchToEdit();
+}
+function switchToEdit(){
   if(!A.selOrder)return;
   const o=A.selOrder;
   A.editOrder=o;A.pendingImgFile=null;A.pendingPDFFile=null;A.pendingSTPFile=null;A.pendingWCFile=null;
   document.getElementById('sp-title').textContent='Edit Order #'+o.sr;
   document.getElementById('sp-sub').textContent=o.name;
+  document.getElementById('sp-edit-btn').style.display='none';
   document.getElementById('btn-del-order').style.display='inline-flex';
+  document.getElementById('sp-view').style.display='none';
+  document.getElementById('sp-edit').style.display='block';
   fillForm(o);
-  openSP();
-  // Scroll table to top so side panel is visible
-  const ta=document.getElementById('table-area');
-  if(ta) ta.scrollTo({top:0,behavior:'smooth'});
+  // Scroll panel to top
+  openSP('edit');
 }
 
 function clearForm(){
@@ -1680,12 +1707,15 @@ async function deleteOrder(){
   }catch(e){toast('Delete failed: '+e.message,5000);}
 }
 
-function openSP(){
+function openSP(mode){
   const panel=document.getElementById('side-panel');
   panel.classList.add('open');
   panel.scrollTop=0;
-  // Force repaint to ensure animation works
-  panel.offsetHeight;
+  panel.offsetHeight; // force repaint
+  // Show correct footer
+  const isEdit=mode==='edit'||document.getElementById('sp-edit').style.display!=='none';
+  document.getElementById('sp-footer-edit').style.display=isEdit?'flex':'none';
+  document.getElementById('sp-footer-view').style.display=isEdit?'none':'flex';
 }
 function closeSP(){
   document.getElementById('side-panel').classList.remove('open');
