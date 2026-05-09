@@ -887,7 +887,14 @@ async function gapiUpload(path,data,contentType){
 // FIND FILE + FOLDERS
 // ═══════════════════════════════════════
 async function findFile(){
-  A.driveId=C.driveId;
+  // Dynamically fetch driveId — hardcoded IDs can expire
+  try{
+    const dr=await gapi('/me/drives');
+    if(dr&&dr.value&&dr.value.length>0){
+      A.driveId=dr.value[0].id;
+      console.log('✅ DriveId:',A.driveId);
+    } else { A.driveId=C.driveId; }
+  }catch(e){ A.driveId=C.driveId; console.warn('DriveId fallback'); }
   const res=await gapi('/drives/'+A.driveId+'/root/search(q=\''+C.fileSearch+'\')');
   if(!res||!res.value||!res.value.length)throw new Error('Excel file not found: "'+C.fileSearch+'"');
   const f=res.value.find(x=>x.name.match(/\.(xlsm|xlsx)$/i));
