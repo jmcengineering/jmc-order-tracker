@@ -43,9 +43,10 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 
 /* ══ LOGIN ══ */
 #s-login{
-  display:flex!important;min-height:100vh;
+  display:flex;min-height:100vh;width:100%;
   background:linear-gradient(135deg,var(--navy) 0%,#1a3a6e 50%,#0d4a7a 100%);
-  align-items:center;justify-content:center;position:relative;overflow:hidden;
+  align-items:center;justify-content:center;position:fixed;top:0;left:0;right:0;bottom:0;
+  z-index:9999;overflow:hidden;
 }
 #s-login::before{
   content:'';position:absolute;inset:0;
@@ -231,12 +232,12 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
 .upload-name{font-size:11px;color:var(--success);font-weight:600;margin-top:4px;font-family:'DM Mono',monospace}
 
 /* SP footer */
-.sp-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:8px;position:sticky;bottom:0;background:var(--surface)}
-.btn-save{flex:1;padding:10px;border-radius:var(--r-sm);border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.sp-footer{padding:12px 24px;border-top:1px solid var(--border);display:flex;gap:8px;position:sticky;bottom:0;background:var(--surface);align-items:center;height:auto}
+.btn-save{flex:1;padding:10px 16px;border-radius:var(--r-sm);border:none;background:var(--blue);color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;height:40px}
 .btn-save:hover{background:var(--blue-light)}
-.btn-cancel{padding:10px 16px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-cancel{padding:10px 16px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:transparent;color:var(--text2);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;height:40px;white-space:nowrap}
 .btn-cancel:hover{background:var(--bg)}
-.btn-del{padding:10px 14px;border-radius:var(--r-sm);border:1.5px solid #FECACA;background:#FEF2F2;color:#DC2626;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-del{padding:10px 14px;border-radius:var(--r-sm);border:1.5px solid #FECACA;background:#FEF2F2;color:#DC2626;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;height:40px;white-space:nowrap}
 .btn-del:hover{background:#FEE2E2}
 
 /* ══ DETAIL PANEL (bottom) ══ */
@@ -352,13 +353,13 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
 </div>
 
 <!-- LOADING -->
-<div id="s-loading" style="display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--bg)">
+<div id="s-loading" style="display:none;visibility:hidden;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--bg)">
   <div class="loader"></div>
   <div id="load-msg" style="font-size:14px;color:var(--text2);font-weight:500">Loading...</div>
 </div>
 
 <!-- ERROR -->
-<div id="s-error" style="display:none;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;background:var(--bg)">
+<div id="s-error" style="display:none;visibility:hidden;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;background:var(--bg)">
   <div class="err-box">
     <div class="err-icon" style="background:#FEF2F2">⚠️</div>
     <div id="err-title" style="font-size:20px;font-weight:700;margin-bottom:8px">Error</div>
@@ -642,14 +643,7 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
   </div>
 </div>
 
-<!-- PDF MODAL -->
-<div id="pdf-modal" style="display:none" class="pdf-modal-bg">
-  <div class="pdf-modal-top">
-    <div class="pdf-modal-title" id="pdf-modal-title">Engineering Drawing</div>
-    <button class="btn-topbar" onclick="closePDFModal()">✕ Close</button>
-  </div>
-  <iframe id="pdf-iframe" class="pdf-iframe" src=""></iframe>
-</div>
+<!-- PDF opens in new tab -->
 
 <!-- EXPORT MODAL -->
 <div id="exp-modal" style="display:none" class="exp-bg" onclick="if(event.target===this)closeExpModal()">
@@ -755,8 +749,17 @@ function go(id,msg){
   SCREENS.forEach(s=>{
     const el=document.getElementById(s);
     if(!el) return;
-    if(s===id){el.style.display='flex';}
-    else{el.style.display='none';}
+    if(s===id){
+      el.style.display=(s==='s-main')?'flex':'flex';
+      el.style.visibility='visible';
+      el.style.position='relative';
+      el.style.zIndex='1';
+    } else {
+      el.style.display='none';
+      el.style.visibility='hidden';
+      el.style.position='fixed';
+      el.style.zIndex='-1';
+    }
   });
   if(id==='s-loading'&&msg) document.getElementById('load-msg').textContent=msg;
 }
@@ -1114,7 +1117,7 @@ function parseOrders(rows){
     lathe:col('jig boring','lathe'),ht:col('heat'),
     inspect:col('inspection','inspect'),dispatch:col('dispatch'),
     status:col('overall status','status'),remarks:col('remarks'),
-    imgFile:col('image file','img file'),pdfFile:col('pdf file','drawing')
+    imgFile:col('image file','img file','imagefile'),pdfFile:col('pdf file','drawing','pdf','pdffile')
   };
   const fmt=v=>{
     if(!v||v==='—')return '—';
@@ -1144,7 +1147,7 @@ function parseOrders(rows){
       stInsp:cc.inspect>=0?r[cc.inspect]:'—',stDisp:cc.dispatch>=0?r[cc.dispatch]:'—',
       status:r[cc.status]||'In Progress',remarks:r[cc.remarks]||'',
       imgFile:cc.imgFile>=0?r[cc.imgFile]:'',
-      pdfFile:cc.pdfFile>=0?r[cc.pdfFile]:'',
+      pdfFile:cc.pdfFile>=0?(r[cc.pdfFile]||''):'',
       client:'',sheet:''
     });
   }
@@ -1249,16 +1252,12 @@ async function viewOrderPDF(){
     const info=await gapi('/drives/'+A.driveId+'/items/'+match.id);
     const url=info['@microsoft.graph.downloadUrl'];
     if(!url){toast('Could not get download link');return;}
-    document.getElementById('pdf-modal-title').textContent='Drawing: '+o.name;
-    document.getElementById('pdf-iframe').src=url;
-    document.getElementById('pdf-modal').style.display='flex';
     document.querySelectorAll('.toast').forEach(t=>t.remove());
+    // OneDrive blocks iframe — open in new tab for proper PDF viewing
+    window.open(url,'_blank');
   }catch(e){toast('Could not load PDF: '+e.message,5000);console.error(e);}
 }
-function closePDFModal(){
-  document.getElementById('pdf-modal').style.display='none';
-  document.getElementById('pdf-iframe').src='';
-}
+function closePDFModal(){}
 
 // ═══════════════════════════════════════
 // BADGES
@@ -1371,8 +1370,9 @@ function render(){
     h+=`<td>${catB(o.cat)}</td>`;
     if(p.images){
       h+=`<td style="text-align:center"><div class="thumb" onclick="event.stopPropagation();openImgModal(${o.sr},'${ne}','${te}')"><img id="thumb-${o.sr}" src="${svgD}" alt="tool" style="opacity:.4"></div></td>`;
-      const hasPDF=o.pdfFile&&o.pdfFile.toString().trim()!==''&&o.pdfFile!=='—';
-      h+=`<td style="text-align:center"><div class="thumb-pdf ${hasPDF?'':'thumb-pdf-empty'}" onclick="event.stopPropagation();quickViewPDF(${o.sr})" title="${o.pdfFile||'No drawing'}">${hasPDF?'PDF':'—'}</div></td>`;
+      const pdfVal=(o.pdfFile||'').toString().trim();
+      const hasPDF=pdfVal!==''&&pdfVal!=='—'&&pdfVal!=='undefined';
+      h+=`<td style="text-align:center"><div class="thumb-pdf ${hasPDF?'':'thumb-pdf-empty'}" onclick="event.stopPropagation();${hasPDF?'quickViewPDF('+o.sr+')':'toast("No drawing uploaded")'}" title="${hasPDF?(o.pdfFile||''):'No drawing'}">${hasPDF?'PDF':'—'}</div></td>`;
     }
     if(p.qty)h+=`<td style="text-align:center;font-size:12px">${o.qty||'—'}</td>`;
     if(p.target)h+=`<td style="font-size:11px;color:var(--text2)">${o.tgt}</td>`;
@@ -1471,6 +1471,7 @@ function openAddOrder(){
   document.getElementById('f-sr').value=maxSr+1;
   document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
   openSP('edit');
+  refreshFooter();
 }
 
 function openEditOrder(){
@@ -1711,9 +1712,13 @@ function openSP(mode){
   const panel=document.getElementById('side-panel');
   panel.classList.add('open');
   panel.scrollTop=0;
-  panel.offsetHeight; // force repaint
-  // Show correct footer
-  const isEdit=mode==='edit'||document.getElementById('sp-edit').style.display!=='none';
+  panel.offsetHeight;
+  const isEdit=(mode==='edit');
+  document.getElementById('sp-footer-edit').style.display=isEdit?'flex':'none';
+  document.getElementById('sp-footer-view').style.display=isEdit?'none':'flex';
+}
+function refreshFooter(){
+  const isEdit=document.getElementById('sp-edit').style.display!=='none';
   document.getElementById('sp-footer-edit').style.display=isEdit?'flex':'none';
   document.getElementById('sp-footer-view').style.display=isEdit?'none':'flex';
 }
