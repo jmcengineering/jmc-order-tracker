@@ -152,9 +152,9 @@ input[type=date].tbar-date{height:34px;padding:0 10px;border-radius:var(--r-sm);
 
 /* ══ TABLE ══ */
 .tbl-wrap{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm);overflow:hidden}
-.tbl-scroll{overflow-x:auto}
+.tbl-scroll{overflow:auto;max-height:calc(100vh - 280px)}
 table{width:100%;border-collapse:collapse;table-layout:auto}
-thead th{background:#F8FAFD;color:var(--text2);font-size:11px;font-weight:600;padding:10px 14px;text-align:left;border-bottom:1.5px solid var(--border);white-space:nowrap;letter-spacing:.3px;text-transform:uppercase;position:sticky;top:0;z-index:10}
+thead th{background:#F8FAFD;color:var(--text2);font-size:11px;font-weight:600;padding:10px 14px;text-align:left;border-bottom:1.5px solid var(--border);white-space:nowrap;letter-spacing:.3px;text-transform:uppercase;position:sticky;top:0;z-index:10;box-shadow:0 1px 0 var(--border)}
 tbody td{font-size:12px;padding:0 14px;border-bottom:1px solid #F0F4FA;color:var(--text);vertical-align:middle;height:52px}
 tbody tr:last-child td{border-bottom:none}
 tbody tr.row{cursor:pointer;transition:background .1s}
@@ -1022,13 +1022,15 @@ async function startApp(){
       A.orders=orders;A.allOrders=orders;
     }
     buildHead();render();go('s-main');
-    // Auto scroll to table
+    // Auto scroll to table area
     setTimeout(()=>{
       const tbl=document.getElementById('table-area');
-      if(tbl) tbl.scrollTop=0;
-      // Scroll page to show data
-      document.getElementById('s-main').scrollTop=0;
-    },300);
+      if(tbl){
+        tbl.scrollTop=0;
+        tbl.scrollIntoView({behavior:'smooth',block:'start'});
+      }
+      window.scrollTo({top:0,behavior:'smooth'});
+    },400);
     setTimeout(()=>loadThumbImages(A.orders),300);
   }catch(e){console.error(e);showErr('Failed to load',e.message||String(e));}
 }
@@ -1203,23 +1205,48 @@ function closeImgModal(){document.getElementById('img-modal').style.display='non
 async function viewOrderPDF(){
   if(!A.selOrder)return;
   const o=A.selOrder;
-  // Check both pdfFile field and by Sr No in drawings folder
-  const hasPdf = o.pdfFile && o.pdfFile.toString().trim()!=='' && o.pdfFile!=='—';
-  if(!hasPdf){toast('No drawing uploaded for this order');return;}
-  toast('Loading drawing PDF...',5000);
+  toast('Searching for drawing...',6000);
   try{
-    // Find PDF in drawings folder
     if(!A.pdfFolderId){toast('Drawings folder not found');return;}
-    const ch=await gapi('/drives/'+A.driveId+'/items/'+A.pdfFolderId+'/children?$select=id,name');
-    const files=ch.value||[];
-    const match=files.find(f=>f.name===o.pdfFile||f.name.startsWith(o.sr+'-'));
-    if(!match){toast('Drawing file not found on OneDrive');return;}
+    // Search recursively in drawings folder and all subfolders
+    let match=null;
+    // Step 1: Check root drawings folder
+    const root=await gapi('/drives/'+A.driveId+'/items/'+A.pdfFolderId+'/children?$select=id,name,folder');
+    const rootItems=root.value||[];
+    // Check files in root
+    match=rootItems.find(f=>!f.folder&&(
+      f.name===o.pdfFile||
+      f.name.toLowerCase().startsWith(String(o.sr)+'-')||
+      f.name.toLowerCase().startsWith(String(o.sr)+'_')
+    ));
+    // Step 2: Check subfolders (client folders)
+    if(!match){
+      const subfolders=rootItems.filter(f=>f.folder);
+      for(const sf of subfolders){
+        try{
+          const sub=await gapi('/drives/'+A.driveId+'/items/'+sf.id+'/children?$select=id,name');
+          const subFiles=sub.value||[];
+          match=subFiles.find(f=>
+            f.name===o.pdfFile||
+            f.name.toLowerCase().startsWith(String(o.sr)+'-')||
+            f.name.toLowerCase().startsWith(String(o.sr)+'_')
+          );
+          if(match)break;
+        }catch(e){}
+      }
+    }
+    if(!match){
+      toast('Drawing PDF not found. Please upload it via Edit Order.');
+      return;
+    }
     const info=await gapi('/drives/'+A.driveId+'/items/'+match.id);
     const url=info['@microsoft.graph.downloadUrl'];
+    if(!url){toast('Could not get download link');return;}
     document.getElementById('pdf-modal-title').textContent='Drawing: '+o.name;
     document.getElementById('pdf-iframe').src=url;
     document.getElementById('pdf-modal').style.display='flex';
-  }catch(e){toast('Could not load PDF: '+e.message,5000);}
+    document.querySelectorAll('.toast').forEach(t=>t.remove());
+  }catch(e){toast('Could not load PDF: '+e.message,5000);console.error(e);}
 }
 function closePDFModal(){
   document.getElementById('pdf-modal').style.display='none';
@@ -1354,7 +1381,7 @@ function render(){
 
 async function quickViewPDF(sr){
   const o=A.orders.find(x=>x.sr==sr);
-  if(!o||!o.pdfFile){toast('No drawing uploaded for this order');return;}
+  if(!o){toast('Order not found');return;}
   A.selOrder=o;
   await viewOrderPDF();
 }
@@ -1427,12 +1454,15 @@ function openAddOrder(){
 function openEditOrder(){
   if(!A.selOrder)return;
   const o=A.selOrder;
-  A.editOrder=o;A.pendingImgFile=null;A.pendingPDFFile=null;
+  A.editOrder=o;A.pendingImgFile=null;A.pendingPDFFile=null;A.pendingSTPFile=null;A.pendingWCFile=null;
   document.getElementById('sp-title').textContent='Edit Order #'+o.sr;
   document.getElementById('sp-sub').textContent=o.name;
   document.getElementById('btn-del-order').style.display='inline-flex';
   fillForm(o);
   openSP();
+  // Scroll table to top so side panel is visible
+  const ta=document.getElementById('table-area');
+  if(ta) ta.scrollTo({top:0,behavior:'smooth'});
 }
 
 function clearForm(){
@@ -1651,9 +1681,11 @@ async function deleteOrder(){
 }
 
 function openSP(){
-  document.getElementById('side-panel').classList.add('open');
-  // Scroll to top of side panel
-  document.getElementById('side-panel').scrollTop=0;
+  const panel=document.getElementById('side-panel');
+  panel.classList.add('open');
+  panel.scrollTop=0;
+  // Force repaint to ensure animation works
+  panel.offsetHeight;
 }
 function closeSP(){
   document.getElementById('side-panel').classList.remove('open');
