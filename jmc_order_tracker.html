@@ -887,16 +887,38 @@ async function gapiUpload(path,data,contentType){
 // FIND FILE + FOLDERS
 // ═══════════════════════════════════════
 async function findFile(){
-  // Dynamically fetch driveId — hardcoded IDs can expire
+  // Step 1: Get valid driveId dynamically
   try{
     const dr=await gapi('/me/drives');
     if(dr&&dr.value&&dr.value.length>0){
       A.driveId=dr.value[0].id;
       console.log('✅ DriveId:',A.driveId);
-    } else { A.driveId=C.driveId; }
-  }catch(e){ A.driveId=C.driveId; console.warn('DriveId fallback'); }
-  const res=await gapi('/drives/'+A.driveId+'/root/search(q=\''+C.fileSearch+'\')');
-  if(!res||!res.value||!res.value.length)throw new Error('Excel file not found: "'+C.fileSearch+'"');
+    } else {
+      A.driveId=C.driveId;
+    }
+  }catch(e){ A.driveId=C.driveId; }
+
+  // Step 2: Search for file — try multiple approaches
+  let res=null;
+  // Try 1: Search by name
+  try{ res=await gapi('/drives/'+A.driveId+'/root/search(q=\''+C.fileSearch+'\')'); }catch(e){ console.warn('Search 1 failed:',e); }
+  // Try 2: Search in me/drive if first fails
+  if(!res||!res.value||!res.value.length){
+    try{ res=await gapi('/me/drive/search(q=\''+C.fileSearch+'\')'); }catch(e){ console.warn('Search 2 failed:',e); }
+  }
+  // Try 3: Browse root children
+  if(!res||!res.value||!res.value.length){
+    try{
+      const root=await gapi('/drives/'+A.driveId+'/root/children');
+      const folders=(root.value||[]).filter(x=>x.folder);
+      for(const f of folders){
+        const ch=await gapi('/drives/'+A.driveId+'/items/'+f.id+'/children');
+        const found=(ch.value||[]).find(x=>x.name&&x.name.toLowerCase().includes('jmc_order_tracker'));
+        if(found){res={value:[found]};break;}
+      }
+    }catch(e){ console.warn('Search 3 failed:',e); }
+  }
+  if(!res||!res.value||!res.value.length)throw new Error('Excel file not found: "'+C.fileSearch+'"\nMake sure the file is saved on OneDrive for Business.');
   const f=res.value.find(x=>x.name.match(/\.(xlsm|xlsx)$/i));
   if(!f)throw new Error('No Excel file matching: '+C.fileSearch);
   A.fileId=f.id;
@@ -985,9 +1007,9 @@ async function getRowForSr(sr){
 // ═══════════════════════════════════════
 async function startApp(){
   try{
-    go('s-loading','Finding your Excel file...');
+    go('s-loading','Connecting to JMC data...');
     await findFile();
-    go('s-loading','Reading access list...');
+    go('s-loading','Verifying access...');
     let aRows=[];
     try{aRows=await readSheet(C.accSheet);}
     catch(e){throw new Error('Could not find "Access List" sheet.\nPlease create it in Excel with columns:\nEmail | Client Name | Sheet Name | Stages | Images | Qty | Target | PO No | Remarks');}
@@ -1016,10 +1038,10 @@ async function startApp(){
       document.getElementById('btn-add').style.display='inline-flex';
     }
     if(A.isAdmin){
-      go('s-loading','Loading all client sheets...');
+      go('s-loading','Fetching orders...');
       await loadAllSheets();
     } else {
-      go('s-loading','Loading orders from '+ur.sheet+'...');
+      go('s-loading','Fetching your orders...');
       const rows=await readSheet(ur.sheet);
       const orders=parseOrders(rows);
       orders.forEach(o=>o.client=ur.clientName);
@@ -1061,7 +1083,7 @@ async function loadAllSheets(){
 }
 
 async function doRefresh(){
-  go('s-loading','Refreshing...');
+  go('s-loading','Refreshing orders...');
   try{
     A.imgCache={};A.imgFolderCache=null;
     if(A.imgFolderId){
