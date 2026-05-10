@@ -468,13 +468,13 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
       <div id="sp-edit" class="sp-body" style="display:none">
         <!-- Client Selector (admin only, shown for new orders) -->
         <div class="sp-section" id="client-selector-section" style="display:none">
-          <div class="sp-sec-label">Client / Sheet Routing</div>
+          <div class="sp-sec-label">Client</div>
           <div class="field">
-            <label>Save to client sheet <span class="req">*</span></label>
+            <label>Assign to client <span class="req">*</span></label>
             <select id="f-client-sheet">
               <option value="">— Select client —</option>
             </select>
-            <div class="field-hint">Order will be saved to this client's sheet AND mirrored to the master Order Tracker</div>
+            <div class="field-hint">Order will be tagged with this client and saved to the master Order Tracker</div>
           </div>
         </div>
 
@@ -717,7 +717,6 @@ const C = {
   logoFile:    'jmc_logo.png',
   accSheet:    'Access List',
   masterSheet: 'Order Tracker',
-  templateSheet: 'UE',  // Used as template for new client sheets
   adminEmail:  'info@jmcengg.com',
   skipSheets:  ['order tracker','access list','archieve','archive','dashboard','sheet1','sheet2'],
   redirectUri: 'https://jmcengineering.github.io/jmc-order-tracker/jmc_order_tracker.html'
@@ -944,7 +943,6 @@ async function allSheetNames(){
   return(d.value||[]).map(s=>s.name);
 }
 
-// Find header row + start row for a sheet
 async function findSheetLayout(sheetName){
   const rows=await readSheet(sheetName);
   let hi=-1;
@@ -954,7 +952,6 @@ async function findSheetLayout(sheetName){
   return {rows, headerRow:hi, dataStart:hi+1};
 }
 
-// Get next Sr No for a specific sheet (per-sheet, not global!)
 async function getNextSrNoForSheet(sheetName){
   try{
     const {rows, dataStart}=await findSheetLayout(sheetName);
@@ -967,26 +964,6 @@ async function getNextSrNoForSheet(sheetName){
   }catch(e){return 1;}
 }
 
-// Write order to a specific sheet at a specific row
-async function writeOrderRow(sheetName, order, rowNum){
-  const dateExcel=order.date?excelDateSerial(order.date):'';
-  const tgtExcel=order.tgt?excelDateSerial(order.tgt):'';
-  // 21 columns matching the sheet template
-  const row=[
-    order.sr, dateExcel, order.po, order.name, order.cat, order.type,
-    order.qty||'', order.quoted||'No', order.poRec||'No', order.approval||'No',
-    tgtExcel, order.stRM||'—', order.stShape||'—', order.stGrind||'—',
-    order.stWire||'—', order.stLathe||'—', order.stHT||'—',
-    order.stInsp||'—', order.stDisp||'—', order.status||'In Progress',
-    order.remarks||''
-  ];
-  const range='A'+rowNum+':U'+rowNum;
-  await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(sheetName)+'/range(address=\''+range+'\')',{
-    method:'PATCH', body:JSON.stringify({values:[row]})
-  });
-}
-
-// Convert ISO date to Excel serial number
 function excelDateSerial(isoDate){
   if(!isoDate)return '';
   const d=new Date(isoDate+'T00:00:00Z');
@@ -995,92 +972,21 @@ function excelDateSerial(isoDate){
   return Math.floor((d-epoch)/86400000);
 }
 
-// Save order to client sheet AND mirror to master Order Tracker
-async function saveOrderToSheets(order, targetSheetName){
-  const isMaster=targetSheetName===C.masterSheet;
-  // Step 1: Save to client sheet (find row, write)
-  const {rows:clientRows, dataStart}=await findSheetLayout(targetSheetName);
-  let clientRowNum=null;
-  if(A.editOrder){
-    for(let i=dataStart;i<clientRows.length;i++){
-      if(parseInt(clientRows[i][0])===parseInt(order.sr)){clientRowNum=i+1;break;}
-    }
-  }
-  if(!clientRowNum){
-    let last=dataStart;
-    for(let i=dataStart;i<clientRows.length;i++){if(clientRows[i].some(v=>v))last=i+1;}
-    clientRowNum=last+1;
-  }
-  await writeOrderRow(targetSheetName, order, clientRowNum);
-
-  // Step 2: Mirror to master Order Tracker (skip if target IS master)
-  if(!isMaster){
-    try{
-      const {rows:masterRows, dataStart:mds}=await findSheetLayout(C.masterSheet);
-      let masterRowNum=null;
-      // Find by client+sr combo (client name in PO column? No — use the unique combo of client+name+date)
-      // Better: just append to master, OR match by sr if same
-      if(A.editOrder){
-        for(let i=mds;i<masterRows.length;i++){
-          if(parseInt(masterRows[i][0])===parseInt(order.sr)&&
-             String(masterRows[i][3])===String(order.name)){
-            masterRowNum=i+1;break;
-          }
-        }
-      }
-      if(!masterRowNum){
-        let last=mds;
-        for(let i=mds;i<masterRows.length;i++){if(masterRows[i].some(v=>v))last=i+1;}
-        masterRowNum=last+1;
-        // Master gets a fresh sequential Sr No to avoid collisions across clients
-        order=Object.assign({}, order, {sr:await getNextSrNoForSheet(C.masterSheet)});
-      }
-      await writeOrderRow(C.masterSheet, order, masterRowNum);
-    }catch(e){
-      console.warn('Master mirror failed:',e);
-      // Don't fail the whole save if master mirror fails
-    }
-  }
-  return clientRowNum;
-}
-
-// ═══════════════════════════════════════
-// CLONE TEMPLATE FOR NEW CLIENT SHEET
-// ═══════════════════════════════════════
-async function createClientSheetFromTemplate(newSheetName){
-  // Use Graph API to copy worksheet within the same workbook
-  // Method: copy the UE template sheet
-  try{
-    const tok=await getToken();
-    const r=await fetch('https://graph.microsoft.com/v1.0/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.templateSheet)+'/copy',{
-      method:'POST',
-      headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},
-      body:JSON.stringify({positionType:'End', name:newSheetName})
-    });
-    if(!r.ok){
-      const txt=await r.text();
-      throw new Error('Sheet copy failed: '+r.status+' '+txt.slice(0,200));
-    }
-    return await r.json();
-  }catch(e){
-    // Fallback: create empty sheet with headers
-    console.warn('Template copy failed, creating blank:',e);
-    await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets',{
-      method:'POST', body:JSON.stringify({name:newSheetName})
-    });
-    // Write headers
-    const headers=[
-      ['JMC ENGINEERING — CLIENT ORDER TRACKER'],
-      ['Precision Tooling • Jigs • Fixtures'],
-      [],
-      [],
-      ['Sr\nNo','Order\nDate','Client PO No.','Product / Tool Name','Category','Tool Type','Qty','Quoted','Client PO\nReceived','Approval\nto Start','Target\nDelivery','Raw Material\nPurchased','Shaping /\nMilling / Sizing','Surface /\nCG Grinding','Wirecut /\nVMC','Jig Boring /\nLathe','Heat\nTreatment','Final\nInspection','Dispatch','Overall Status','Remarks / Hold Reason']
-    ];
-    await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(newSheetName)+'/range(address=\'A1:U5\')',{
-      method:'PATCH', body:JSON.stringify({values:headers})
-    });
-    return {name:newSheetName};
-  }
+async function writeOrderRow(sheetName, order, rowNum){
+  const dateExcel=order.date?excelDateSerial(order.date):'';
+  const tgtExcel=order.tgt?excelDateSerial(order.tgt):'';
+  const row=[
+    order.sr, dateExcel, order.po, order.client||'', order.name, order.cat, order.type,
+    order.qty||'', order.quoted||'No', order.poRec||'No', order.approval||'No',
+    tgtExcel, order.stRM||'—', order.stShape||'—', order.stGrind||'—',
+    order.stWire||'—', order.stLathe||'—', order.stHT||'—',
+    order.stInsp||'—', order.stDisp||'—', order.status||'In Progress',
+    order.remarks||''
+  ];
+  const range='A'+rowNum+':V'+rowNum;
+  await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(sheetName)+'/range(address=\''+range+'\')',{
+    method:'PATCH', body:JSON.stringify({values:[row]})
+  });
 }
 
 // ═══════════════════════════════════════
@@ -1094,76 +1000,57 @@ async function startApp(){
     let aRows=[];
     try{aRows=await readSheet(C.accSheet);}
     catch(e){throw new Error('Could not find "Access List" sheet.');}
+
     A.accessList=[];
     const yn=v=>(v||'').toString().trim().toUpperCase()!=='NO'&&(v||'').toString().trim()!=='';
     for(let i=1;i<aRows.length;i++){
       const r=aRows[i];if(!r[0])continue;
       A.accessList.push({
         email:(r[0]||'').toString().toLowerCase().trim(),
-        clientName:r[1]||'Client',sheet:r[2]||C.masterSheet,
+        clientName:r[1]||'Client',
+        sheet:r[2]||C.masterSheet,
         stages:(r[3]||'').toString().toUpperCase().trim(),
         images:yn(r[4]),qty:yn(r[5]),target:yn(r[6]),po:yn(r[7]),remarks:yn(r[8])
       });
     }
+
     const email=(A.user.username||'').toLowerCase().trim();
     const ur=A.accessList.find(x=>x.email===email);
     if(!ur){document.getElementById('denied-email').textContent=email;go('s-denied');return;}
     A.perms=ur;A.isAdmin=email===C.adminEmail.toLowerCase();
-
-    // Load all sheet names (for admin's client selector)
     A.sheetNames=await allSheetNames();
+
+    go('s-loading','Fetching orders...');
+    const rows=await readSheet(C.masterSheet);
+    const allOrders=parseOrders(rows);
+    A.allOrders=allOrders;
+    A.orders=A.isAdmin?allOrders:allOrders.filter(o=>o.client===ur.clientName);
 
     const ini=ur.clientName.replace(/[^A-Z]/gi,'').slice(0,2).toUpperCase()||'?';
     document.getElementById('tb-uname').textContent=ur.clientName;
     document.getElementById('tb-role').textContent=A.isAdmin?'Admin':'Client';
     document.getElementById('tb-av').textContent=ini;
-    document.getElementById('tb-sub').textContent=A.isAdmin?'Admin · all clients':ur.sheet+' orders';
+    document.getElementById('tb-sub').textContent=A.isAdmin?'Admin · all clients':'My orders';
     if(A.isAdmin){
       document.getElementById('admin-btn').style.display='inline-flex';
       document.getElementById('btn-add').style.display='inline-flex';
     }
+
+    const cf=document.getElementById('f-client');
     if(A.isAdmin){
-      go('s-loading','Fetching all client orders...');
-      await loadAllSheets();
-    } else {
-      go('s-loading','Fetching your orders...');
-      const rows=await readSheet(ur.sheet);
-      const orders=parseOrders(rows);
-      orders.forEach(o=>{o.client=ur.clientName;o.sheet=ur.sheet;});
-      A.orders=orders;A.allOrders=orders;
+      cf.innerHTML='<option value="">All clients</option>';
+      [...new Set(allOrders.map(o=>o.client).filter(Boolean))].sort().forEach(c=>{
+        const o=document.createElement('option');o.value=c;o.textContent=c;cf.appendChild(o);
+      });
+      cf.style.display='block';
+    }else{
+      cf.style.display='none';
     }
+
     buildHead();render();
     go('s-main');
     setTimeout(()=>loadThumbImages(A.orders),300);
   }catch(e){console.error(e);showErr('Failed to load',e.message||String(e));}
-}
-
-async function loadAllSheets(){
-  const clientSheets=A.sheetNames.filter(s=>!C.skipSheets.includes(s.toLowerCase()));
-  const cf=document.getElementById('f-client');
-  cf.innerHTML='<option value="">All clients</option>';
-  clientSheets.forEach(s=>{const o=document.createElement('option');o.value=s;o.textContent=s;cf.appendChild(o);});
-  cf.style.display='block';
-  A.allOrders=[];
-  for(const sheet of clientSheets){
-    try{
-      const rows=await readSheet(sheet);
-      const orders=parseOrders(rows);
-      const ac=A.accessList.find(x=>x.sheet===sheet);
-      const clientName=ac?ac.clientName:sheet;
-      orders.forEach(o=>{o.client=clientName;o.sheet=sheet;});
-      A.allOrders.push(...orders);
-    }catch(e){console.warn('Sheet read fail:',sheet,e);}
-  }
-  if(!A.allOrders.length){
-    try{
-      const rows=await readSheet(C.masterSheet);
-      const orders=parseOrders(rows);
-      orders.forEach(o=>{o.client='JMC';o.sheet=C.masterSheet;});
-      A.allOrders=orders;
-    }catch(e){}
-  }
-  A.orders=A.allOrders;
 }
 
 async function doRefresh(){
@@ -1175,13 +1062,12 @@ async function doRefresh(){
     A.stpFolderCache=await loadFolderRecursive(A.stpFolderId);
     A.wcFolderCache=await loadFolderRecursive(A.wcFolderId);
     A.sheetNames=await allSheetNames();
-    if(A.isAdmin)await loadAllSheets();
-    else{
-      const rows=await readSheet(A.perms.sheet);
-      const orders=parseOrders(rows);
-      orders.forEach(o=>{o.client=A.perms.clientName;o.sheet=A.perms.sheet;});
-      A.orders=orders;A.allOrders=orders;
-    }
+
+    const rows=await readSheet(C.masterSheet);
+    const allOrders=parseOrders(rows);
+    A.allOrders=allOrders;
+    A.orders=A.isAdmin?allOrders:allOrders.filter(o=>o.client===A.perms.clientName);
+
     render();go('s-main');toast('Refreshed!');
     loadThumbImages(A.orders);
   }catch(e){showErr('Refresh failed',e.message||String(e));}
@@ -1201,6 +1087,7 @@ function parseOrders(rows){
   const col=(...kws)=>{for(const k of kws){const i=h.findIndex(x=>x.includes(k));if(i>=0)return i;}return -1;};
   const cc={
     sr:col('sr','no'),date:col('order date','date'),po:col('client po','po no'),
+    client:col('client name','client'),
     name:col('product','tool name'),cat:col('category'),type:col('tool type'),
     qty:col('qty','quantity'),quoted:col('quoted'),poRec:col('po received','received'),
     approval:col('approval'),tgt:col('target'),
@@ -1214,7 +1101,6 @@ function parseOrders(rows){
     if(!v||v==='—')return '—';
     if(typeof v==='number'){const d=new Date((v-25569)*86400000);return d.getDate().toString().padStart(2,'0')+'-'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+'-'+String(d.getFullYear()).slice(-2);}
     const s=String(v);
-    // ISO date 2026-04-10 → 10-Apr-26
     const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
     if(m){const d=new Date(s);return d.getDate().toString().padStart(2,'0')+'-'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+'-'+String(d.getFullYear()).slice(-2);}
     return s;
@@ -1234,7 +1120,9 @@ function parseOrders(rows){
     orders.push({
       sr:r[cc.sr]||i-hi,
       date:fmtDisp(r[cc.date]),dateISO:fmtISO(r[cc.date]),
-      po:r[cc.po]||'—',name:r[cc.name]||'—',cat:r[cc.cat]||'—',
+      po:r[cc.po]||'—',
+      client:r[cc.client]||'',
+      name:r[cc.name]||'—',cat:r[cc.cat]||'—',
       type:r[cc.type]||'',qty:cc.qty>=0?r[cc.qty]:'',
       quoted:r[cc.quoted]||'No',poRec:cc.poRec>=0?r[cc.poRec]:'No',
       approval:cc.approval>=0?r[cc.approval]:'No',
@@ -1244,13 +1132,12 @@ function parseOrders(rows){
       stLathe:cc.lathe>=0?r[cc.lathe]:'—',stHT:cc.ht>=0?r[cc.ht]:'—',
       stInsp:cc.inspect>=0?r[cc.inspect]:'—',stDisp:cc.dispatch>=0?r[cc.dispatch]:'—',
       status:r[cc.status]||'In Progress',remarks:r[cc.remarks]||'',
-      client:'',sheet:''
+      sheet:C.masterSheet
     });
   }
   return orders;
 }
 
-// Days until target (negative = late, null = no target/delivered)
 function daysToTarget(o){
   if(!o.tgtISO)return null;
   const status=(o.status||'').toLowerCase();
@@ -1380,7 +1267,6 @@ async function openFMModal(fileItem,kind){
   addRow('Format', ext);
   addRow('Order Sr', '#'+(A.selOrder?A.selOrder.sr:'—'));
   document.getElementById('fm-modal').style.display='flex';
-  // Pre-fetch download URL
   try{
     const info=await gapi('/drives/'+A.driveId+'/items/'+fileItem.id);
     A._lastFMUrl=info['@microsoft.graph.downloadUrl'];
@@ -1431,7 +1317,6 @@ function stagesDots(o){
   }).join('');
 }
 
-// Production timeline (visual)
 function buildTimeline(o){
   const stages=[
     ['Raw',o.stRM],['Shape',o.stShape],['Grind',o.stGrind],
@@ -1497,7 +1382,7 @@ function getFiltered(){
     if(s&&!o.name.toLowerCase().includes(s)&&!(o.po||'').toString().toLowerCase().includes(s)&&!(o.type||'').toLowerCase().includes(s))return false;
     if(fc&&!o.cat.includes(fc))return false;
     if(fs&&o.status!==fs)return false;
-    if(fcl&&o.client!==fcl&&o.sheet!==fcl)return false;
+    if(fcl&&o.client!==fcl)return false;
     if(fd&&o.dateISO&&o.dateISO<fd)return false;
     if(td&&o.dateISO&&o.dateISO>td)return false;
     const sl=o.status.toLowerCase();
@@ -1535,7 +1420,6 @@ function render(){
     h+=`<td>${catB(o.cat)}</td>`;
     if(p.images){
       h+=`<td style="text-align:center"><div class="thumb" onclick="event.stopPropagation();openImgModal(${o.sr},'${ne}','${te}')"><img id="thumb-${o.sr}" src="${svgD}" alt="tool" style="opacity:.4"></div></td>`;
-      // Files cell: PDF, STP, WC chips
       const hasPDF=!!findFileForSr(A.pdfFolderCache,o.sr);
       const hasSTP=!!findFileForSr(A.stpFolderCache,o.sr);
       const hasWC=!!findFileForSr(A.wcFolderCache,o.sr);
@@ -1559,7 +1443,6 @@ function render(){
 }
 
 async function quickViewFile(sr, kind, sheet){
-  // Find order
   const o=A.orders.find(x=>x.sr==sr&&(!sheet||x.sheet===sheet))||A.orders.find(x=>x.sr==sr);
   if(!o){toast('Order not found');return;}
   A.selOrder=o;
@@ -1601,7 +1484,6 @@ function showDet(o){
   if(o.client)dc('Client',`<span class="b-client">${o.client}</span>`);
   if(p.remarks&&o.remarks)dc('Remarks',o.remarks);
 
-  // Production timeline
   const sd=document.getElementById('det-stages');
   if(p.stages!=='NO'){
     sd.style.display='block';
@@ -1616,7 +1498,6 @@ function showDet(o){
     });
   } else sd.style.display='none';
 
-  // Files list
   const fl=document.getElementById('sp-files-list');fl.innerHTML='';
   let hasAnyFile=false;
   const pdfMatch=findFileForSr(A.pdfFolderCache,o.sr);
@@ -1646,13 +1527,13 @@ function showDet(o){
 function populateClientSelector(){
   const sel=document.getElementById('f-client-sheet');
   sel.innerHTML='<option value="">— Select client —</option>';
-  // Get unique sheets from access list
   const seen=new Set();
   A.accessList.forEach(ac=>{
-    if(ac.sheet&&!seen.has(ac.sheet)&&!C.skipSheets.includes(ac.sheet.toLowerCase())){
-      seen.add(ac.sheet);
+    if(ac.clientName && !seen.has(ac.clientName)){
+      seen.add(ac.clientName);
       const opt=document.createElement('option');
-      opt.value=ac.sheet;opt.textContent=ac.clientName+' ('+ac.sheet+')';
+      opt.value=ac.clientName;
+      opt.textContent=ac.clientName;
       sel.appendChild(opt);
     }
   });
@@ -1665,7 +1546,6 @@ async function openAddOrder(){
   document.getElementById('sp-edit-btn').style.display='none';
   document.getElementById('sp-view').style.display='none';
   document.getElementById('sp-edit').style.display='block';
-  // Show client selector for admin (new order only)
   document.getElementById('client-selector-section').style.display=A.isAdmin?'block':'none';
   populateClientSelector();
   clearForm();
@@ -1683,7 +1563,6 @@ function switchToEdit(){
   document.getElementById('btn-del-order').style.display='inline-flex';
   document.getElementById('sp-view').style.display='none';
   document.getElementById('sp-edit').style.display='block';
-  // Hide client selector when editing (sheet is already determined)
   document.getElementById('client-selector-section').style.display='none';
   fillForm(o);
   openSP('edit');
@@ -1721,7 +1600,6 @@ function fillForm(o){
   setSelect('st-grind',o.stGrind);setSelect('st-wire',o.stWire);
   setSelect('st-lathe',o.stLathe);setSelect('st-ht',o.stHT);
   setSelect('st-insp',o.stInsp);setSelect('st-disp',o.stDisp);
-  // Show existing files in upload zones
   const showExisting=(zoneId,nameId,cache)=>{
     const match=findFileForSr(cache,o.sr);
     if(match){
@@ -1765,6 +1643,7 @@ function handleSTPFile(input){if(!input.files.length)return;A.pendingSTPFile=inp
 function handleWCFile(input){if(!input.files.length)return;A.pendingWCFile=input.files[0];document.getElementById('wc-name').textContent='⬆ '+A.pendingWCFile.name;document.getElementById('wc-zone').classList.add('has-file');}
 
 async function uploadFileToFolder(file, folderId, sr, cleanName, ext){
+  if(!folderId) throw new Error('Upload folder not initialized. Folder ID is missing.');
   const fileName=sr+'-'+cleanName+'.'+(ext||file.name.split('.').pop().toLowerCase());
   const buf=await file.arrayBuffer();
   const res=await gapiUpload('/drives/'+A.driveId+'/items/'+folderId+':/'+encodeURIComponent(fileName)+':/content',buf,file.type||'application/octet-stream');
@@ -1783,40 +1662,41 @@ async function saveOrder(){
   const o=getFormOrder();
   if(!o.name){toast('Product name is required');return;}
 
-  // Determine target sheet
-  let targetSheet=A.perms.sheet;
-  if(A.isAdmin&&!A.editOrder){
+  let clientName=A.perms.clientName;
+  if(A.isAdmin && !A.editOrder){
     const sel=getVal('f-client-sheet');
-    if(!sel){toast('Please select a client sheet');return;}
-    targetSheet=sel;
+    if(!sel){toast('Please select a client');return;}
+    clientName=sel;
   } else if(A.editOrder){
-    targetSheet=A.editOrder.sheet||A.perms.sheet;
+    clientName=A.editOrder.client||A.perms.clientName;
   }
+  o.client=clientName;
 
   document.getElementById('btn-save-order').disabled=true;
   toast('Saving order...',10000);
 
   try{
-    // Auto-assign Sr No on new orders
     if(!A.editOrder){
-      o.sr=await getNextSrNoForSheet(targetSheet);
+      o.sr=await getNextSrNoForSheet(C.masterSheet);
     } else {
       o.sr=parseInt(A.editOrder.sr);
     }
 
     const cleanName=o.name.toUpperCase().replace(/[^A-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,40);
 
-    // Upload Image
+    if(A.pendingImgFile && !A.imgFolderId){toast('Image folder missing'); document.getElementById('btn-save-order').disabled=false; return;}
+    if(A.pendingPDFFile && !A.pdfFolderId){toast('PDF folder missing'); document.getElementById('btn-save-order').disabled=false; return;}
+    if(A.pendingSTPFile && !A.stpFolderId){toast('STP folder missing'); document.getElementById('btn-save-order').disabled=false; return;}
+    if(A.pendingWCFile && !A.wcFolderId){toast('Wirecut folder missing'); document.getElementById('btn-save-order').disabled=false; return;}
+
     if(A.pendingImgFile&&A.imgFolderId){
       const {fileName, res}=await uploadFileToFolder(A.pendingImgFile, A.imgFolderId, o.sr, cleanName);
       A.imgFolderCache=refreshCacheAfterUpload(A.imgFolderCache, o.sr, fileName, res?.id);
       delete A.imgCache['sr-'+o.sr];
     }
 
-    // Upload PDF (in client subfolder)
     if(A.pendingPDFFile&&A.pdfFolderId){
-      const ac=A.accessList.find(x=>x.sheet===targetSheet);
-      const clientFolderName=(ac?ac.clientName:targetSheet).replace(/[^A-Za-z0-9]/g,'-');
+      const clientFolderName=clientName.replace(/[^A-Za-z0-9]/g,'-');
       let clientFolderId=A.pdfFolderId;
       try{
         const cf=await gapi('/drives/'+A.driveId+'/items/'+A.pdfFolderId+'/children?$select=id,name,folder');
@@ -1833,32 +1713,39 @@ async function saveOrder(){
       A.pdfFolderCache=refreshCacheAfterUpload(A.pdfFolderCache, o.sr, fileName, res?.id);
     }
 
-    // Upload STP
     if(A.pendingSTPFile&&A.stpFolderId){
       const ext=A.pendingSTPFile.name.split('.').pop().toLowerCase();
       const {fileName, res}=await uploadFileToFolder(A.pendingSTPFile, A.stpFolderId, o.sr, cleanName, ext);
       A.stpFolderCache=refreshCacheAfterUpload(A.stpFolderCache, o.sr, fileName, res?.id);
     }
 
-    // Upload Wirecut
     if(A.pendingWCFile&&A.wcFolderId){
       const ext=A.pendingWCFile.name.split('.').pop().toLowerCase();
       const {fileName, res}=await uploadFileToFolder(A.pendingWCFile, A.wcFolderId, o.sr, cleanName, ext);
       A.wcFolderCache=refreshCacheAfterUpload(A.wcFolderCache, o.sr, fileName, res?.id);
     }
 
-    // Write to Excel — client sheet AND mirror to master
-    await saveOrderToSheets(o, targetSheet);
-
-    // Update local state
+    const {rows, dataStart}=await findSheetLayout(C.masterSheet);
+    let rowNum=null;
     if(A.editOrder){
-      const idx=A.allOrders.findIndex(x=>x.sr==o.sr&&x.sheet===targetSheet);
-      if(idx>=0)Object.assign(A.allOrders[idx], o, {dateISO:o.date, tgtISO:o.tgt, sheet:targetSheet});
-    } else {
-      const ac=A.accessList.find(x=>x.sheet===targetSheet);
-      A.allOrders.push({...o, dateISO:o.date, tgtISO:o.tgt, client:ac?ac.clientName:targetSheet, sheet:targetSheet});
+      for(let i=dataStart;i<rows.length;i++){
+        if(parseInt(rows[i][0])===parseInt(o.sr)){rowNum=i+1;break;}
+      }
     }
-    A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(o=>o.sheet===A.perms.sheet);
+    if(!rowNum){
+      let last=dataStart;
+      for(let i=dataStart;i<rows.length;i++){if(rows[i].some(v=>v!==undefined&&v!==null&&v!==''))last=i+1;}
+      rowNum=last+1;
+    }
+    await writeOrderRow(C.masterSheet, o, rowNum);
+
+    if(A.editOrder){
+      const idx=A.allOrders.findIndex(x=>x.sr==o.sr);
+      if(idx>=0)Object.assign(A.allOrders[idx], o, {dateISO:o.date, tgtISO:o.tgt, client:clientName});
+    } else {
+      A.allOrders.push({...o, dateISO:o.date, tgtISO:o.tgt, client:clientName});
+    }
+    A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(o=>o.client===A.perms.clientName);
 
     closeSP();render();
     toast('✅ Order saved!');
@@ -1872,35 +1759,20 @@ async function saveOrder(){
 
 async function deleteOrder(){
   if(!A.editOrder)return;
-  if(!confirm('Delete Order #'+A.editOrder.sr+' — '+A.editOrder.name+'?\n\nThis clears the row in '+A.editOrder.sheet+' and Order Tracker.'))return;
+  if(!confirm('Delete Order #'+A.editOrder.sr+' — '+A.editOrder.name+'?'))return;
   toast('Deleting...',5000);
   try{
     const sr=parseInt(A.editOrder.sr);
-    const sheet=A.editOrder.sheet||A.perms.sheet;
-    // Clear in client sheet
-    const {rows, dataStart}=await findSheetLayout(sheet);
+    const {rows, dataStart}=await findSheetLayout(C.masterSheet);
     for(let i=dataStart;i<rows.length;i++){
       if(parseInt(rows[i][0])===sr){
-        const range='A'+(i+1)+':U'+(i+1);
-        await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(sheet)+'/range(address=\''+range+'\')/clear',{method:'POST',body:JSON.stringify({applyTo:'Contents'})});
+        const range='A'+(i+1)+':V'+(i+1);
+        await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\''+range+'\')/clear',{method:'POST',body:JSON.stringify({applyTo:'Contents'})});
         break;
       }
     }
-    // Clear in master (if not master)
-    if(sheet!==C.masterSheet){
-      try{
-        const {rows:mr, dataStart:mds}=await findSheetLayout(C.masterSheet);
-        for(let i=mds;i<mr.length;i++){
-          if(String(mr[i][3])===String(A.editOrder.name)){
-            const range='A'+(i+1)+':U'+(i+1);
-            await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\''+range+'\')/clear',{method:'POST',body:JSON.stringify({applyTo:'Contents'})});
-            break;
-          }
-        }
-      }catch(e){}
-    }
-    A.allOrders=A.allOrders.filter(o=>!(o.sr==sr&&o.sheet===sheet));
-    A.orders=A.allOrders;
+    A.allOrders=A.allOrders.filter(o=>!(o.sr==sr));
+    A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(o=>o.client===A.perms.clientName);
     A.selOrder=null;A.editOrder=null;
     closeSP();render();
     toast('✅ Order deleted!');
@@ -2021,7 +1893,6 @@ async function doPDF(withImages){
 // ═══════════════════════════════════════
 function openAdmin(){
   if(!A.isAdmin)return;
-  // Column toggles
   const ct=document.getElementById('adm-cols');ct.innerHTML='';
   const cols=[['po','PO No.'],['images','Tool images & files'],['qty','Qty'],['target','Target date'],['days','Days indicator'],['client','Client'],['remarks','Remarks'],['quoted','Quoted column'],['stages','Manufacturing stages']];
   cols.forEach(([key,label])=>{
@@ -2029,7 +1900,6 @@ function openAdmin(){
     d.innerHTML=`<span class="toggle-label">${label}</span><label class="toggle"><input type="checkbox" ${A.adminCols[key]?'checked':''} onchange="A.adminCols['${key}']=this.checked;buildHead();render()"><span class="tslider"></span></label>`;
     ct.appendChild(d);
   });
-  // Client list
   const cl=document.getElementById('adm-clients');cl.innerHTML='';
   A.accessList.forEach((ac,i)=>{
     const d=document.createElement('div');d.className='client-card';
@@ -2037,7 +1907,6 @@ function openAdmin(){
     d.innerHTML=`<div class="client-card-name">${ac.clientName} ${ac.email===C.adminEmail?'👑':''}</div><div class="client-card-info">${ac.email} · Sheet: ${ac.sheet}</div><div class="client-perms">${perms}</div>${ac.email!==C.adminEmail?`<button class="btn-adm btn-adm-danger" style="margin-top:8px;font-size:11px;padding:4px 10px" onclick="removeClient(${i})">Remove</button>`:''}`;
     cl.appendChild(d);
   });
-  // Existing-sheet dropdown
   const exSel=document.getElementById('nc-sheet-existing');
   exSel.innerHTML='<option value="">— Select existing sheet —</option>';
   A.sheetNames.filter(s=>!C.skipSheets.includes(s.toLowerCase())).forEach(s=>{
@@ -2057,31 +1926,11 @@ function toggleSheetMode(){
 async function addClient(){
   const email=getVal('nc-email').trim().toLowerCase();
   const name=getVal('nc-name').trim();
-  const mode=document.querySelector('input[name="nc-sheet-mode"]:checked').value;
-  let sheet='';
-  if(mode==='new'){
-    sheet=getVal('nc-sheet-new').trim();
-    if(!sheet){toast('Enter sheet name');return;}
-    // Check for duplicate
-    if(A.sheetNames.some(s=>s.toLowerCase()===sheet.toLowerCase())){
-      toast('Sheet "'+sheet+'" already exists. Use "existing" mode.',5000);return;
-    }
-  } else {
-    sheet=getVal('nc-sheet-existing');
-    if(!sheet){toast('Select existing sheet');return;}
-  }
   if(!email||!name){toast('Email and client name required');return;}
-
-  if(mode==='new'){
-    toast('Creating new sheet from template...',8000);
-    try{
-      await createClientSheetFromTemplate(sheet);
-      A.sheetNames.push(sheet);
-      toast('✅ Sheet "'+sheet+'" created!',3000);
-    }catch(e){
-      toast('Sheet creation failed: '+e.message,6000);return;
-    }
-  }
+  
+  // Single-sheet mode: all clients share Order Tracker
+  const sheet = C.masterSheet;
+  
   A.accessList.push({
     email, clientName:name, sheet,
     stages:document.getElementById('nc-stages').checked?'FULL':'NO',
@@ -2091,7 +1940,7 @@ async function addClient(){
     po:document.getElementById('nc-po').checked,
     remarks:document.getElementById('nc-remarks').checked
   });
-  ['nc-email','nc-name','nc-sheet-new'].forEach(id=>document.getElementById(id).value='');
+  ['nc-email','nc-name','nc-sheet-new'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   toast('Client added! Click Sync to save to Excel.',4000);
   openAdmin();
 }
@@ -2104,7 +1953,6 @@ async function syncToExcel(){
   try{
     const rows=[['Email','Client Name','Sheet Name','Stages','Images','Qty','Target','PO No','Remarks']];
     A.accessList.forEach(ac=>rows.push([ac.email,ac.clientName,ac.sheet,ac.stages,ac.images?'YES':'NO',ac.qty?'YES':'NO',ac.target?'YES':'NO',ac.po?'YES':'NO',ac.remarks?'YES':'NO']));
-    // Clear existing first
     await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.accSheet)+'/range(address=\'A1:I1000\')/clear',{method:'POST',body:JSON.stringify({applyTo:'Contents'})});
     const range='A1:I'+rows.length;
     await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.accSheet)+'/range(address=\''+range+'\')',{method:'PATCH',body:JSON.stringify({values:rows})});
