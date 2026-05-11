@@ -125,7 +125,6 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
 .s-wait{background:#FEF3C7;color:#92400E}
 .b-client{background:#F0FFFE;color:#0F7272;border:1px solid #99F6E4;font-size:10px;padding:2px 8px;border-radius:20px;font-weight:600}
 
-/* Days indicator */
 .days-pill{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.3px;display:inline-flex;align-items:center;gap:3px}
 .dp-ok{background:#ECFDF5;color:#065F46}
 .dp-warn{background:#FEF3C7;color:#92400E}
@@ -151,7 +150,6 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
 .sd-hold{background:var(--danger)}
 .sd-na{background:var(--border)}
 
-/* Side panel */
 .sp-header{padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surface);z-index:10;flex-shrink:0}
 .sp-title{font-size:16px;font-weight:700;color:var(--navy)}
 .sp-sub{font-size:11px;color:var(--text2);margin-top:2px}
@@ -192,7 +190,6 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
 .btn-del{padding:10px 14px;border-radius:var(--r-sm);border:1.5px solid #FECACA;background:#FEF2F2;color:#DC2626;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
 .btn-del:hover{background:#FEE2E2}
 
-/* Detail view */
 .detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px}
 .dc{background:var(--surface);border-radius:var(--r-sm);padding:10px 12px;border:1px solid var(--border)}
 .dc-lbl{font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;font-weight:600}
@@ -207,7 +204,6 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
 .btn-edit{background:var(--blue);color:#fff;border-color:var(--blue)}
 .btn-edit:hover{background:var(--blue-light)}
 
-/* Production timeline */
 .timeline{display:flex;align-items:center;gap:0;margin:8px 0 4px;padding:6px;background:var(--bg);border-radius:var(--r-sm);overflow-x:auto}
 .tl-step{flex:1;min-width:60px;text-align:center;position:relative;padding:6px 4px}
 .tl-step::before{content:'';position:absolute;top:50%;left:0;right:0;height:2px;background:var(--border);z-index:0}
@@ -220,17 +216,14 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
 .tl-dot.na{border-style:dashed;color:var(--text3)}
 .tl-lbl{font-size:9px;color:var(--text2);font-weight:500;line-height:1.2}
 
-/* Files list */
 .file-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r-sm);border:1px solid var(--border);margin-bottom:6px;transition:all .15s;cursor:pointer;background:var(--surface)}
 .file-row:hover{background:var(--bg);border-color:var(--blue)}
 .file-row-icon{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
 .file-row-name{flex:1;font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .file-row-meta{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;flex-shrink:0}
-.file-row-actions{display:flex;gap:4px;flex-shrink:0}
 .file-row-btn{padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--surface);font-size:10px;font-weight:600;cursor:pointer;color:var(--text2);font-family:'DM Sans',sans-serif;transition:all .1s}
 .file-row-btn:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
 
-/* Modals */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(4px)}
 .modal-box{background:var(--surface);border-radius:var(--r-xl);padding:28px;max-width:480px;width:100%;text-align:center;box-shadow:var(--shadow-xl)}
 .modal-img{width:280px;height:280px;object-fit:contain;border-radius:var(--r-md);background:var(--bg);padding:16px;display:block;margin:0 auto 16px;border:1px solid var(--border)}
@@ -242,7 +235,6 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
 .pdf-modal-title{font-size:14px;font-weight:600;color:#fff;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pdf-iframe{flex:1;border:none;background:#525659;width:100%}
 
-/* File metadata modal (STP/Wirecut) */
 .fm-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;backdrop-filter:blur(4px)}
 .fm-box{background:var(--surface);border-radius:var(--r-xl);padding:32px;max-width:440px;width:100%;box-shadow:var(--shadow-xl)}
 .fm-icon{width:64px;height:64px;border-radius:14px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700}
@@ -262,7 +254,6 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
 .fm-btn-sec{background:transparent;color:var(--text2);border-color:var(--border)}
 .fm-btn-sec:hover{background:var(--bg)}
 
-/* Export modal */
 .exp-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:900;backdrop-filter:blur(4px)}
 .exp-box{background:var(--surface);border-radius:var(--r-xl);padding:28px;width:360px;box-shadow:var(--shadow-xl)}
 .exp-title{font-size:16px;font-weight:700;color:var(--navy);margin-bottom:6px}
@@ -273,7 +264,6 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
 .exp-card h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
 .exp-card p{font-size:11px;color:var(--text2)}
 
-/* Admin */
 .admin-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500;backdrop-filter:blur(2px)}
 .admin-drawer{position:fixed;right:0;top:0;bottom:0;width:440px;background:var(--surface);border-left:1px solid var(--border);box-shadow:var(--shadow-xl);overflow-y:auto;z-index:501;display:flex;flex-direction:column}
 .adm-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:1}
@@ -297,11 +287,6 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
 .perm-tag.on{background:#EBF4FF;color:var(--blue);border-color:#BDDEFF}
 .adm-input{width:100%;padding:8px 10px;border-radius:var(--r-sm);border:1.5px solid var(--border);font-size:12px;font-family:'DM Sans',sans-serif;margin-bottom:8px;outline:none;color:var(--text)}
 .adm-input:focus{border-color:var(--blue)}
-.adm-radio-row{display:flex;gap:12px;margin-bottom:10px}
-.adm-radio-row label{font-size:11px;display:flex;align-items:center;gap:5px;cursor:pointer;color:var(--text2);padding:6px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);flex:1;transition:all .1s}
-.adm-radio-row label:hover{background:var(--bg)}
-.adm-radio-row label input{margin:0}
-.adm-radio-row input:checked+span{color:var(--blue);font-weight:600}
 .adm-check-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
 .adm-check-row label{font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;color:var(--text2)}
 .btn-adm{padding:8px 14px;border-radius:var(--r-sm);font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;border:1.5px solid transparent;transition:all .15s}
@@ -470,11 +455,11 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
         <div class="sp-section" id="client-selector-section" style="display:none">
           <div class="sp-sec-label">Client</div>
           <div class="field">
-            <label>Assign to client <span class="req">*</span></label>
-            <select id="f-client-sheet">
+            <label>This order belongs to <span class="req">*</span></label>
+            <select id="f-client-name">
               <option value="">— Select client —</option>
             </select>
-            <div class="field-hint">Order will be tagged with this client and saved to the master Order Tracker</div>
+            <div class="field-hint">Only this client will see this order in their dashboard</div>
           </div>
         </div>
 
@@ -552,7 +537,7 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
           <div class="sp-sec-label">Engineering Drawing (PDF)</div>
           <div class="upload-zone" id="pdf-zone" onclick="document.getElementById('pdf-file').click()">
             <div style="font-size:22px">📄</div>
-            <div class="upload-label">Click to upload drawing PDF (up to 50 pages)</div>
+            <div class="upload-label">Click to upload drawing PDF</div>
             <div class="upload-name" id="pdf-name"></div>
             <input type="file" id="pdf-file" accept=".pdf" onchange="handlePDFFile(this)">
           </div>
@@ -611,7 +596,7 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
   <iframe id="pdf-iframe" class="pdf-iframe" src=""></iframe>
 </div>
 
-<!-- FILE METADATA MODAL (STP/Wirecut) -->
+<!-- FILE METADATA MODAL -->
 <div id="fm-modal" style="display:none" class="fm-modal-bg" onclick="if(event.target===this)closeFMModal()">
   <div class="fm-box">
     <div class="fm-icon" id="fm-icon">🧊</div>
@@ -668,19 +653,10 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
       <div style="background:var(--bg);border-radius:var(--r-md);padding:14px;border:1px solid var(--border);margin-top:10px">
         <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:10px">+ Add New Client</div>
         <input class="adm-input" id="nc-email" placeholder="Email address" type="email">
-        <input class="adm-input" id="nc-name" placeholder="Client name (e.g. Rane)">
+        <input class="adm-input" id="nc-name" placeholder="Client name (e.g. Rane, Yamaha)">
+        <div class="field-hint" style="margin-bottom:10px;color:var(--text3);font-size:11px">This name will appear in the "Client" column. Match it exactly across all orders for this client.</div>
 
-        <div style="font-size:11px;font-weight:600;color:var(--text2);margin:10px 0 6px">Sheet</div>
-        <div class="adm-radio-row">
-          <label><input type="radio" name="nc-sheet-mode" value="new" checked onchange="toggleSheetMode()"><span>Create new</span></label>
-          <label><input type="radio" name="nc-sheet-mode" value="existing" onchange="toggleSheetMode()"><span>Use existing</span></label>
-        </div>
-        <input class="adm-input" id="nc-sheet-new" placeholder="New sheet name (will be created)">
-        <select class="adm-input" id="nc-sheet-existing" style="display:none">
-          <option value="">— Select existing sheet —</option>
-        </select>
-
-        <div style="font-size:11px;font-weight:600;color:var(--text2);margin:10px 0 6px">Permissions</div>
+        <div style="font-size:11px;font-weight:600;color:var(--text2);margin:10px 0 6px">Permissions (what this client can see)</div>
         <div class="adm-check-row">
           <label><input type="checkbox" id="nc-stages" checked> Stages</label>
           <label><input type="checkbox" id="nc-images" checked> Images</label>
@@ -694,7 +670,7 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
     </div>
     <div class="adm-section">
       <div class="adm-sec-label">Sync Access List</div>
-      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Push access list changes to your Excel on OneDrive.</p>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Push access list changes to Excel.</p>
       <button class="btn-adm-sync" onclick="syncToExcel()">⬆ Sync Access List to Excel</button>
     </div>
   </div>
@@ -718,7 +694,6 @@ const C = {
   accSheet:    'Access List',
   masterSheet: 'Order Tracker',
   adminEmail:  'info@jmcengg.com',
-  skipSheets:  ['order tracker','access list','archieve','archive','dashboard','sheet1','sheet2'],
   redirectUri: 'https://jmcengineering.github.io/jmc-order-tracker/jmc_order_tracker.html'
 };
 
@@ -727,16 +702,15 @@ const C = {
 // ═══════════════════════════════════════
 let A = {
   msal:null, user:null, token:null,
-  fileId:null, driveId:null,
+  fileId:null, driveId:null, parentFolderId:null,
   imgFolderId:null, pdfFolderId:null, stpFolderId:null, wcFolderId:null,
   imgFolderCache:null, pdfFolderCache:null, stpFolderCache:null, wcFolderCache:null,
   logoUrl:null, imgCache:{},
   perms:null, accessList:[], orders:[], allOrders:[],
   tab:'all', selOrder:null, editOrder:null, isAdmin:false,
-  sheetNames:[],
-  adminCols:{po:true,images:true,qty:true,target:true,remarks:true,client:true,stages:true,quoted:true,approval:true,days:true},
+  adminCols:{po:true,images:true,qty:true,target:true,remarks:true,client:true,stages:true,quoted:true,days:true},
   pendingImgFile:null, pendingPDFFile:null, pendingSTPFile:null, pendingWCFile:null,
-  _lastPdfBlobUrl:null, _lastFMBlob:null, _lastFMName:null, _lastFMUrl:null
+  _lastPdfBlobUrl:null, _lastPdfFileName:null, _lastFMUrl:null, _lastFMName:null
 };
 
 // ═══════════════════════════════════════
@@ -745,13 +719,12 @@ let A = {
 const SCREENS=['s-login','s-loading','s-error','s-denied','s-main'];
 function go(id,msg){
   SCREENS.forEach(s=>{
-    const el=document.getElementById(s);
-    if(!el) return;
+    const el=document.getElementById(s);if(!el)return;
     if(s===id){el.style.display='flex';el.style.visibility='visible';}
     else{el.style.display='none';el.style.visibility='hidden';}
   });
   document.body.style.overflow=(id==='s-main')?'auto':'hidden';
-  if(id==='s-loading'&&msg) document.getElementById('load-msg').textContent=msg;
+  if(id==='s-loading'&&msg)document.getElementById('load-msg').textContent=msg;
 }
 function goLogin(){go('s-login');}
 function showErr(t,m){
@@ -791,7 +764,7 @@ async function initMSAL(){
   goLogin();
 }
 async function doLogin(){
-  if(!A.msal){showErr('Not ready','App still loading. Please wait.');return;}
+  if(!A.msal){showErr('Not ready','App still loading.');return;}
   try{clearMSALLocks();await A.msal.loginRedirect({scopes:C.scopes});}
   catch(e){
     if(e.message&&e.message.includes('interaction_in_progress')){
@@ -802,9 +775,7 @@ async function doLogin(){
 }
 function clearMSALLocks(){
   Object.keys(sessionStorage).forEach(k=>{
-    if(k.includes('msal')||k.includes('interaction')||k.includes('login.windows')){
-      sessionStorage.removeItem(k);
-    }
+    if(k.includes('msal')||k.includes('interaction')||k.includes('login.windows'))sessionStorage.removeItem(k);
   });
 }
 async function getToken(){
@@ -838,7 +809,7 @@ async function gapiUpload(path,data,contentType){
 }
 
 // ═══════════════════════════════════════
-// FIND FILE + FOLDERS
+// FIND FILE + ENSURE FOLDERS (robust)
 // ═══════════════════════════════════════
 async function findFile(){
   try{
@@ -862,31 +833,22 @@ async function findFile(){
       }
     }catch(e){}
   }
-  if(!res||!res.value||!res.value.length)throw new Error('Excel file not found: "'+C.fileSearch+'"\nMake sure the file is on OneDrive.');
+  if(!res||!res.value||!res.value.length)throw new Error('Excel file not found: "'+C.fileSearch+'"');
   const f=res.value.find(x=>x.name.match(/\.(xlsm|xlsx)$/i));
   if(!f)throw new Error('No Excel file matching: '+C.fileSearch);
   A.fileId=f.id;
-  const parentId=f.parentReference.id;
+  A.parentFolderId=f.parentReference.id;
 
+  // Ensure all folders exist (with proper error handling — no silent nulls!)
+  A.imgFolderId=await ensureFolder(C.imgFolder);
+  A.pdfFolderId=await ensureFolder(C.pdfFolder);
+  A.stpFolderId=await ensureFolder(C.stpFolder);
+  A.wcFolderId=await ensureFolder(C.wcFolder);
+
+  // Load logo
   try{
-    const ch=await gapi('/drives/'+A.driveId+'/items/'+parentId+'/children');
+    const ch=await gapi('/drives/'+A.driveId+'/items/'+A.parentFolderId+'/children?$select=id,name');
     const items=ch.value||[];
-    const ensureFolder=async(name)=>{
-      const existing=items.find(x=>x.name===name&&x.folder);
-      if(existing)return existing.id;
-      try{
-        const created=await gapi('/drives/'+A.driveId+'/items/'+parentId+'/children',{
-          method:'POST',body:JSON.stringify({name,folder:{},['@microsoft.graph.conflictBehavior']:'rename'})
-        });
-        return created?created.id:null;
-      }catch(e){return null;}
-    };
-    const imgF=items.find(x=>x.name===C.imgFolder&&x.folder);
-    if(imgF)A.imgFolderId=imgF.id;else A.imgFolderId=await ensureFolder(C.imgFolder);
-    A.pdfFolderId=await ensureFolder(C.pdfFolder);
-    A.stpFolderId=await ensureFolder(C.stpFolder);
-    A.wcFolderId=await ensureFolder(C.wcFolder);
-
     const logoF=items.find(x=>x.name===C.logoFile);
     if(logoF){
       const li=await gapi('/drives/'+A.driveId+'/items/'+logoF.id);
@@ -899,29 +861,65 @@ async function findFile(){
         if(tw)tw.innerHTML=inj;
       }
     }
-    if(A.imgFolderId)A.imgFolderCache=(await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name')).value||[];
-    A.pdfFolderCache=await loadFolderRecursive(A.pdfFolderId);
-    A.stpFolderCache=await loadFolderRecursive(A.stpFolderId);
-    A.wcFolderCache=await loadFolderRecursive(A.wcFolderId);
-    console.log('Caches: PDF='+A.pdfFolderCache.length+', STP='+A.stpFolderCache.length+', WC='+A.wcFolderCache.length);
-  }catch(e){console.warn('folder scan:',e);}
+  }catch(e){}
+
+  // Load file caches
+  if(A.imgFolderId){
+    try{A.imgFolderCache=(await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name')).value||[];}catch(e){A.imgFolderCache=[];}
+  } else A.imgFolderCache=[];
+  A.pdfFolderCache=await loadFolderRecursive(A.pdfFolderId);
+  A.stpFolderCache=await loadFolderRecursive(A.stpFolderId);
+  A.wcFolderCache=await loadFolderRecursive(A.wcFolderId);
+  console.log('Folder IDs:',{img:A.imgFolderId,pdf:A.pdfFolderId,stp:A.stpFolderId,wc:A.wcFolderId});
+  console.log('Caches:',{img:A.imgFolderCache.length,pdf:A.pdfFolderCache.length,stp:A.stpFolderCache.length,wc:A.wcFolderCache.length});
+}
+
+// FIXED: robust folder ensure — searches AND retries, never returns null silently
+async function ensureFolder(name){
+  if(!A.parentFolderId){console.error('No parent folder ID to create',name,'in');return null;}
+  try{
+    // Step 1: check if folder exists
+    const ch=await gapi('/drives/'+A.driveId+'/items/'+A.parentFolderId+'/children?$top=200');
+    const existing=(ch.value||[]).find(x=>x.name===name&&x.folder);
+    if(existing){console.log('Folder exists:',name,existing.id);return existing.id;}
+
+    // Step 2: create it
+    console.log('Creating folder:',name);
+    const created=await gapi('/drives/'+A.driveId+'/items/'+A.parentFolderId+'/children',{
+      method:'POST',
+      body:JSON.stringify({name,folder:{},['@microsoft.graph.conflictBehavior']:'rename'})
+    });
+    if(created&&created.id){console.log('Created folder:',name,created.id);return created.id;}
+    console.error('Folder creation returned no ID for',name);
+    return null;
+  }catch(e){
+    console.error('ensureFolder failed for',name,e);
+    // Retry once after a delay — sometimes Graph needs a moment
+    try{
+      await new Promise(r=>setTimeout(r,500));
+      const ch=await gapi('/drives/'+A.driveId+'/items/'+A.parentFolderId+'/children?$top=200');
+      const retry=(ch.value||[]).find(x=>x.name===name&&x.folder);
+      if(retry){console.log('Folder found on retry:',name);return retry.id;}
+    }catch(e2){}
+    return null;
+  }
 }
 
 async function loadFolderRecursive(folderId){
   const out=[];
   if(!folderId)return out;
   try{
-    const root=await gapi('/drives/'+A.driveId+'/items/'+folderId+'/children?$select=id,name,folder,size,lastModifiedDateTime');
+    const root=await gapi('/drives/'+A.driveId+'/items/'+folderId+'/children?$select=id,name,folder,size,lastModifiedDateTime&$top=500');
     const items=root.value||[];
     items.filter(f=>!f.folder).forEach(f=>out.push(f));
     const subs=items.filter(f=>f.folder);
     for(const sf of subs){
       try{
-        const sub=await gapi('/drives/'+A.driveId+'/items/'+sf.id+'/children?$select=id,name,size,lastModifiedDateTime');
+        const sub=await gapi('/drives/'+A.driveId+'/items/'+sf.id+'/children?$select=id,name,size,lastModifiedDateTime&$top=500');
         (sub.value||[]).filter(f=>!f.folder).forEach(f=>out.push(f));
       }catch(e){}
     }
-  }catch(e){}
+  }catch(e){console.warn('loadFolderRecursive:',e);}
   return out;
 }
 
@@ -938,11 +936,6 @@ async function readSheet(name){
   const d=await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(name)+'/usedRange');
   return d?(d.values||[]):[];
 }
-async function allSheetNames(){
-  const d=await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets');
-  return(d.value||[]).map(s=>s.name);
-}
-
 async function findSheetLayout(sheetName){
   const rows=await readSheet(sheetName);
   let hi=-1;
@@ -951,10 +944,9 @@ async function findSheetLayout(sheetName){
   }
   return {rows, headerRow:hi, dataStart:hi+1};
 }
-
-async function getNextSrNoForSheet(sheetName){
+async function getNextSrNo(){
   try{
-    const {rows, dataStart}=await findSheetLayout(sheetName);
+    const {rows, dataStart}=await findSheetLayout(C.masterSheet);
     let max=0;
     for(let i=dataStart;i<rows.length;i++){
       const v=parseInt(rows[i][0]);
@@ -964,29 +956,30 @@ async function getNextSrNoForSheet(sheetName){
   }catch(e){return 1;}
 }
 
-function excelDateSerial(isoDate){
-  if(!isoDate)return '';
-  const d=new Date(isoDate+'T00:00:00Z');
-  if(isNaN(d))return isoDate;
-  const epoch=new Date('1899-12-30T00:00:00Z');
-  return Math.floor((d-epoch)/86400000);
-}
-
-async function writeOrderRow(sheetName, order, rowNum){
+// Write a row to Order Tracker — 22 columns (A-V) with Client in col C
+async function writeOrderRow(order, rowNum){
   const dateExcel=order.date?excelDateSerial(order.date):'';
   const tgtExcel=order.tgt?excelDateSerial(order.tgt):'';
   const row=[
-    order.sr, dateExcel, order.po, order.client||'', order.name, order.cat, order.type,
-    order.qty||'', order.quoted||'No', order.poRec||'No', order.approval||'No',
+    order.sr, dateExcel, order.client||'', order.po||'—', order.name, order.cat,
+    order.type||'', order.qty||'', order.quoted||'No', order.poRec||'No', order.approval||'No',
     tgtExcel, order.stRM||'—', order.stShape||'—', order.stGrind||'—',
     order.stWire||'—', order.stLathe||'—', order.stHT||'—',
     order.stInsp||'—', order.stDisp||'—', order.status||'In Progress',
     order.remarks||''
   ];
   const range='A'+rowNum+':V'+rowNum;
-  await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(sheetName)+'/range(address=\''+range+'\')',{
+  await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\''+range+'\')',{
     method:'PATCH', body:JSON.stringify({values:[row]})
   });
+}
+
+function excelDateSerial(isoDate){
+  if(!isoDate)return '';
+  const d=new Date(isoDate+'T00:00:00Z');
+  if(isNaN(d))return isoDate;
+  const epoch=new Date('1899-12-30T00:00:00Z');
+  return Math.floor((d-epoch)/86400000);
 }
 
 // ═══════════════════════════════════════
@@ -1000,7 +993,6 @@ async function startApp(){
     let aRows=[];
     try{aRows=await readSheet(C.accSheet);}
     catch(e){throw new Error('Could not find "Access List" sheet.');}
-
     A.accessList=[];
     const yn=v=>(v||'').toString().trim().toUpperCase()!=='NO'&&(v||'').toString().trim()!=='';
     for(let i=1;i<aRows.length;i++){
@@ -1008,45 +1000,41 @@ async function startApp(){
       A.accessList.push({
         email:(r[0]||'').toString().toLowerCase().trim(),
         clientName:r[1]||'Client',
-        sheet:r[2]||C.masterSheet,
-        stages:(r[3]||'').toString().toUpperCase().trim(),
-        images:yn(r[4]),qty:yn(r[5]),target:yn(r[6]),po:yn(r[7]),remarks:yn(r[8])
+        stages:(r[2]||'').toString().toUpperCase().trim(),
+        images:yn(r[3]),qty:yn(r[4]),target:yn(r[5]),po:yn(r[6]),remarks:yn(r[7])
       });
     }
-
     const email=(A.user.username||'').toLowerCase().trim();
     const ur=A.accessList.find(x=>x.email===email);
     if(!ur){document.getElementById('denied-email').textContent=email;go('s-denied');return;}
     A.perms=ur;A.isAdmin=email===C.adminEmail.toLowerCase();
-    A.sheetNames=await allSheetNames();
-
-    go('s-loading','Fetching orders...');
-    const rows=await readSheet(C.masterSheet);
-    const allOrders=parseOrders(rows);
-    A.allOrders=allOrders;
-    A.orders=A.isAdmin?allOrders:allOrders.filter(o=>o.client===ur.clientName);
 
     const ini=ur.clientName.replace(/[^A-Z]/gi,'').slice(0,2).toUpperCase()||'?';
     document.getElementById('tb-uname').textContent=ur.clientName;
     document.getElementById('tb-role').textContent=A.isAdmin?'Admin':'Client';
     document.getElementById('tb-av').textContent=ini;
-    document.getElementById('tb-sub').textContent=A.isAdmin?'Admin · all clients':'My orders';
+    document.getElementById('tb-sub').textContent=A.isAdmin?'Admin · all clients':ur.clientName+' orders';
     if(A.isAdmin){
       document.getElementById('admin-btn').style.display='inline-flex';
       document.getElementById('btn-add').style.display='inline-flex';
     }
 
-    const cf=document.getElementById('f-client');
+    go('s-loading','Fetching orders...');
+    const rows=await readSheet(C.masterSheet);
+    const allParsed=parseOrders(rows);
+    A.allOrders=allParsed;
+    // Apply client filter for non-admin
     if(A.isAdmin){
+      A.orders=A.allOrders;
+      // Populate client filter dropdown
+      const cf=document.getElementById('f-client');
       cf.innerHTML='<option value="">All clients</option>';
-      [...new Set(allOrders.map(o=>o.client).filter(Boolean))].sort().forEach(c=>{
-        const o=document.createElement('option');o.value=c;o.textContent=c;cf.appendChild(o);
-      });
+      const uniqueClients=[...new Set(A.allOrders.map(o=>o.client).filter(c=>c))].sort();
+      uniqueClients.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;cf.appendChild(o);});
       cf.style.display='block';
-    }else{
-      cf.style.display='none';
+    } else {
+      A.orders=A.allOrders.filter(o=>(o.client||'').toLowerCase()===ur.clientName.toLowerCase());
     }
-
     buildHead();render();
     go('s-main');
     setTimeout(()=>loadThumbImages(A.orders),300);
@@ -1057,24 +1045,29 @@ async function doRefresh(){
   go('s-loading','Refreshing orders...');
   try{
     A.imgCache={};
-    if(A.imgFolderId)A.imgFolderCache=(await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name')).value||[];
+    if(A.imgFolderId){try{A.imgFolderCache=(await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name')).value||[];}catch(e){}}
     A.pdfFolderCache=await loadFolderRecursive(A.pdfFolderId);
     A.stpFolderCache=await loadFolderRecursive(A.stpFolderId);
     A.wcFolderCache=await loadFolderRecursive(A.wcFolderId);
-    A.sheetNames=await allSheetNames();
-
     const rows=await readSheet(C.masterSheet);
-    const allOrders=parseOrders(rows);
-    A.allOrders=allOrders;
-    A.orders=A.isAdmin?allOrders:allOrders.filter(o=>o.client===A.perms.clientName);
-
+    A.allOrders=parseOrders(rows);
+    if(A.isAdmin){
+      A.orders=A.allOrders;
+      const cf=document.getElementById('f-client');
+      const curr=cf.value;
+      cf.innerHTML='<option value="">All clients</option>';
+      const uniqueClients=[...new Set(A.allOrders.map(o=>o.client).filter(c=>c))].sort();
+      uniqueClients.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;if(c===curr)o.selected=true;cf.appendChild(o);});
+    } else {
+      A.orders=A.allOrders.filter(o=>(o.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
+    }
     render();go('s-main');toast('Refreshed!');
     loadThumbImages(A.orders);
   }catch(e){showErr('Refresh failed',e.message||String(e));}
 }
 
 // ═══════════════════════════════════════
-// PARSE ORDERS
+// PARSE ORDERS (22 columns, Client in col C)
 // ═══════════════════════════════════════
 function parseOrders(rows){
   const orders=[];
@@ -1086,17 +1079,21 @@ function parseOrders(rows){
   const h=rows[hi].map(v=>(v||'').toString().toLowerCase());
   const col=(...kws)=>{for(const k of kws){const i=h.findIndex(x=>x.includes(k));if(i>=0)return i;}return -1;};
   const cc={
-    sr:col('sr','no'),date:col('order date','date'),po:col('client po','po no'),
-    client:col('client name','client'),
-    name:col('product','tool name'),cat:col('category'),type:col('tool type'),
-    qty:col('qty','quantity'),quoted:col('quoted'),poRec:col('po received','received'),
-    approval:col('approval'),tgt:col('target'),
+    sr:col('sr','no'),date:col('order date','date'),client:col('client name','client'),
+    po:col('client po','po no'),name:col('product','tool name'),cat:col('category'),
+    type:col('tool type'),qty:col('qty','quantity'),quoted:col('quoted'),
+    poRec:col('po received','received'),approval:col('approval'),tgt:col('target'),
     rm:col('raw material','rm'),shape:col('shaping','milling'),
     grind:col('grinding','grind','surface'),wire:col('wirecut','wire','vmc'),
     lathe:col('jig boring','lathe'),ht:col('heat'),
     inspect:col('inspection','inspect'),dispatch:col('dispatch'),
     status:col('overall status','status'),remarks:col('remarks')
   };
+  // 'client' col conflicts with 'client po' — disambiguate
+  if(cc.client>=0&&cc.po>=0&&cc.client===cc.po){
+    // Find a header that's exactly "client" or "client name"
+    cc.client=h.findIndex(x=>/^client(\s|$)|^client name/.test(x));
+  }
   const fmtDisp=v=>{
     if(!v||v==='—')return '—';
     if(typeof v==='number'){const d=new Date((v-25569)*86400000);return d.getDate().toString().padStart(2,'0')+'-'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+'-'+String(d.getFullYear()).slice(-2);}
@@ -1120,9 +1117,8 @@ function parseOrders(rows){
     orders.push({
       sr:r[cc.sr]||i-hi,
       date:fmtDisp(r[cc.date]),dateISO:fmtISO(r[cc.date]),
-      po:r[cc.po]||'—',
-      client:r[cc.client]||'',
-      name:r[cc.name]||'—',cat:r[cc.cat]||'—',
+      client:cc.client>=0?(r[cc.client]||''):'',
+      po:r[cc.po]||'—',name:r[cc.name]||'—',cat:r[cc.cat]||'—',
       type:r[cc.type]||'',qty:cc.qty>=0?r[cc.qty]:'',
       quoted:r[cc.quoted]||'No',poRec:cc.poRec>=0?r[cc.poRec]:'No',
       approval:cc.approval>=0?r[cc.approval]:'No',
@@ -1131,8 +1127,7 @@ function parseOrders(rows){
       stGrind:cc.grind>=0?r[cc.grind]:'—',stWire:cc.wire>=0?r[cc.wire]:'—',
       stLathe:cc.lathe>=0?r[cc.lathe]:'—',stHT:cc.ht>=0?r[cc.ht]:'—',
       stInsp:cc.inspect>=0?r[cc.inspect]:'—',stDisp:cc.dispatch>=0?r[cc.dispatch]:'—',
-      status:r[cc.status]||'In Progress',remarks:r[cc.remarks]||'',
-      sheet:C.masterSheet
+      status:r[cc.status]||'In Progress',remarks:r[cc.remarks]||''
     });
   }
   return orders;
@@ -1173,7 +1168,6 @@ async function getImgUrl(sr){
     A.imgCache[key]=url;return url;
   }catch(e){A.imgCache[key]=null;return null;}
 }
-
 async function loadThumbImages(orders){
   if(!A.imgFolderId)return;
   const p=colsToShow();if(!p.images)return;
@@ -1184,7 +1178,6 @@ async function loadThumbImages(orders){
     }catch(e){}
   }
 }
-
 async function openImgModal(sr,name,type){
   const imgEl=document.getElementById('m-img');
   imgEl.src=svgUrl(toolSVG(type||name));
@@ -1197,14 +1190,13 @@ async function openImgModal(sr,name,type){
 function closeImgModal(){document.getElementById('img-modal').style.display='none';}
 
 // ═══════════════════════════════════════
-// PDF VIEWING (blob-based)
+// PDF VIEWING
 // ═══════════════════════════════════════
 async function viewOrderPDF(){
   if(!A.selOrder){toast('No order selected');return;}
-  const o=A.selOrder;
-  const match=findFileForSr(A.pdfFolderCache,o.sr);
-  if(!match){toast('No PDF drawing found for Sr #'+o.sr,4000);return;}
-  await openPDFModal(match,o.name);
+  const match=findFileForSr(A.pdfFolderCache,A.selOrder.sr);
+  if(!match){toast('No PDF drawing found',4000);return;}
+  await openPDFModal(match,A.selOrder.name);
 }
 async function openPDFModal(fileItem,title){
   toast('Loading drawing...',8000);
@@ -1237,7 +1229,7 @@ function closePDFModal(){
 }
 
 // ═══════════════════════════════════════
-// STP/WIRECUT METADATA + DOWNLOAD MODAL
+// STP/WC METADATA MODAL
 // ═══════════════════════════════════════
 function fmtBytes(n){
   if(!n||n<0)return '—';
@@ -1250,7 +1242,7 @@ function fmtDate(iso){
   if(!iso)return '—';
   try{
     const d=new Date(iso);
-    return d.getDate().toString().padStart(2,'0')+'-'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+'-'+String(d.getFullYear()).slice(-2)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+    return d.getDate().toString().padStart(2,'0')+'-'+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()]+'-'+String(d.getFullYear()).slice(-2);
   }catch(e){return iso;}
 }
 async function openFMModal(fileItem,kind){
@@ -1259,7 +1251,7 @@ async function openFMModal(fileItem,kind){
   document.getElementById('fm-icon').className='fm-icon '+(isStp?'fm-icon-stp':'fm-icon-wc');
   document.getElementById('fm-icon').textContent=isStp?'🧊':'⚡';
   document.getElementById('fm-name').textContent=fileItem.name;
-  document.getElementById('fm-type').textContent=isStp?'3D Model File · '+ext:'Wirecut/NC Program · '+ext;
+  document.getElementById('fm-type').textContent=isStp?'3D Model · '+ext:'Wirecut/NC Program · '+ext;
   const rows=document.getElementById('fm-rows');rows.innerHTML='';
   const addRow=(l,v)=>{rows.innerHTML+=`<div class="fm-row"><span class="fm-row-lbl">${l}</span><span class="fm-row-val">${v}</span></div>`;};
   addRow('File size', fmtBytes(fileItem.size));
@@ -1276,8 +1268,7 @@ async function openFMModal(fileItem,kind){
 function closeFMModal(){document.getElementById('fm-modal').style.display='none';}
 async function downloadCurrentFM(){
   if(!A._lastFMUrl){toast('Download URL not available');return;}
-  const a=document.createElement('a');
-  a.href=A._lastFMUrl;a.download=A._lastFMName||'file';a.click();
+  const a=document.createElement('a');a.href=A._lastFMUrl;a.download=A._lastFMName||'file';a.click();
   toast('Download started...');
 }
 
@@ -1316,7 +1307,6 @@ function stagesDots(o){
     return`<span class="stage-dot ${cl}" title="${s||'—'}"></span>`;
   }).join('');
 }
-
 function buildTimeline(o){
   const stages=[
     ['Raw',o.stRM],['Shape',o.stShape],['Grind',o.stGrind],
@@ -1351,10 +1341,10 @@ function colsToShow(){
     quoted:A.isAdmin?ad.quoted:false
   };
 }
-
 function buildHead(){
   const p=colsToShow();const r=document.getElementById('t-head');r.innerHTML='';
   const cols=['Sr','Date'];
+  if(p.client)cols.push('Client');
   if(p.po)cols.push('PO No.');
   cols.push('Product / Tool name','Category');
   if(p.images)cols.push('Image','Files');
@@ -1364,9 +1354,8 @@ function buildHead(){
   if(p.quoted)cols.push('Quoted');
   if(p.stages!=='NO')cols.push('Stages');
   cols.push('Status');
-  if(p.client)cols.push('Client');
   if(p.remarks)cols.push('Remarks');
-  const ws={'Sr':'34px','Date':'90px','PO No.':'88px','Category':'120px','Image':'48px','Files':'90px','Qty':'42px','Target':'90px','Days':'68px','Quoted':'60px','Status':'110px','Client':'90px'};
+  const ws={'Sr':'34px','Date':'90px','Client':'90px','PO No.':'88px','Category':'120px','Image':'48px','Files':'90px','Qty':'42px','Target':'90px','Days':'68px','Quoted':'60px','Status':'110px'};
   cols.forEach(c=>{const th=document.createElement('th');th.textContent=c;if(ws[c])th.style.width=ws[c];r.appendChild(th);});
 }
 
@@ -1379,10 +1368,10 @@ function getFiltered(){
   const td=document.getElementById('f-dt').value;
   const t=A.tab;
   return A.orders.filter(o=>{
-    if(s&&!o.name.toLowerCase().includes(s)&&!(o.po||'').toString().toLowerCase().includes(s)&&!(o.type||'').toLowerCase().includes(s))return false;
+    if(s&&!o.name.toLowerCase().includes(s)&&!String(o.po||'').toLowerCase().includes(s)&&!(o.type||'').toLowerCase().includes(s)&&!(o.client||'').toLowerCase().includes(s))return false;
     if(fc&&!o.cat.includes(fc))return false;
     if(fs&&o.status!==fs)return false;
-    if(fcl&&o.client!==fcl)return false;
+    if(fcl&&(o.client||'')!==fcl)return false;
     if(fd&&o.dateISO&&o.dateISO<fd)return false;
     if(td&&o.dateISO&&o.dateISO>td)return false;
     const sl=o.status.toLowerCase();
@@ -1409,12 +1398,13 @@ function render(){
     return;
   }
   list.forEach(o=>{
-    const tr=document.createElement('tr');tr.className='row'+(A.selOrder&&A.selOrder.sr===o.sr&&A.selOrder.sheet===o.sheet?' sel':'');
+    const tr=document.createElement('tr');tr.className='row'+(A.selOrder&&A.selOrder.sr===o.sr?' sel':'');
     const svgD=svgUrl(toolSVG(o.type||o.name));
     const ne=String(o.name).replace(/"/g,'&quot;').replace(/'/g,"\\'");
     const te=String(o.type||'').replace(/"/g,'&quot;').replace(/'/g,"\\'");
     let h=`<td style="color:var(--text3);font-size:11px;font-family:'DM Mono',monospace">${o.sr}</td>`;
     h+=`<td style="font-size:11px;color:var(--text2)">${o.date}</td>`;
+    if(p.client)h+=`<td><span class="b-client">${o.client||'—'}</span></td>`;
     if(p.po)h+=`<td style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text2)">${o.po}</td>`;
     h+=`<td style="font-weight:${A.selOrder&&A.selOrder.sr===o.sr?600:400};max-width:240px">${o.name}</td>`;
     h+=`<td>${catB(o.cat)}</td>`;
@@ -1424,9 +1414,9 @@ function render(){
       const hasSTP=!!findFileForSr(A.stpFolderCache,o.sr);
       const hasWC=!!findFileForSr(A.wcFolderCache,o.sr);
       h+=`<td><div style="display:flex;gap:3px;justify-content:center">`;
-      h+=`<div class="file-chip ${hasPDF?'fc-pdf':'fc-empty'}" onclick="event.stopPropagation();${hasPDF?`quickViewFile(${o.sr},'pdf','${o.sheet}')`:''}" title="${hasPDF?'View PDF drawing':'No PDF'}" style="width:24px;height:24px;font-size:8px">PDF</div>`;
-      h+=`<div class="file-chip ${hasSTP?'fc-stp':'fc-empty'}" onclick="event.stopPropagation();${hasSTP?`quickViewFile(${o.sr},'stp','${o.sheet}')`:''}" title="${hasSTP?'View STP file':'No STP'}" style="width:24px;height:24px;font-size:8px">STP</div>`;
-      h+=`<div class="file-chip ${hasWC?'fc-wc':'fc-empty'}" onclick="event.stopPropagation();${hasWC?`quickViewFile(${o.sr},'wc','${o.sheet}')`:''}" title="${hasWC?'View Wirecut':'No Wirecut'}" style="width:24px;height:24px;font-size:8px">WC</div>`;
+      h+=`<div class="file-chip ${hasPDF?'fc-pdf':'fc-empty'}" onclick="event.stopPropagation();${hasPDF?`quickViewFile(${o.sr},'pdf')`:''}" title="${hasPDF?'View PDF':'No PDF'}" style="width:24px;height:24px;font-size:8px">PDF</div>`;
+      h+=`<div class="file-chip ${hasSTP?'fc-stp':'fc-empty'}" onclick="event.stopPropagation();${hasSTP?`quickViewFile(${o.sr},'stp')`:''}" title="${hasSTP?'View STP':'No STP'}" style="width:24px;height:24px;font-size:8px">STP</div>`;
+      h+=`<div class="file-chip ${hasWC?'fc-wc':'fc-empty'}" onclick="event.stopPropagation();${hasWC?`quickViewFile(${o.sr},'wc')`:''}" title="${hasWC?'View Wirecut':'No Wirecut'}" style="width:24px;height:24px;font-size:8px">WC</div>`;
       h+=`</div></td>`;
     }
     if(p.qty)h+=`<td style="text-align:center;font-size:12px">${o.qty||'—'}</td>`;
@@ -1435,15 +1425,14 @@ function render(){
     if(p.quoted)h+=`<td><span class="badge ${o.quoted==='Yes'?'s-del':'s-unk'}">${o.quoted||'No'}</span></td>`;
     if(p.stages!=='NO')h+=`<td>${stagesDots(o)}</td>`;
     h+=`<td>${stB(o.status)}</td>`;
-    if(p.client)h+=`<td><span class="b-client">${o.client||'—'}</span></td>`;
     if(p.remarks)h+=`<td style="font-size:11px;color:var(--text2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.remarks||''}</td>`;
     tr.innerHTML=h;tr.onclick=()=>showDet(o);tb.appendChild(tr);
   });
   setTimeout(()=>loadThumbImages(list),100);
 }
 
-async function quickViewFile(sr, kind, sheet){
-  const o=A.orders.find(x=>x.sr==sr&&(!sheet||x.sheet===sheet))||A.orders.find(x=>x.sr==sr);
+async function quickViewFile(sr,kind){
+  const o=A.orders.find(x=>x.sr==sr);
   if(!o){toast('Order not found');return;}
   A.selOrder=o;
   const cache=kind==='pdf'?A.pdfFolderCache:kind==='stp'?A.stpFolderCache:A.wcFolderCache;
@@ -1503,18 +1492,9 @@ function showDet(o){
   const pdfMatch=findFileForSr(A.pdfFolderCache,o.sr);
   const stpMatch=findFileForSr(A.stpFolderCache,o.sr);
   const wcMatch=findFileForSr(A.wcFolderCache,o.sr);
-  if(pdfMatch){
-    hasAnyFile=true;
-    fl.innerHTML+=`<div class="file-row" onclick="quickViewFile(${o.sr},'pdf','${o.sheet}')"><div class="file-row-icon" style="background:#FEE2E2;color:#DC2626">PDF</div><div style="flex:1;min-width:0"><div class="file-row-name">${pdfMatch.name}</div><div class="file-row-meta">${fmtBytes(pdfMatch.size)}</div></div><div class="file-row-actions"><button class="file-row-btn">View</button></div></div>`;
-  }
-  if(stpMatch){
-    hasAnyFile=true;
-    fl.innerHTML+=`<div class="file-row" onclick="quickViewFile(${o.sr},'stp','${o.sheet}')"><div class="file-row-icon" style="background:#E0E7FF;color:#4338CA">STP</div><div style="flex:1;min-width:0"><div class="file-row-name">${stpMatch.name}</div><div class="file-row-meta">${fmtBytes(stpMatch.size)}</div></div><div class="file-row-actions"><button class="file-row-btn">Info</button></div></div>`;
-  }
-  if(wcMatch){
-    hasAnyFile=true;
-    fl.innerHTML+=`<div class="file-row" onclick="quickViewFile(${o.sr},'wc','${o.sheet}')"><div class="file-row-icon" style="background:#FCE7F3;color:#9D174D">WC</div><div style="flex:1;min-width:0"><div class="file-row-name">${wcMatch.name}</div><div class="file-row-meta">${fmtBytes(wcMatch.size)}</div></div><div class="file-row-actions"><button class="file-row-btn">Info</button></div></div>`;
-  }
+  if(pdfMatch){hasAnyFile=true;fl.innerHTML+=`<div class="file-row" onclick="quickViewFile(${o.sr},'pdf')"><div class="file-row-icon" style="background:#FEE2E2;color:#DC2626">PDF</div><div style="flex:1;min-width:0"><div class="file-row-name">${pdfMatch.name}</div><div class="file-row-meta">${fmtBytes(pdfMatch.size)}</div></div><button class="file-row-btn">View</button></div>`;}
+  if(stpMatch){hasAnyFile=true;fl.innerHTML+=`<div class="file-row" onclick="quickViewFile(${o.sr},'stp')"><div class="file-row-icon" style="background:#E0E7FF;color:#4338CA">STP</div><div style="flex:1;min-width:0"><div class="file-row-name">${stpMatch.name}</div><div class="file-row-meta">${fmtBytes(stpMatch.size)}</div></div><button class="file-row-btn">Info</button></div>`;}
+  if(wcMatch){hasAnyFile=true;fl.innerHTML+=`<div class="file-row" onclick="quickViewFile(${o.sr},'wc')"><div class="file-row-icon" style="background:#FCE7F3;color:#9D174D">WC</div><div style="flex:1;min-width:0"><div class="file-row-name">${wcMatch.name}</div><div class="file-row-meta">${fmtBytes(wcMatch.size)}</div></div><button class="file-row-btn">Info</button></div>`;}
   document.getElementById('sp-files').style.display=hasAnyFile?'block':'none';
 
   openSP('view');
@@ -1525,17 +1505,14 @@ function showDet(o){
 // ADD / EDIT ORDER
 // ═══════════════════════════════════════
 function populateClientSelector(){
-  const sel=document.getElementById('f-client-sheet');
+  const sel=document.getElementById('f-client-name');
   sel.innerHTML='<option value="">— Select client —</option>';
-  const seen=new Set();
-  A.accessList.forEach(ac=>{
-    if(ac.clientName && !seen.has(ac.clientName)){
-      seen.add(ac.clientName);
-      const opt=document.createElement('option');
-      opt.value=ac.clientName;
-      opt.textContent=ac.clientName;
-      sel.appendChild(opt);
-    }
+  // Get unique client names from access list (excluding admin)
+  const clients=A.accessList.filter(ac=>ac.email!==C.adminEmail.toLowerCase()).map(ac=>ac.clientName);
+  const unique=[...new Set(clients)].sort();
+  unique.forEach(c=>{
+    const opt=document.createElement('option');opt.value=c;opt.textContent=c;
+    sel.appendChild(opt);
   });
 }
 async function openAddOrder(){
@@ -1563,13 +1540,15 @@ function switchToEdit(){
   document.getElementById('btn-del-order').style.display='inline-flex';
   document.getElementById('sp-view').style.display='none';
   document.getElementById('sp-edit').style.display='block';
-  document.getElementById('client-selector-section').style.display='none';
+  // Show client selector for admin even when editing (allows reassigning)
+  document.getElementById('client-selector-section').style.display=A.isAdmin?'block':'none';
+  populateClientSelector();
   fillForm(o);
   openSP('edit');
 }
 
 function clearForm(){
-  ['f-sr','f-date','f-po','f-qty','f-name','f-type','f-tgt','f-remarks','f-client-sheet'].forEach(id=>{
+  ['f-sr','f-date','f-po','f-qty','f-name','f-type','f-tgt','f-remarks','f-client-name'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.value='';
   });
   ['f-cat2','f-quoted','f-po-rec','f-approval','f-status'].forEach(id=>{
@@ -1600,6 +1579,7 @@ function fillForm(o){
   setSelect('st-grind',o.stGrind);setSelect('st-wire',o.stWire);
   setSelect('st-lathe',o.stLathe);setSelect('st-ht',o.stHT);
   setSelect('st-insp',o.stInsp);setSelect('st-disp',o.stDisp);
+  setSelect('f-client-name',o.client||'');
   const showExisting=(zoneId,nameId,cache)=>{
     const match=findFileForSr(cache,o.sr);
     if(match){
@@ -1622,11 +1602,12 @@ function setSelect(id,val){
     if(el.options[i].value===val||el.options[i].text===val){el.selectedIndex=i;return;}
   }
 }
-
 function getVal(id){return(document.getElementById(id)||{}).value||'';}
 function getFormOrder(){
   return{
-    sr:getVal('f-sr'),date:getVal('f-date'),po:getVal('f-po')||'—',
+    sr:getVal('f-sr'),date:getVal('f-date'),
+    client:A.isAdmin?getVal('f-client-name'):A.perms.clientName,
+    po:getVal('f-po')||'—',
     name:getVal('f-name'),cat:getVal('f-cat2'),type:getVal('f-type'),
     qty:getVal('f-qty'),quoted:getVal('f-quoted'),
     poRec:getVal('f-po-rec'),approval:getVal('f-approval'),
@@ -1643,15 +1624,14 @@ function handleSTPFile(input){if(!input.files.length)return;A.pendingSTPFile=inp
 function handleWCFile(input){if(!input.files.length)return;A.pendingWCFile=input.files[0];document.getElementById('wc-name').textContent='⬆ '+A.pendingWCFile.name;document.getElementById('wc-zone').classList.add('has-file');}
 
 async function uploadFileToFolder(file, folderId, sr, cleanName, ext){
-  if(!folderId) throw new Error('Upload folder not initialized. Folder ID is missing.');
+  if(!folderId)throw new Error('Target folder not available. Try refreshing the page.');
   const fileName=sr+'-'+cleanName+'.'+(ext||file.name.split('.').pop().toLowerCase());
   const buf=await file.arrayBuffer();
   const res=await gapiUpload('/drives/'+A.driveId+'/items/'+folderId+':/'+encodeURIComponent(fileName)+':/content',buf,file.type||'application/octet-stream');
   return {fileName, res};
 }
-
 function refreshCacheAfterUpload(cache, sr, fileName, fileId){
-  if(!cache)return;
+  if(!cache)cache=[];
   const re=new RegExp('^0*'+sr+'[-_. ]','i');
   const filtered=cache.filter(f=>!re.test(f.name));
   filtered.push({id:fileId, name:fileName, size:0, lastModifiedDateTime:new Date().toISOString()});
@@ -1661,70 +1641,47 @@ function refreshCacheAfterUpload(cache, sr, fileName, fileId){
 async function saveOrder(){
   const o=getFormOrder();
   if(!o.name){toast('Product name is required');return;}
-
-  let clientName=A.perms.clientName;
-  if(A.isAdmin && !A.editOrder){
-    const sel=getVal('f-client-sheet');
-    if(!sel){toast('Please select a client');return;}
-    clientName=sel;
-  } else if(A.editOrder){
-    clientName=A.editOrder.client||A.perms.clientName;
-  }
-  o.client=clientName;
+  if(A.isAdmin&&!o.client){toast('Please select a client');return;}
 
   document.getElementById('btn-save-order').disabled=true;
   toast('Saving order...',10000);
 
   try{
     if(!A.editOrder){
-      o.sr=await getNextSrNoForSheet(C.masterSheet);
+      o.sr=await getNextSrNo();
     } else {
       o.sr=parseInt(A.editOrder.sr);
     }
 
     const cleanName=o.name.toUpperCase().replace(/[^A-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,40);
 
-    if(A.pendingImgFile && !A.imgFolderId){toast('Image folder missing'); document.getElementById('btn-save-order').disabled=false; return;}
-    if(A.pendingPDFFile && !A.pdfFolderId){toast('PDF folder missing'); document.getElementById('btn-save-order').disabled=false; return;}
-    if(A.pendingSTPFile && !A.stpFolderId){toast('STP folder missing'); document.getElementById('btn-save-order').disabled=false; return;}
-    if(A.pendingWCFile && !A.wcFolderId){toast('Wirecut folder missing'); document.getElementById('btn-save-order').disabled=false; return;}
+    // Defensive: re-ensure folders if they're missing (handles bugs from earlier sessions)
+    if(!A.imgFolderId)A.imgFolderId=await ensureFolder(C.imgFolder);
+    if(!A.pdfFolderId)A.pdfFolderId=await ensureFolder(C.pdfFolder);
+    if(!A.stpFolderId)A.stpFolderId=await ensureFolder(C.stpFolder);
+    if(!A.wcFolderId)A.wcFolderId=await ensureFolder(C.wcFolder);
 
     if(A.pendingImgFile&&A.imgFolderId){
       const {fileName, res}=await uploadFileToFolder(A.pendingImgFile, A.imgFolderId, o.sr, cleanName);
       A.imgFolderCache=refreshCacheAfterUpload(A.imgFolderCache, o.sr, fileName, res?.id);
       delete A.imgCache['sr-'+o.sr];
     }
-
     if(A.pendingPDFFile&&A.pdfFolderId){
-      const clientFolderName=clientName.replace(/[^A-Za-z0-9]/g,'-');
-      let clientFolderId=A.pdfFolderId;
-      try{
-        const cf=await gapi('/drives/'+A.driveId+'/items/'+A.pdfFolderId+'/children?$select=id,name,folder');
-        const existing=(cf.value||[]).find(x=>x.name===clientFolderName&&x.folder);
-        if(existing)clientFolderId=existing.id;
-        else{
-          const created=await gapi('/drives/'+A.driveId+'/items/'+A.pdfFolderId+'/children',{
-            method:'POST',body:JSON.stringify({name:clientFolderName,folder:{},['@microsoft.graph.conflictBehavior']:'rename'})
-          });
-          clientFolderId=created.id;
-        }
-      }catch(e){}
-      const {fileName,res}=await uploadFileToFolder(A.pendingPDFFile, clientFolderId, o.sr, cleanName, 'pdf');
+      const {fileName,res}=await uploadFileToFolder(A.pendingPDFFile, A.pdfFolderId, o.sr, cleanName, 'pdf');
       A.pdfFolderCache=refreshCacheAfterUpload(A.pdfFolderCache, o.sr, fileName, res?.id);
     }
-
     if(A.pendingSTPFile&&A.stpFolderId){
       const ext=A.pendingSTPFile.name.split('.').pop().toLowerCase();
       const {fileName, res}=await uploadFileToFolder(A.pendingSTPFile, A.stpFolderId, o.sr, cleanName, ext);
       A.stpFolderCache=refreshCacheAfterUpload(A.stpFolderCache, o.sr, fileName, res?.id);
     }
-
     if(A.pendingWCFile&&A.wcFolderId){
       const ext=A.pendingWCFile.name.split('.').pop().toLowerCase();
       const {fileName, res}=await uploadFileToFolder(A.pendingWCFile, A.wcFolderId, o.sr, cleanName, ext);
       A.wcFolderCache=refreshCacheAfterUpload(A.wcFolderCache, o.sr, fileName, res?.id);
     }
 
+    // Find row in Order Tracker
     const {rows, dataStart}=await findSheetLayout(C.masterSheet);
     let rowNum=null;
     if(A.editOrder){
@@ -1734,18 +1691,28 @@ async function saveOrder(){
     }
     if(!rowNum){
       let last=dataStart;
-      for(let i=dataStart;i<rows.length;i++){if(rows[i].some(v=>v!==undefined&&v!==null&&v!==''))last=i+1;}
+      for(let i=dataStart;i<rows.length;i++){if(rows[i].some(v=>v))last=i+1;}
       rowNum=last+1;
     }
-    await writeOrderRow(C.masterSheet, o, rowNum);
+    await writeOrderRow(o, rowNum);
 
+    // Update local state
     if(A.editOrder){
       const idx=A.allOrders.findIndex(x=>x.sr==o.sr);
-      if(idx>=0)Object.assign(A.allOrders[idx], o, {dateISO:o.date, tgtISO:o.tgt, client:clientName});
+      if(idx>=0)Object.assign(A.allOrders[idx], o, {dateISO:o.date, tgtISO:o.tgt, date:o.date, tgt:o.tgt});
     } else {
-      A.allOrders.push({...o, dateISO:o.date, tgtISO:o.tgt, client:clientName});
+      A.allOrders.push({...o, dateISO:o.date, tgtISO:o.tgt});
     }
-    A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(o=>o.client===A.perms.clientName);
+    A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
+
+    // Refresh client filter if admin
+    if(A.isAdmin){
+      const cf=document.getElementById('f-client');
+      const curr=cf.value;
+      cf.innerHTML='<option value="">All clients</option>';
+      const uniqueClients=[...new Set(A.allOrders.map(o=>o.client).filter(c=>c))].sort();
+      uniqueClients.forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;if(c===curr)o.selected=true;cf.appendChild(o);});
+    }
 
     closeSP();render();
     toast('✅ Order saved!');
@@ -1771,8 +1738,8 @@ async function deleteOrder(){
         break;
       }
     }
-    A.allOrders=A.allOrders.filter(o=>!(o.sr==sr));
-    A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(o=>o.client===A.perms.clientName);
+    A.allOrders=A.allOrders.filter(o=>o.sr!=sr);
+    A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
     A.selOrder=null;A.editOrder=null;
     closeSP();render();
     toast('✅ Order deleted!');
@@ -1801,24 +1768,24 @@ function closeExpModal(){document.getElementById('exp-modal').style.display='non
 function getExportData(){
   const p=colsToShow();
   const h=['Sr','Date'];
+  if(p.client)h.push('Client');
   if(p.po)h.push('PO No.');
   h.push('Product / Tool Name','Category');
   if(p.qty)h.push('Qty');
-  if(p.target)h.push('Target Delivery');
+  if(p.target)h.push('Target');
   if(p.quoted)h.push('Quoted');
-  h.push('Overall Status');
-  if(p.client)h.push('Client');
+  h.push('Status');
   if(p.remarks)h.push('Remarks');
   const list=getFiltered();
   const rows=list.map(o=>{
     const r=[o.sr,o.date];
+    if(p.client)r.push(o.client||'');
     if(p.po)r.push(o.po);
     r.push(o.name,o.cat);
     if(p.qty)r.push(o.qty||'');
     if(p.target)r.push(o.tgt);
     if(p.quoted)r.push(o.quoted||'No');
     r.push(o.status);
-    if(p.client)r.push(o.client||'');
     if(p.remarks)r.push(o.remarks||'');
     return r;
   });
@@ -1835,24 +1802,31 @@ function doExcelExport(){
     toast('Excel downloaded!');
   }catch(e){toast('Export failed: '+e.message);}
 }
+
+// FIXED: Both Fast and Full exports now use autoTable so text doesn't overlap
 async function doPDF(withImages){
   closeExpModal();
   const{jsPDF}=window.jspdf;
   const{h,rows,list}=getExportData();
   toast(withImages?'Preparing PDF with images...':'Generating PDF...',15000);
   try{
+    // Pre-fetch images as data URLs
     const imgDataMap={};
     if(withImages){
       for(const o of list){
         const url=await getImgUrl(o.sr);
         if(url){
-          try{const resp=await fetch(url);const blob=await resp.blob();const du=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(blob);});imgDataMap[o.sr]=du;}
-          catch(e){}
+          try{
+            const resp=await fetch(url);const blob=await resp.blob();
+            const du=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(blob);});
+            imgDataMap[o.sr]=du;
+          }catch(e){}
         }
       }
     }
     const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
     const ML=10,MT=10,PW=287;
+    // Logo + header
     if(A.logoUrl){
       try{const resp=await fetch(A.logoUrl);const blob=await resp.blob();const du=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(blob);});doc.addImage(du,'PNG',ML,MT,16,16);}catch(e){}
     }
@@ -1861,28 +1835,58 @@ async function doPDF(withImages){
     doc.setFontSize(9);doc.setTextColor(90,100,120);doc.setFont(undefined,'normal');
     doc.text(A.perms.clientName+' · '+list.length+' orders · '+new Date().toLocaleDateString('en-IN'),ML+20,MT+13);
     doc.setDrawColor(24,95,165);doc.setLineWidth(.5);doc.line(ML,MT+18,PW,MT+18);
+
     if(!withImages){
-      doc.autoTable({head:[h],body:rows,startY:MT+22,styles:{fontSize:8,cellPadding:3,font:'helvetica'},headStyles:{fillColor:[15,33,68],textColor:255,fontStyle:'bold'},alternateRowStyles:{fillColor:[244,247,251]},margin:{left:ML,right:ML}});
+      // Fast export — plain autoTable
+      doc.autoTable({
+        head:[h],body:rows,startY:MT+22,
+        styles:{fontSize:8,cellPadding:3,font:'helvetica',overflow:'linebreak'},
+        headStyles:{fillColor:[15,33,68],textColor:255,fontStyle:'bold'},
+        alternateRowStyles:{fillColor:[244,247,251]},
+        margin:{left:ML,right:ML}
+      });
     } else {
-      const ROW_H=24,IMG_SZ=18;let y=MT+22;
-      doc.setFillColor(15,33,68);doc.rect(ML,y,PW-ML*2,8,'F');
-      doc.setTextColor(255);doc.setFontSize(7.5);doc.setFont(undefined,'bold');
-      let hx=ML;
-      h.forEach((col,i)=>{doc.text(col.slice(0,16),hx+1.5,y+5.5);hx+=i===h.indexOf('Product / Tool Name')?70:i===h.indexOf('Date')?20:i===h.indexOf('Category')?28:18;});
-      y+=10;
-      list.forEach((o,ri)=>{
-        if(y+ROW_H>195){doc.addPage();y=15;}
-        if(ri%2===0){doc.setFillColor(244,247,251);doc.rect(ML,y,PW-ML*2,ROW_H,'F');}
-        doc.setTextColor(26,35,50);doc.setFontSize(7);doc.setFont(undefined,'normal');
-        const r=rows[ri];let rx=ML;
-        r.forEach((val,ci)=>{if(val!==undefined){doc.text(String(val).slice(0,24),rx+1.5,y+5);}rx+=ci===2?70:ci===3?28:18;});
-        if(imgDataMap[o.sr]){try{doc.addImage(imgDataMap[o.sr],'PNG',PW-ML-IMG_SZ-2,y+2,IMG_SZ,IMG_SZ);}catch(e){}}
-        doc.setDrawColor(220,228,240);doc.setLineWidth(.3);doc.line(ML,y+ROW_H,PW-ML,y+ROW_H);
-        y+=ROW_H;
+      // Full export — autoTable with image column injected
+      // Add Image column at the end of headers
+      const headWithImg=[...h,'Image'];
+      const bodyWithImg=rows.map((r,i)=>[...r,'']);
+      // Track rowHeight for image placement
+      const imgColIndex=headWithImg.length-1;
+
+      doc.autoTable({
+        head:[headWithImg],
+        body:bodyWithImg,
+        startY:MT+22,
+        styles:{fontSize:8,cellPadding:3,font:'helvetica',overflow:'linebreak',minCellHeight:18},
+        headStyles:{fillColor:[15,33,68],textColor:255,fontStyle:'bold'},
+        alternateRowStyles:{fillColor:[244,247,251]},
+        margin:{left:ML,right:ML},
+        columnStyles:{
+          [imgColIndex]:{cellWidth:22,minCellHeight:18}
+        },
+        didDrawCell:(data)=>{
+          // Place image in the last column for body rows
+          if(data.section==='body'&&data.column.index===imgColIndex){
+            const o=list[data.row.index];
+            if(o&&imgDataMap[o.sr]){
+              try{
+                const x=data.cell.x+2;
+                const y=data.cell.y+2;
+                const w=Math.min(data.cell.width-4,14);
+                const hh=Math.min(data.cell.height-4,14);
+                doc.addImage(imgDataMap[o.sr],'PNG',x,y,w,hh);
+              }catch(e){}
+            }
+          }
+        }
       });
     }
+    // Page footer
     const pages=doc.internal.getNumberOfPages();
-    for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(7.5);doc.setTextColor(160);doc.text('JMC Engineering · Confidential · Page '+i+' of '+pages,ML,205);}
+    for(let i=1;i<=pages;i++){
+      doc.setPage(i);doc.setFontSize(7.5);doc.setTextColor(160);
+      doc.text('JMC Engineering · Confidential · Page '+i+' of '+pages,ML,205);
+    }
     doc.save('JMC_Orders_'+new Date().toISOString().slice(0,10)+'.pdf');
     toast('✅ PDF downloaded!');
   }catch(e){toast('PDF failed: '+e.message,6000);console.error(e);}
@@ -1894,7 +1898,7 @@ async function doPDF(withImages){
 function openAdmin(){
   if(!A.isAdmin)return;
   const ct=document.getElementById('adm-cols');ct.innerHTML='';
-  const cols=[['po','PO No.'],['images','Tool images & files'],['qty','Qty'],['target','Target date'],['days','Days indicator'],['client','Client'],['remarks','Remarks'],['quoted','Quoted column'],['stages','Manufacturing stages']];
+  const cols=[['po','PO No.'],['images','Tool images & files'],['qty','Qty'],['target','Target date'],['days','Days indicator'],['client','Client column'],['remarks','Remarks'],['quoted','Quoted column'],['stages','Manufacturing stages']];
   cols.forEach(([key,label])=>{
     const d=document.createElement('div');d.className='toggle-row';
     d.innerHTML=`<span class="toggle-label">${label}</span><label class="toggle"><input type="checkbox" ${A.adminCols[key]?'checked':''} onchange="A.adminCols['${key}']=this.checked;buildHead();render()"><span class="tslider"></span></label>`;
@@ -1904,35 +1908,22 @@ function openAdmin(){
   A.accessList.forEach((ac,i)=>{
     const d=document.createElement('div');d.className='client-card';
     const perms=['stages','images','qty','target','po','remarks'].map(k=>`<span class="perm-tag ${ac[k]&&ac[k]!=='NO'?'on':''}">${k}</span>`).join('');
-    d.innerHTML=`<div class="client-card-name">${ac.clientName} ${ac.email===C.adminEmail?'👑':''}</div><div class="client-card-info">${ac.email} · Sheet: ${ac.sheet}</div><div class="client-perms">${perms}</div>${ac.email!==C.adminEmail?`<button class="btn-adm btn-adm-danger" style="margin-top:8px;font-size:11px;padding:4px 10px" onclick="removeClient(${i})">Remove</button>`:''}`;
+    const orderCount=A.allOrders.filter(o=>(o.client||'').toLowerCase()===ac.clientName.toLowerCase()).length;
+    d.innerHTML=`<div class="client-card-name">${ac.clientName} ${ac.email===C.adminEmail?'👑':''} <span style="font-size:10px;color:var(--text3);font-weight:500">(${orderCount} orders)</span></div><div class="client-card-info">${ac.email}</div><div class="client-perms">${perms}</div>${ac.email!==C.adminEmail?`<button class="btn-adm btn-adm-danger" style="margin-top:8px;font-size:11px;padding:4px 10px" onclick="removeClient(${i})">Remove</button>`:''}`;
     cl.appendChild(d);
-  });
-  const exSel=document.getElementById('nc-sheet-existing');
-  exSel.innerHTML='<option value="">— Select existing sheet —</option>';
-  A.sheetNames.filter(s=>!C.skipSheets.includes(s.toLowerCase())).forEach(s=>{
-    const o=document.createElement('option');o.value=s;o.textContent=s;exSel.appendChild(o);
   });
   document.getElementById('admin-overlay').style.display='block';
   document.getElementById('admin-drawer').style.display='flex';
 }
 function closeAdmin(){document.getElementById('admin-overlay').style.display='none';document.getElementById('admin-drawer').style.display='none';}
 
-function toggleSheetMode(){
-  const mode=document.querySelector('input[name="nc-sheet-mode"]:checked').value;
-  document.getElementById('nc-sheet-new').style.display=mode==='new'?'block':'none';
-  document.getElementById('nc-sheet-existing').style.display=mode==='existing'?'block':'none';
-}
-
-async function addClient(){
+function addClient(){
   const email=getVal('nc-email').trim().toLowerCase();
   const name=getVal('nc-name').trim();
   if(!email||!name){toast('Email and client name required');return;}
-  
-  // Single-sheet mode: all clients share Order Tracker
-  const sheet = C.masterSheet;
-  
+  if(A.accessList.some(ac=>ac.email===email)){toast('Email already exists!');return;}
   A.accessList.push({
-    email, clientName:name, sheet,
+    email, clientName:name,
     stages:document.getElementById('nc-stages').checked?'FULL':'NO',
     images:document.getElementById('nc-images').checked,
     qty:document.getElementById('nc-qty').checked,
@@ -1940,7 +1931,7 @@ async function addClient(){
     po:document.getElementById('nc-po').checked,
     remarks:document.getElementById('nc-remarks').checked
   });
-  ['nc-email','nc-name','nc-sheet-new'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['nc-email','nc-name'].forEach(id=>document.getElementById(id).value='');
   toast('Client added! Click Sync to save to Excel.',4000);
   openAdmin();
 }
@@ -1951,10 +1942,10 @@ function removeClient(i){
 async function syncToExcel(){
   toast('Syncing access list to Excel...',8000);
   try{
-    const rows=[['Email','Client Name','Sheet Name','Stages','Images','Qty','Target','PO No','Remarks']];
-    A.accessList.forEach(ac=>rows.push([ac.email,ac.clientName,ac.sheet,ac.stages,ac.images?'YES':'NO',ac.qty?'YES':'NO',ac.target?'YES':'NO',ac.po?'YES':'NO',ac.remarks?'YES':'NO']));
-    await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.accSheet)+'/range(address=\'A1:I1000\')/clear',{method:'POST',body:JSON.stringify({applyTo:'Contents'})});
-    const range='A1:I'+rows.length;
+    const rows=[['Email','Client Name','Stages','Images','Qty','Target','PO No','Remarks']];
+    A.accessList.forEach(ac=>rows.push([ac.email,ac.clientName,ac.stages,ac.images?'YES':'NO',ac.qty?'YES':'NO',ac.target?'YES':'NO',ac.po?'YES':'NO',ac.remarks?'YES':'NO']));
+    await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.accSheet)+'/range(address=\'A1:H1000\')/clear',{method:'POST',body:JSON.stringify({applyTo:'Contents'})});
+    const range='A1:H'+rows.length;
     await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.accSheet)+'/range(address=\''+range+'\')',{method:'PATCH',body:JSON.stringify({values:rows})});
     toast('✅ Synced to Excel!');
   }catch(e){toast('Sync failed: '+e.message,5000);}
