@@ -670,7 +670,7 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
     </div>
     <div class="adm-section">
       <div class="adm-sec-label">Sync Access List</div>
-      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Push Access List changes to Excel.</p>
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Push access list changes to Excel.</p>
       <button class="btn-adm-sync" onclick="syncToExcel()">⬆ Sync Access List to Excel</button>
     </div>
   </div>
@@ -683,7 +683,7 @@ tbody tr.row.sel td{border-bottom-color:#D1E9FF}
 const C = {
   clientId:    '248daf88-bf2b-4f29-9295-ab2e707fa3ef',
   tenantId:    'ae273161-7bde-4004-9e52-0ebbee8e3c0d',
-  scopes:      ['Files.Read','Files.ReadWrite','Sites.Read.All','User.Read'],
+  scopes:      ['Files.ReadWrite.All','User.Read'],
   driveId:     'b!jceebB-yv06JofmpaCD0YV43KWvC7BxKt4YoJXGPaaXaE0_L5fJdT4sWiVQE6BXZ',
   fileSearch:  'JMC_Order_Tracker copy test',
   imgFolder:   'tool_images',
@@ -812,66 +812,134 @@ async function gapiUpload(path,data,contentType){
 // FIND FILE + ENSURE FOLDERS (robust)
 // ═══════════════════════════════════════
 async function findFile(){
-  try{
-    const dr=await gapi('/me/drives');
-    A.driveId=(dr&&dr.value&&dr.value[0])?dr.value[0].id:C.driveId;
-  }catch(e){A.driveId=C.driveId;}
+  let foundItem = null;
+  let workingDriveId = C.driveId;
 
-  let res=null;
-  try{res=await gapi('/drives/'+A.driveId+'/root/search(q=\''+C.fileSearch+'\')');}catch(e){}
-  if(!res||!res.value||!res.value.length){
-    try{res=await gapi('/me/drive/search(q=\''+C.fileSearch+'\')');}catch(e){}
-  }
-  if(!res||!res.value||!res.value.length){
-    try{
-      const root=await gapi('/drives/'+A.driveId+'/root/children');
-      const folders=(root.value||[]).filter(x=>x.folder);
-      for(const f of folders){
-        const ch=await gapi('/drives/'+A.driveId+'/items/'+f.id+'/children');
-        const found=(ch.value||[]).find(x=>x.name&&x.name.toLowerCase().includes('jmc_order_tracker'));
-        if(found){res={value:[found]};break;}
+  // STRATEGY 1: Search user's own OneDrive (works for admin who owns the file)
+  try {
+    const dr = await gapi('/me/drives');
+    const userDriveId = dr?.value?.[0]?.id;
+    if (userDriveId) {
+      try {
+        const res = await gapi('/drives/' + userDriveId + '/root/search(q=\'' + C.fileSearch + '\')');
+        if (res?.value?.length) {
+          const match = res.value.find(x => x.name && /\.(xlsm|xlsx)$/i.test(x.name));
+          if (match) { foundItem = match; workingDriveId = userDriveId; }
+        }
+      } catch(e) { console.warn('Own drive search:', e.message); }
+    }
+  } catch(e) {}
+
+  // STRATEGY 2: Look in "Shared with me" (works for clients who got a share)
+  if (!foundItem) {
+    try {
+      const shared = await gapi('/me/drive/sharedWithMe?$top=200');
+      const items = shared?.value || [];
+      const candidate = items.find(x => {
+        const n = (x.name || '').toLowerCase();
+        return n.includes('jmc') && n.includes('order') && /\.(xlsm|xlsx)$/i.test(n);
+      });
+      if (candidate) {
+        // Shared items have remoteItem with the real driveId + itemId
+        if (candidate.remoteItem) {
+          foundItem = candidate.remoteItem;
+          workingDriveId = candidate.remoteItem.parentReference?.driveId || C.driveId;
+        } else {
+          foundItem = candidate;
+          workingDriveId = candidate.parentReference?.driveId || C.driveId;
+        }
       }
-    }catch(e){}
+    } catch(e) { console.warn('sharedWithMe search:', e.message); }
   }
-  if(!res||!res.value||!res.value.length)throw new Error('Excel file not found: "'+C.fileSearch+'"');
-  const f=res.value.find(x=>x.name.match(/\.(xlsm|xlsx)$/i));
-  if(!f)throw new Error('No Excel file matching: '+C.fileSearch);
-  A.fileId=f.id;
-  A.parentFolderId=f.parentReference.id;
 
-  // Ensure all folders exist (with proper error handling — no silent nulls!)
-  A.imgFolderId=await ensureFolder(C.imgFolder);
-  A.pdfFolderId=await ensureFolder(C.pdfFolder);
-  A.stpFolderId=await ensureFolder(C.stpFolder);
-  A.wcFolderId=await ensureFolder(C.wcFolder);
+  // STRATEGY 3: Try the configured admin drive directly (fallback)
+  if (!foundItem) {
+    try {
+      const res = await gapi('/drives/' + C.driveId + '/root/search(q=\'' + C.fileSearch + '\')');
+      if (res?.value?.length) {
+        const match = res.value.find(x => x.name && /\.(xlsm|xlsx)$/i.test(x.name));
+        if (match) { foundItem = match; workingDriveId = C.driveId; }
+      }
+    } catch(e) {}
+  }
 
-  // Load logo
-  try{
-    const ch=await gapi('/drives/'+A.driveId+'/items/'+A.parentFolderId+'/children?$select=id,name');
-    const items=ch.value||[];
-    const logoF=items.find(x=>x.name===C.logoFile);
-    if(logoF){
-      const li=await gapi('/drives/'+A.driveId+'/items/'+logoF.id);
-      A.logoUrl=li['@microsoft.graph.downloadUrl']||null;
-      if(A.logoUrl){
-        const lw=document.getElementById('login-logo-wrap');
-        const tw=document.getElementById('tb-logo-wrap');
-        const inj='<img src="'+A.logoUrl+'" alt="JMC" style="width:100%;height:100%;object-fit:contain">';
-        if(lw)lw.innerHTML=inj;
-        if(tw)tw.innerHTML=inj;
+  if (!foundItem) {
+    throw new Error(
+      'Excel file not accessible. If you are a client, please ask JMC Engineering ' +
+      '(info@jmcengg.com) to share the order tracker file with your Microsoft account. ' +
+      'If you are admin, check that the file "' + C.fileSearch + '" exists in your OneDrive.'
+    );
+  }
+
+  A.fileId = foundItem.id;
+  A.driveId = workingDriveId;
+  A.parentFolderId = foundItem.parentReference?.id || null;
+  console.log('File found:', {fileId:A.fileId, driveId:A.driveId, parentFolderId:A.parentFolderId});
+}
+
+// Folder setup — admin creates, client just looks up read-only
+async function setupFolders(isAdminUser){
+  if (!A.parentFolderId) {
+    console.warn('No parent folder — folder features will be unavailable');
+    A.imgFolderId = null; A.pdfFolderId = null; A.stpFolderId = null; A.wcFolderId = null;
+    A.imgFolderCache = []; A.pdfFolderCache = []; A.stpFolderCache = []; A.wcFolderCache = [];
+    return;
+  }
+
+  if (isAdminUser) {
+    // Admin: ensure folders exist (create if missing)
+    A.imgFolderId = await ensureFolder(C.imgFolder);
+    A.pdfFolderId = await ensureFolder(C.pdfFolder);
+    A.stpFolderId = await ensureFolder(C.stpFolder);
+    A.wcFolderId = await ensureFolder(C.wcFolder);
+  } else {
+    // Client: just look up existing folders, don't try to create
+    A.imgFolderId = await findExistingFolder(C.imgFolder);
+    A.pdfFolderId = await findExistingFolder(C.pdfFolder);
+    A.stpFolderId = await findExistingFolder(C.stpFolder);
+    A.wcFolderId = await findExistingFolder(C.wcFolder);
+  }
+
+  // Logo (try to load for everyone, fail silently)
+  try {
+    const ch = await gapi('/drives/' + A.driveId + '/items/' + A.parentFolderId + '/children?$select=id,name');
+    const items = ch.value || [];
+    const logoF = items.find(x => x.name === C.logoFile);
+    if (logoF) {
+      const li = await gapi('/drives/' + A.driveId + '/items/' + logoF.id);
+      A.logoUrl = li['@microsoft.graph.downloadUrl'] || null;
+      if (A.logoUrl) {
+        const lw = document.getElementById('login-logo-wrap');
+        const tw = document.getElementById('tb-logo-wrap');
+        const inj = '<img src="' + A.logoUrl + '" alt="JMC" style="width:100%;height:100%;object-fit:contain">';
+        if (lw) lw.innerHTML = inj;
+        if (tw) tw.innerHTML = inj;
       }
     }
-  }catch(e){}
+  } catch(e) { console.warn('Logo load:', e.message); }
 
-  // Load file caches
-  if(A.imgFolderId){
-    try{A.imgFolderCache=(await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name')).value||[];}catch(e){A.imgFolderCache=[];}
-  } else A.imgFolderCache=[];
-  A.pdfFolderCache=await loadFolderRecursive(A.pdfFolderId);
-  A.stpFolderCache=await loadFolderRecursive(A.stpFolderId);
-  A.wcFolderCache=await loadFolderRecursive(A.wcFolderId);
-  console.log('Folder IDs:',{img:A.imgFolderId,pdf:A.pdfFolderId,stp:A.stpFolderId,wc:A.wcFolderId});
-  console.log('Caches:',{img:A.imgFolderCache.length,pdf:A.pdfFolderCache.length,stp:A.stpFolderCache.length,wc:A.wcFolderCache.length});
+  // Load file caches (works for both admin and read-only client)
+  if (A.imgFolderId) {
+    try { A.imgFolderCache = (await gapi('/drives/' + A.driveId + '/items/' + A.imgFolderId + '/children?$select=id,name')).value || []; }
+    catch(e) { A.imgFolderCache = []; }
+  } else A.imgFolderCache = [];
+  A.pdfFolderCache = await loadFolderRecursive(A.pdfFolderId);
+  A.stpFolderCache = await loadFolderRecursive(A.stpFolderId);
+  A.wcFolderCache = await loadFolderRecursive(A.wcFolderId);
+  console.log('Folders set up:', {img:A.imgFolderId, pdf:A.pdfFolderId, stp:A.stpFolderId, wc:A.wcFolderId});
+}
+
+// Look up existing folder (no creation) — for clients/read-only users
+async function findExistingFolder(name){
+  if (!A.parentFolderId) return null;
+  try {
+    const ch = await gapi('/drives/' + A.driveId + '/items/' + A.parentFolderId + '/children?$top=200');
+    const existing = (ch.value || []).find(x => x.name === name && x.folder);
+    return existing ? existing.id : null;
+  } catch(e) {
+    console.warn('findExistingFolder failed for', name, e.message);
+    return null;
+  }
 }
 
 // FIXED: robust folder ensure — searches AND retries, never returns null silently
@@ -1008,6 +1076,10 @@ async function startApp(){
     const ur=A.accessList.find(x=>x.email===email);
     if(!ur){document.getElementById('denied-email').textContent=email;go('s-denied');return;}
     A.perms=ur;A.isAdmin=email===C.adminEmail.toLowerCase();
+
+    // Now that we know if user is admin, set up folders accordingly
+    go('s-loading', A.isAdmin?'Setting up admin workspace...':'Loading shared data...');
+    await setupFolders(A.isAdmin);
 
     const ini=ur.clientName.replace(/[^A-Z]/gi,'').slice(0,2).toUpperCase()||'?';
     document.getElementById('tb-uname').textContent=ur.clientName;
