@@ -859,11 +859,29 @@ async function writeOrderRow(order,rowNum){
   const dateExcel=order.date?excelDateSerial(order.date):'';
   const tgtExcel=order.tgt?excelDateSerial(order.tgt):'';
   const row=[
-    order.sr,dateExcel,order.client||'',order.po||'—',order.name,order.cat,
-    order.type||'',order.qty||'',order.quoted||'No',order.price||'',order.poRec||'No',order.approval||'No',
-    tgtExcel,order.stRM||'—',order.stShape||'—',order.stGrind||'—',
-    order.stWire||'—',order.stLathe||'—',order.stHT||'—',
-    order.stInsp||'—',order.stDisp||'—',order.status||'In Progress',order.remarks||''
+    order.sr,           // A - Sr No
+    dateExcel,          // B - Order Date
+    order.client||'',   // C - Client
+    order.po||'—',      // D - Client PO No
+    order.name,         // E - Product/Tool Name
+    order.cat,          // F - Category
+    order.type||'',     // G - Tool Type
+    order.qty||'',      // H - Qty
+    order.quoted||'No', // I - Quoted
+    order.poRec||'No',  // J - Client PO Received
+    order.approval||'No',// K - Approval to Start
+    tgtExcel,           // L - Target Delivery
+    order.stRM||'—',    // M - Raw Material
+    order.stShape||'—', // N - Shaping/Milling
+    order.stGrind||'—', // O - Surface/CG Grinding
+    order.stWire||'—',  // P - Wirecut/VMC
+    order.stLathe||'—', // Q - Jig Boring/Lathe
+    order.stHT||'—',    // R - Heat Treatment
+    order.stInsp||'—',  // S - Final Inspection
+    order.stDisp||'—',  // T - Dispatch
+    order.status||'In Progress', // U - Overall Status
+    order.price||'',    // V - Quoted Price ← NEW
+    order.remarks||''   // W - Remarks/Hold Reason
   ];
   const range='A'+rowNum+':W'+rowNum;
   await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\''+range+'\')',{method:'PATCH',body:JSON.stringify({values:[row]})});
@@ -954,7 +972,7 @@ function parseOrders(rows){
     sr:col('sr','no'),date:col('order date','date'),
     client:col('client name','client'),po:col('client po','po no'),
     name:col('product','tool name'),cat:col('category'),type:col('tool type'),
-    qty:col('qty','quantity'),quoted:col('quoted'),price:col('quoted price','price'),
+    qty:col('qty','quantity'),quoted:col('quoted'),price:col('quoted price','price (₹)','price'),
     poRec:col('po received','received'),approval:col('approval'),tgt:col('target'),
     rm:col('raw material','rm'),shape:col('shaping','milling'),
     grind:col('grinding','grind','surface'),wire:col('wirecut','wire','vmc'),
