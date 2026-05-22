@@ -290,7 +290,61 @@ tbody tr.row.checked.sel{background:#EDE9FE}
 .perm-tag.on{background:#EBF4FF;color:var(--blue);border-color:#BDDEFF}
 
 @media(max-width:768px){.metrics{grid-template-columns:repeat(2,1fr)}.side-panel{width:100%;position:fixed;inset:56px 0 0 0}.tb-sub,.tb-role{display:none}.table-area{padding:12px}}
+
+/* ═══════════════════════════════════════
+   PARENT-CHILD ORDER STYLES
+   ═══════════════════════════════════════ */
+.parent-row{background:#F0F7FF !important;border-left:3px solid var(--blue) !important;cursor:pointer}
+.parent-row:hover{background:#E0EFFF !important}
+.parent-row td{font-weight:600}
+.parent-sr{display:inline-flex;align-items:center;gap:4px;color:var(--blue);font-weight:700;font-size:12px}
+.parent-badge{font-size:9px;padding:1px 6px;border-radius:10px;background:var(--blue);color:#fff;margin-left:4px}
+.child-row{background:#FAFCFF !important;display:none}
+.child-row.visible{display:table-row}
+.child-row td{padding-left:24px !important;font-size:11px;color:var(--text2)}
+.child-row .child-prefix{color:var(--blue);margin-right:4px;font-weight:700}
+.child-name-cell{border-left:2px solid #BDDEFF;padding-left:8px !important}
+.child-row:hover{background:#F0F7FF !important}
+.parent-children-count{font-size:10px;color:var(--blue);font-weight:500;margin-left:4px}
+
+/* PDF IMPORT MODAL */
+.pdf-import-table{width:100%;border-collapse:collapse;font-size:12px}
+.pdf-import-table th{background:#F8FAFD;padding:8px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text2);border-bottom:1.5px solid var(--border);white-space:nowrap}
+.pdf-import-table td{padding:8px 10px;border-bottom:1px solid #F0F4FA;vertical-align:middle}
+.pdf-import-table tr:hover{background:#F8FAFD}
+.pdf-import-table input,.pdf-import-table select{padding:4px 6px;border-radius:4px;border:1.5px solid var(--border);font-size:11px;font-family:'DM Sans',sans-serif;outline:none;width:100%}
+.pdf-import-table input:focus{border-color:var(--blue)}
+.pdf-import-thumb{width:50px;height:50px;border-radius:6px;border:1.5px solid var(--border);object-fit:contain;background:var(--bg)}
+.pdf-import-ocr-badge{font-size:9px;padding:1px 6px;border-radius:10px;background:#FEF3C7;color:#92400E;font-weight:600;display:inline-flex;align-items:center;gap:2px}
+.pdf-import-parent-name{width:100%;padding:8px 10px;border-radius:var(--r-sm);border:1.5px solid var(--border);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;margin-bottom:12px}
+.pdf-import-parent-name:focus{border-color:var(--blue)}
+
+/* CHILD ORDER TOGGLE */
+.child-toggle-row{display:flex;align-items:center;gap:8px;padding:8px 0;margin-bottom:8px;font-size:12px;color:var(--text2)}
+.child-toggle-row .toggle{position:relative;width:38px;height:20px}
+.child-toggle-row .toggle input{opacity:0;width:0;height:0;position:absolute}
+.child-toggle-row .tslider{position:absolute;inset:0;background:#D1D5DB;border-radius:20px;cursor:pointer;transition:.2s}
+.child-toggle-row .toggle input:checked+.tslider{background:var(--blue)}
+.child-toggle-row .tslider:before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.child-toggle-row .toggle input:checked+.tslider:before{transform:translateX(18px)}
+
+/* DETAIL VIEW CHILD PARTS */
+.child-parts-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.child-parts-table th{background:#F8FAFD;padding:6px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text2);border-bottom:1.5px solid var(--border)}
+.child-parts-table td{padding:6px 10px;border-bottom:1px solid #F0F4FA;cursor:pointer}
+.child-parts-table tr:hover{background:#F8FAFD}
+.child-parts-table .child-sr{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)}
+
+/* PDF ENGINE LOADING */
+.pdf-engine-loading{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2);padding:8px 12px;background:#F0F7FF;border-radius:var(--r-sm);margin-bottom:8px}
+.pdf-engine-loading .loader{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--blue)}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+</script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+<base target="_blank">
 </head>
 <body>
 <div id="s-login">
@@ -375,7 +429,8 @@ tbody tr.row.checked.sel{background:#EDE9FE}
         <input class="tbar-date" id="f-dt" type="date" onchange="render()" title="To date">
         <button class="btn-tb" onclick="clearFilters()">✕ Clear</button>
         <button class="btn-tb" onclick="doRefresh()">⟳ Refresh</button>
-        <button class="btn-tb btn-xl" onclick="doExcelExport()">📊 Excel</button>
+        <button class="        <button class="btn-tb" onclick="openPDFImportModal()">📄 Import PDF</button>
+        btn-tb btn-xl" onclick="doExcelExport()">📊 Excel</button>
         <button class="btn-tb btn-pdf" onclick="showExpModal()">📄 PDF</button>
         <button id="btn-add" class="btn-tb btn-add" onclick="openAddOrder()" style="display:none">+ Add Order</button>
       </div>
@@ -460,6 +515,19 @@ tbody tr.row.checked.sel{background:#EDE9FE}
             <div class="stage-field"><label>Dispatch</label><select id="st-disp"><option>—</option><option>Pending</option><option>Done</option><option>NA</option><option>Hold</option></select></div>
           </div>
         </div>
+                <div class="sp-section">
+          <div class="sp-sec-label">Parent / Child Configuration</div>
+          <div class="sp-grid-1">
+            <div class="child-toggle-row">
+              <label class="toggle"><input type="checkbox" id="f-is-parent" onchange="toggleParentFields()"><span class="tslider"></span></label>
+              <span>This is a <strong>Parent Order</strong> (has child parts)</span>
+            </div>
+            <div class="field" id="parent-sr-field" style="display:none">
+              <label>Parent Sr No. (for child orders)</label>
+              <select id="f-parent-sr"><option value="">— None (standalone order) —</option></select>
+            </div>
+          </div>
+        </div>
         <div class="sp-section">
           <div class="sp-sec-label">Final Status & Notes</div>
           <div class="sp-grid-1">
@@ -513,6 +581,8 @@ tbody tr.row.checked.sel{background:#EDE9FE}
       </div>
       <div class="sp-footer" id="sp-footer-view" style="display:none">
         <button class="btn-cancel" onclick="closeSP()">Close</button>
+        <button class="btn-edit" id="btn-create-child" onclick="createChildOrder()" style="display:none">➕ Create Child Order</button>
+        <button class="btn-edit" onclick="switchToEdit()">✏️ Edit</button>
       </div>
     </div>
   </div>
@@ -650,7 +720,11 @@ let A = {
   _lastPdfBlobUrl:null, _lastPdfFileName:null, _lastFMUrl:null, _lastFMName:null,
   selectedRows:new Set(),
   colFilters:{},      // {colKey: Set of allowed values}
-  activeColFilter:null // {col, key, values, allValues}
+  activeColFilter:null, // {col, key, values, allValues}
+  expandedParents:new Set(),
+  pdfImportData:null,
+  pdfEnginesLoaded:false,
+  tesseractWorker:null
 };
 
 // ═══════════════════════════════════════
@@ -881,9 +955,11 @@ async function writeOrderRow(order,rowNum){
     order.stDisp||'—',  // T - Dispatch
     order.status||'In Progress', // U - Overall Status
     order.price||'',    // V - Quoted Price ← NEW
-    order.remarks||''   // W - Remarks/Hold Reason
+    order.remarks||'',  // W - Remarks/Hold Reason
+    order.parentSr||'', // X - Parent Sr
+    order.isParent||''  // Y - Is Parent
   ];
-  const range='A'+rowNum+':W'+rowNum;
+  const range='A'+rowNum+':Y'+rowNum;
   await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\''+range+'\')',{method:'PATCH',body:JSON.stringify({values:[row]})});
 }
 
@@ -978,7 +1054,8 @@ function parseOrders(rows){
     grind:col('grinding','grind','surface'),wire:col('wirecut','wire','vmc'),
     lathe:col('jig boring','lathe'),ht:col('heat'),
     inspect:col('inspection','inspect'),dispatch:col('dispatch'),
-    status:col('overall status','status'),remarks:col('remarks')
+    status:col('overall status','status'),remarks:col('remarks'),
+    parentSr:col('parent sr','parent'),isParent:col('is parent','parent flag')
   };
   // Disambiguate client from client PO
   if(cc.client>=0&&cc.po>=0&&cc.client===cc.po)cc.client=h.findIndex(x=>/^client(\s|$)|^client name/.test(x));
@@ -1011,7 +1088,9 @@ function parseOrders(rows){
       stGrind:cc.grind>=0?r[cc.grind]:'—',stWire:cc.wire>=0?r[cc.wire]:'—',
       stLathe:cc.lathe>=0?r[cc.lathe]:'—',stHT:cc.ht>=0?r[cc.ht]:'—',
       stInsp:cc.inspect>=0?r[cc.inspect]:'—',stDisp:cc.dispatch>=0?r[cc.dispatch]:'—',
-      status:r[cc.status]||'In Progress',remarks:r[cc.remarks]||''
+      status:r[cc.status]||'In Progress',remarks:r[cc.remarks]||'',
+      parentSr:(cc.parentSr>=0?(r[cc.parentSr]||''):''),
+      isParent:(cc.isParent>=0?(r[cc.isParent]||''):'')
     });
   }
   return orders;
@@ -1376,29 +1455,50 @@ function getFiltered(){
   const fd=document.getElementById('f-df').value;
   const td=document.getElementById('f-dt').value;
   const t=A.tab;
-  return A.orders.filter(o=>{
-    if(s&&!o.name.toLowerCase().includes(s)&&!String(o.po||'').toLowerCase().includes(s)&&!(o.type||'').toLowerCase().includes(s)&&!(o.client||'').toLowerCase().includes(s))return false;
-    if(fc&&!o.cat.includes(fc))return false;
-    if(fs&&o.status!==fs)return false;
-    if(fcl&&(o.client||'')!==fcl)return false;
-    if(fd&&o.dateISO&&o.dateISO<fd)return false;
-    if(td&&o.dateISO&&o.dateISO>td)return false;
+  const matched=new Set();
+  // First pass: find all orders that match filters
+  A.orders.forEach(o=>{
+    if(s&&!o.name.toLowerCase().includes(s)&&!String(o.po||'').toLowerCase().includes(s)&&!(o.type||'').toLowerCase().includes(s)&&!(o.client||'').toLowerCase().includes(s))return;
+    if(fc&&!o.cat.includes(fc))return;
+    if(fs&&o.status!==fs)return;
+    if(fcl&&(o.client||'')!==fcl)return;
+    if(fd&&o.dateISO&&o.dateISO<fd)return;
+    if(td&&o.dateISO&&o.dateISO>td)return;
     // Column filters
+    let cfPass=true;
     for(const [col,vals] of Object.entries(A.colFilters)){
       let v='';
       if(col==='cat')v=o.cat||'—';
       else if(col==='status')v=o.status||'—';
       else if(col==='client')v=o.client||'—';
       else if(col==='quoted')v=o.quoted||'No';
-      if(v&&!vals.has(v))return false;
+      if(v&&!vals.has(v)){cfPass=false;break;}
     }
+    if(!cfPass)return;
     const sl=o.status.toLowerCase();
-    if(t==='prg'&&!sl.includes('progress'))return false;
-    if(t==='del'&&!sl.includes('deliver')&&!sl.includes('ready'))return false;
-    if(t==='hld'&&!sl.includes('hold'))return false;
-    if(t==='late'){const d=daysToTarget(o);if(d===null||d>=0)return false;}
-    return true;
+    if(t==='prg'&&!sl.includes('progress'))return;
+    if(t==='del'&&!sl.includes('deliver')&&!sl.includes('ready'))return;
+    if(t==='hld'&&!sl.includes('hold'))return;
+    if(t==='late'){const d=daysToTarget(o);if(d===null||d>=0)return;}
+    matched.add(o.sr);
   });
+  // Second pass: auto-expand parents of matched children, and include all children of matched parents
+  const result=new Set();
+  matched.forEach(sr=>{
+    const o=A.orders.find(x=>x.sr==sr);
+    if(!o)return;
+    result.add(sr);
+    // If child matched, include its parent and expand
+    if(o.parentSr){
+      result.add(o.parentSr);
+      A.expandedParents.add(parseInt(o.parentSr));
+    }
+    // If parent matched, include all its children
+    if(o.isParent==='YES'){
+      A.orders.filter(c=>c.parentSr==String(o.sr)).forEach(c=>result.add(c.sr));
+    }
+  });
+  return A.orders.filter(o=>result.has(o.sr));
 }
 function render(){
   const p=colsToShow();if(!A.perms)return;
@@ -1412,20 +1512,42 @@ function render(){
   if(!list.length){tb.innerHTML='<tr><td colspan="20"><div class="empty-state"><div style="font-size:40px;margin-bottom:12px">📋</div><div style="font-size:14px;font-weight:500">No orders found</div></div></td></tr>';return;}
   const allChecked=list.length>0&&list.every(o=>A.selectedRows.has(o.sr));
   const cbAll=document.getElementById('cb-all');if(cbAll)cbAll.checked=allChecked;
+  // Build parent-child lookup
+  const childrenByParent={};
+  A.orders.forEach(o=>{if(o.parentSr){if(!childrenByParent[o.parentSr])childrenByParent[o.parentSr]=[];childrenByParent[o.parentSr].push(o);}});
   list.forEach(o=>{
     const isChecked=A.selectedRows.has(o.sr);
     const isSel=A.selOrder&&A.selOrder.sr===o.sr;
+    const isParent=o.isParent==='YES';
+    const isChild=!!o.parentSr;
+    const children=isParent?(childrenByParent[String(o.sr)]||[]):[];
     const tr=document.createElement('tr');
-    tr.className='row'+(isSel?' sel':'')+(isChecked?' checked':'');
+    if(isParent){
+      tr.className='parent-row'+(isSel?' sel':'')+(isChecked?' checked':'');
+    }else if(isChild){
+      tr.className='child-row'+(A.expandedParents.has(parseInt(o.parentSr))?' visible':'')+(isSel?' sel':'')+(isChecked?' checked':'');
+    }else{
+      tr.className='row'+(isSel?' sel':'')+(isChecked?' checked':'');
+    }
     const svgD=svgUrl(toolSVG(o.type||o.name));
-    const ne=String(o.name).replace(/"/g,'&quot;').replace(/'/g,"\\'");
-    const te=String(o.type||'').replace(/"/g,'&quot;').replace(/'/g,"\\'");
+    const ne=String(o.name).replace(/"/g,'&quot;').replace(/'/g,"\'");
+    const te=String(o.type||'').replace(/"/g,'&quot;').replace(/'/g,"\'");
     let h=`<td style="text-align:center;padding:0 8px"><input type="checkbox" class="row-cb" ${isChecked?'checked':''} onclick="event.stopPropagation();toggleRow(${o.sr},this.checked,event)"></td>`;
-    h+=`<td style="color:var(--text3);font-size:11px;font-family:DM Mono,monospace">${o.sr}</td>`;
+    if(isParent){
+      h+=`<td style="color:var(--blue);font-size:11px;font-family:DM Mono,monospace;font-weight:700">${o.sr}<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:middle;margin-left:4px"><polyline points="${A.expandedParents.has(o.sr)?'6 9 12 15 18 9':'6 15 12 9 18 15'}"></polyline></svg><span class="parent-badge">PARENT</span>${children.length?'<span class="parent-children-count">('+children.length+' child'+(children.length>1?'ren':'')+')</span>':''}</td>`;
+    }else if(isChild){
+      h+=`<td style="color:var(--text3);font-size:11px;font-family:DM Mono,monospace"><span class="child-prefix">↳</span>${o.sr}</td>`;
+    }else{
+      h+=`<td style="color:var(--text3);font-size:11px;font-family:DM Mono,monospace">${o.sr}</td>`;
+    }
     h+=`<td style="font-size:11px;color:var(--text2)">${o.date}</td>`;
     if(p.client)h+=`<td><span class="b-client">${o.client||'—'}</span></td>`;
     if(p.po)h+=`<td style="font-size:11px;font-family:DM Mono,monospace;color:var(--text2)">${o.po}</td>`;
-    h+=`<td style="font-weight:${isSel?600:400};max-width:240px">${o.name}</td>`;
+    if(isChild){
+      h+=`<td style="font-weight:${isSel?600:400};max-width:240px"><span class="child-name-cell">${o.name}</span></td>`;
+    }else{
+      h+=`<td style="font-weight:${isSel?600:400};max-width:240px">${o.name}</td>`;
+    }
     h+=`<td>${catB(o.cat)}</td>`;
     if(p.images){
       h+=`<td style="text-align:center"><div class="thumb" onclick="event.stopPropagation();openImgModal(${o.sr},'${ne}','${te}')"><img id="thumb-${o.sr}" src="${svgD}" alt="tool" style="opacity:.4;width:100%;height:100%;object-fit:contain"></div></td>`;
@@ -1447,10 +1569,19 @@ function render(){
     h+=`<td>${stB(o.status)}</td>`;
     if(p.remarks)h+=`<td style="font-size:11px;color:var(--text2);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.remarks||''}</td>`;
     tr.innerHTML=h;
-    tr.onclick=(e)=>{if(e.target.type==='checkbox')return;showDet(o);};
+    if(isParent){
+      tr.onclick=(e)=>{if(e.target.type==='checkbox')return;toggleParent(o.sr);};
+    }else{
+      tr.onclick=(e)=>{if(e.target.type==='checkbox')return;showDet(o);};
+    }
     tb.appendChild(tr);
   });
   setTimeout(()=>loadThumbImages(list),100);
+}
+function toggleParent(sr){
+  if(A.expandedParents.has(sr))A.expandedParents.delete(sr);
+  else A.expandedParents.add(sr);
+  render();
 }
 function clearFilters(){
   ['f-srch','f-cat','f-st','f-client','f-df','f-dt'].forEach(id=>document.getElementById(id).value='');
@@ -1466,10 +1597,11 @@ function setTab(t,el){A.tab=t;A.selOrder=null;document.querySelectorAll('.tab').
 function showDet(o){
   A.selOrder=o;const p=colsToShow();
   document.getElementById('sp-title').textContent='Order #'+o.sr+' — '+o.name;
-  document.getElementById('sp-sub').textContent=o.date+' · '+o.cat+(o.client?' · '+o.client:'');
+  document.getElementById('sp-sub').textContent=o.date+' · '+o.cat+(o.client?' · '+o.client:'')+(o.isParent==='YES'?' · PARENT ORDER':(o.parentSr?' · Child of #'+o.parentSr:''));
   document.getElementById('sp-edit-btn').style.display=A.isAdmin?'inline-flex':'none';
   document.getElementById('sp-edit').style.display='none';
   document.getElementById('sp-view').style.display='block';
+  document.getElementById('btn-create-child').style.display=(o.isParent==='YES'||!o.parentSr)?'inline-flex':'none';
   document.getElementById('btn-del-order').style.display='none';
   const g=document.getElementById('det-grid');g.innerHTML='';
   const dc=(l,v)=>{const d=document.createElement('div');d.className='dc';d.innerHTML=`<div class="dc-lbl">${l}</div><div class="dc-val">${v||'—'}</div>`;g.appendChild(d);};
@@ -1481,6 +1613,14 @@ function showDet(o){
   dc('Status',stB(o.status));
   if(o.client)dc('Client',`<span class="b-client">${o.client}</span>`);
   if(p.remarks&&o.remarks)dc('Remarks',o.remarks);
+  // Parent/Child info
+  if(o.isParent==='YES'){
+    const children=A.orders.filter(c=>c.parentSr==String(o.sr));
+    dc('Parent Order','<span class="parent-badge">YES</span> — '+children.length+' child part'+(children.length!==1?'s':'')+' linked');
+  }else if(o.parentSr){
+    const parent=A.orders.find(x=>String(x.sr)===String(o.parentSr));
+    dc('Parent Sr','<a href="#" onclick="event.preventDefault();showDet(A.orders.find(x=>x.sr=='+o.parentSr+'))">#'+o.parentSr+(parent?' — '+parent.name:'')+'</a>');
+  }
   const sd=document.getElementById('det-stages');
   if(p.stages!=='NO'){
     sd.style.display='block';
@@ -1489,6 +1629,26 @@ function showDet(o){
     const stgs=[['RM',o.stRM],['Shape',o.stShape],['Grind',o.stGrind],['Wire/VMC',o.stWire],['Lathe',o.stLathe],['HT',o.stHT],['Inspect',o.stInsp],['Dispatch',o.stDisp]];
     stgs.forEach(([l,v])=>{if(!v||v==='—')return;const vs=v.toString();const cl=vs.toLowerCase()==='done'?'sch-done':vs.toLowerCase()==='pending'?'sch-pend':vs.toLowerCase().includes('hold')?'sch-hold':'sch-na';ss.innerHTML+=`<span class="sch ${cl}">${l}: ${vs}</span>`;});
   }else sd.style.display='none';
+  // Child parts table for parent orders
+  if(o.isParent==='YES'){
+    const children=A.orders.filter(c=>c.parentSr==String(o.sr));
+    if(children.length){
+      const childDiv=document.createElement('div');
+      childDiv.style.cssText='margin-top:16px;padding-top:12px;border-top:1.5px solid var(--border);';
+      childDiv.innerHTML='<div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:8px">Child Parts ('+children.length+')</div>';
+      const tbl=document.createElement('table');
+      tbl.className='child-parts-table';
+      tbl.innerHTML='<tr><th>Sr</th><th>Name</th><th>Category</th><th>Status</th><th>Target</th></tr>';
+      children.forEach(c=>{
+        const tr=document.createElement('tr');
+        tr.onclick=()=>showDet(c);
+        tr.innerHTML='<td class="child-sr">'+c.sr+'</td><td>'+c.name+'</td><td>'+catB(c.cat)+'</td><td>'+stB(c.status)+'</td><td>'+(c.tgt||'—')+'</td>';
+        tbl.appendChild(tr);
+      });
+      childDiv.appendChild(tbl);
+      g.appendChild(childDiv);
+    }
+  }
   const fl=document.getElementById('sp-files-list');fl.innerHTML='';let hasAnyFile=false;
   const pdfMatch=findFileForSr(A.pdfFolderCache,o.sr);
   const stpMatch=findFileForSr(A.stpFolderCache,o.sr);
@@ -1498,23 +1658,17 @@ function showDet(o){
   if(wcMatch){hasAnyFile=true;fl.innerHTML+=`<div class="file-row" onclick="quickViewFile(${o.sr},'wc')"><div class="file-row-icon" style="background:#FCE7F3;color:#9D174D">WC</div><div style="flex:1;min-width:0"><div class="file-row-name">${wcMatch.name}</div><div class="file-row-meta">${fmtBytes(wcMatch.size)}</div></div><button class="file-row-btn">Info</button></div>`;}
   document.getElementById('sp-files').style.display=hasAnyFile?'block':'none';
   openSP('view');render();
-}
-
-// ═══════════════════════════════════════
-// ADD / EDIT ORDER
-// ═══════════════════════════════════════
-function populateClientSelector(){
-  const sel=document.getElementById('f-client-name');sel.innerHTML='<option value="">— Select client —</option>';
-  const clients=[...new Set(A.accessList.filter(ac=>ac.email!==C.adminEmail.toLowerCase()).map(ac=>ac.clientName))].sort();
-  clients.forEach(c=>{const opt=document.createElement('option');opt.value=c;opt.textContent=c;sel.appendChild(opt);});
-}
-async function openAddOrder(){
+}v><button class="file-row-btn">Info</button></div>`;}
+  if(wcMatch){hasAnyFile=true;fl.innerHTML+=`<div class="file-row" onclick="quickViewFile(${o.sr},'wc')"><div class="file-row-icon" style="background:#FCE7F3;color:#9D174D">WC</div><div style="flex:1;min-width:0"><div class="file-row-name">${wcMatch.name}</div><div class="file-row-meta">${fmtBytes(wcMatch.size)}</div></div><button class="file-row-btn">Info</button></div>`;}
+  document.getElementById('sp-files').style.display=hasAnyFile?'block':'none';
+  openSP('view');render();
+}function openAddOrder(){
   A.editOrder=null;A.selOrder=null;A.pendingImgFile=null;A.pendingPDFFile=null;A.pendingSTPFile=null;A.pendingWCFile=null;
   document.getElementById('sp-title').textContent='New Order';document.getElementById('sp-sub').textContent='Fill in order details';
   document.getElementById('btn-del-order').style.display='none';document.getElementById('sp-edit-btn').style.display='none';
   document.getElementById('sp-view').style.display='none';document.getElementById('sp-edit').style.display='block';
   document.getElementById('client-selector-section').style.display=A.isAdmin?'block':'none';
-  populateClientSelector();clearForm();
+  populateClientSelector();populateParentSrSelector();clearForm();
   document.getElementById('f-sr').value='(Auto on save)';
   document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
   openSP('edit');
@@ -1526,14 +1680,16 @@ function switchToEdit(){
   document.getElementById('sp-edit-btn').style.display='none';document.getElementById('btn-del-order').style.display='inline-flex';
   document.getElementById('sp-view').style.display='none';document.getElementById('sp-edit').style.display='block';
   document.getElementById('client-selector-section').style.display=A.isAdmin?'block':'none';
-  populateClientSelector();fillForm(o);openSP('edit');
+  populateClientSelector();populateParentSrSelector();fillForm(o);openSP('edit');
 }
 function clearForm(){
-  ['f-sr','f-date','f-po','f-qty','f-name','f-type','f-tgt','f-remarks','f-client-name','f-price'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-sr','f-date','f-po','f-qty','f-name','f-type','f-tgt','f-remarks','f-client-name','f-price','f-parent-sr'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['f-cat2','f-quoted','f-po-rec','f-approval','f-status'].forEach(id=>{const el=document.getElementById(id);if(el)el.selectedIndex=0;});
   ['st-rm','st-shape','st-grind','st-wire','st-lathe','st-ht','st-insp','st-disp'].forEach(id=>{const el=document.getElementById(id);if(el)el.selectedIndex=0;});
   ['img-name','pdf-name','stp-name','wc-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='';});
   ['img-zone','pdf-zone','stp-zone','wc-zone'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('has-file');});
+  const ip=document.getElementById('f-is-parent');if(ip)ip.checked=false;
+  toggleParentFields();
 }
 function fillForm(o){
   document.getElementById('f-sr').value=o.sr;document.getElementById('f-date').value=o.dateISO||'';
@@ -1545,13 +1701,35 @@ function fillForm(o){
   setSelect('st-rm',o.stRM);setSelect('st-shape',o.stShape);setSelect('st-grind',o.stGrind);setSelect('st-wire',o.stWire);
   setSelect('st-lathe',o.stLathe);setSelect('st-ht',o.stHT);setSelect('st-insp',o.stInsp);setSelect('st-disp',o.stDisp);
   setSelect('f-client-name',o.client||'');
+  // Parent/Child fields
+  const ip=document.getElementById('f-is-parent');if(ip)ip.checked=(o.isParent==='YES');
+  toggleParentFields();
+  if(o.parentSr){setSelect('f-parent-sr',o.parentSr);}
+  else{document.getElementById('f-parent-sr').selectedIndex=0;}
   const showExisting=(zoneId,nameId,cache)=>{const match=findFileForSr(cache,o.sr);if(match){document.getElementById(nameId).textContent='✓ '+match.name+' (replace?)';document.getElementById(zoneId).classList.add('has-file');}else{document.getElementById(nameId).textContent='';document.getElementById(zoneId).classList.remove('has-file');}};
   showExisting('img-zone','img-name',A.imgFolderCache);showExisting('pdf-zone','pdf-name',A.pdfFolderCache);
   showExisting('stp-zone','stp-name',A.stpFolderCache);showExisting('wc-zone','wc-name',A.wcFolderCache);
 }
-function setSelect(id,val){const el=document.getElementById(id);if(!el)return;for(let i=0;i<el.options.length;i++){if(el.options[i].value===val||el.options[i].text===val){el.selectedIndex=i;return;}}}
-function getVal(id){return(document.getElementById(id)||{}).value||'';}
-function getFormOrder(){
+function toggleParentFields(){
+  const isParent=document.getElementById('f-is-parent').checked;
+  document.getElementById('parent-sr-field').style.display=isParent?'none':'block';
+}
+function populateParentSrSelector(){
+  const sel=document.getElementById('f-parent-sr');
+  if(!sel)return;
+  const current=sel.value;
+  sel.innerHTML='<option value="">— None (standalone order) —</option>';
+  const parents=A.orders.filter(o=>o.isParent==='YES').sort((a,b)=>a.sr-b.sr);
+  parents.forEach(p=>{
+    const opt=document.createElement('option');
+    opt.value=String(p.sr);
+    opt.textContent='#'+p.sr+' — '+p.name;
+    sel.appendChild(opt);
+  });
+  if(current)setSelect('f-parent-sr',current);
+}function getFormOrder(){
+  const isParent=document.getElementById('f-is-parent').checked;
+  const parentSr=!isParent?getVal('f-parent-sr'):'';
   return{
     sr:getVal('f-sr'),date:getVal('f-date'),
     client:A.isAdmin?getVal('f-client-name'):A.perms.clientName,
@@ -1561,23 +1739,10 @@ function getFormOrder(){
     remarks:getVal('f-remarks'),status:getVal('f-status'),
     stRM:getVal('st-rm'),stShape:getVal('st-shape'),stGrind:getVal('st-grind'),
     stWire:getVal('st-wire'),stLathe:getVal('st-lathe'),stHT:getVal('st-ht'),
-    stInsp:getVal('st-insp'),stDisp:getVal('st-disp')
+    stInsp:getVal('st-insp'),stDisp:getVal('st-disp'),
+    parentSr:parentSr,isParent:isParent?'YES':''
   };
-}
-async function uploadFileToFolder(file,folderId,sr,cleanName,ext){
-  if(!folderId)throw new Error('Target folder not available. Try refreshing.');
-  const fileName=sr+'-'+cleanName+'.'+(ext||file.name.split('.').pop().toLowerCase());
-  const buf=await file.arrayBuffer();
-  const res=await gapiUpload('/drives/'+A.driveId+'/items/'+folderId+':/'+encodeURIComponent(fileName)+':/content',buf,file.type||'application/octet-stream');
-  return{fileName,res};
-}
-function refreshCacheAfterUpload(cache,sr,fileName,fileId){
-  if(!cache)cache=[];const re=new RegExp('^0*'+sr+'[-_. ]','i');
-  const filtered=cache.filter(f=>!re.test(f.name));
-  filtered.push({id:fileId,name:fileName,size:0,lastModifiedDateTime:new Date().toISOString()});
-  return filtered;
-}
-async function saveOrder(){
+}function saveOrder(){
   const o=getFormOrder();
   if(!o.name){toast('Product name is required');return;}
   if(A.isAdmin&&!o.client){toast('Please select a client');return;}
@@ -1606,8 +1771,7 @@ async function saveOrder(){
     closeSP();render();toast('✅ Order saved!');loadThumbImages(getFiltered());
   }catch(e){toast('Save failed: '+e.message,7000);console.error(e);}
   finally{document.getElementById('btn-save-order').disabled=false;}
-}
-async function deleteOrder(){
+}async function deleteOrder(){
   if(!A.editOrder)return;
   if(!confirm('Delete Order #'+A.editOrder.sr+' — '+A.editOrder.name+'?'))return;
   toast('Deleting...',5000);
@@ -1615,7 +1779,7 @@ async function deleteOrder(){
     const sr=parseInt(A.editOrder.sr);const{rows,dataStart}=await findSheetLayout(C.masterSheet);
     for(let i=dataStart;i<rows.length;i++){
       if(parseInt(rows[i][0])===sr){
-        await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\'A'+(i+1)+':W'+(i+1)+'\')/clear',{method:'POST',body:JSON.stringify({applyTo:'Contents'})});break;
+        await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\'A'+(i+1)+':Y'+(i+1)+'\')/clear',{method:'POST',body:JSON.stringify({applyTo:'Contents'})});break;
       }
     }
     A.allOrders=A.allOrders.filter(o=>o.sr!=sr);
@@ -1669,6 +1833,7 @@ function getExportData(list){
   if(p.price)h.push('Quoted Price (₹)');
   h.push('Status');
   if(p.remarks)h.push('Remarks');
+  h.push('Parent Sr','Is Parent');
   const rows=(list||getFiltered()).map(o=>{
     const r=[o.sr,o.date];
     if(p.client)r.push(o.client||'');
@@ -1680,6 +1845,7 @@ function getExportData(list){
     if(p.price)r.push(o.price||'');
     r.push(o.status);
     if(p.remarks)r.push(o.remarks||'');
+    r.push(o.parentSr||'',o.isParent||'');
     return r;
   });
   return{h,rows,list:list||getFiltered()};
@@ -1804,8 +1970,252 @@ document.addEventListener('DOMContentLoaded',()=>{
   setupPasteListener();
   setupDragDrop();
 });
+
+// ═══════════════════════════════════════
+// PDF IMPORT FUNCTIONS
+// ═══════════════════════════════════════
+function openPDFImportModal(){document.getElementById('pdf-import-modal').style.display='flex';document.getElementById('pdf-import-step1').style.display='block';document.getElementById('pdf-import-step2').style.display='none';document.getElementById('pdf-import-input').value='';}
+function closePDFImportModal(){document.getElementById('pdf-import-modal').style.display='none';A.pdfImportData=null;}
+function handlePDFDrop(e){e.preventDefault();const f=e.dataTransfer.files[0];if(f&&f.type==='application/pdf')handlePDFImportFile(f);else toast('Please drop a PDF file');}
+async function handlePDFImportFile(file){
+  if(!file)return;
+  document.getElementById('pdf-engine-status').innerHTML='<div class="pdf-engine-loading"><div class="loader"></div>Loading PDF engines...</div>';
+  try{
+    await loadPDFEngines();
+    document.getElementById('pdf-engine-status').innerHTML='<div class="pdf-engine-loading"><div class="loader"></div>Extracting pages from PDF...</div>';
+    const arrayBuffer=await file.arrayBuffer();
+    const pdf=await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+    const pages=[];
+    for(let i=1;i<=pdf.numPages;i++){
+      const page=await pdf.getPage(i);
+      const viewport=page.getViewport({scale:1.5});
+      const canvas=document.createElement('canvas');
+      const ctx=canvas.getContext('2d');
+      canvas.width=viewport.width;canvas.height=viewport.height;
+      await page.render({canvasContext:ctx,viewport:viewport}).promise;
+      const imgData=canvas.toDataURL('image/jpeg',0.85);
+      // Extract text
+      const textContent=await page.getTextContent();
+      const text=textContent.items.map(it=>it.str).join(' ');
+      pages.push({page:i,imgData,text,canvas,ctx});
+      document.getElementById('pdf-engine-status').innerHTML='<div class="pdf-engine-loading"><div class="loader"></div>Processing page '+i+' of '+pdf.numPages+'...</div>';
+    }
+    document.getElementById('pdf-engine-status').innerHTML='<div class="pdf-engine-loading"><div class="loader"></div>Running OCR on pages...</div>';
+    // Run OCR on each page
+    for(const pg of pages){
+      if(!pg.text.trim()||pg.text.trim().length<20){
+        try{
+          const result=await A.tesseractWorker.recognize(pg.imgData);
+          pg.ocrText=result.data.text;
+          pg.ocrUsed=true;
+        }catch(e){pg.ocrText='';pg.ocrUsed=false;}
+      }else{pg.ocrText='';pg.ocrUsed=false;}
+    }
+    document.getElementById('pdf-engine-status').innerHTML='';
+    // Parse detected orders from text
+    const detected=parsePDFOrders(pages);
+    A.pdfImportData={pages,detected,parentName:''};
+    showPDFImportStep2();
+  }catch(e){toast('PDF import failed: '+e.message,7000);console.error(e);document.getElementById('pdf-engine-status').innerHTML='';}
+}
+async function loadPDFEngines(){
+  if(A.pdfEnginesLoaded)return;
+  // Tesseract worker
+  if(!A.tesseractWorker){
+    A.tesseractWorker=await Tesseract.createWorker('eng',1,{
+      workerPath:'https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/worker.min.js',
+      langPath:'https://tessdata.projectnaptha.com/4.0.0',
+      corePath:'https://cdn.jsdelivr.net/npm/tesseract.js-core@4'
+    });
+  }
+  A.pdfEnginesLoaded=true;
+}
+function parsePDFOrders(pages){
+  const orders=[];
+  let globalSr=1;
+  pages.forEach((pg,pi)=>{
+    const fullText=(pg.text||'')+' '+(pg.ocrText||'');
+    // Simple heuristic: look for lines with numbers and product-like names
+    const lines=fullText.split(/[
+
+]+/).map(l=>l.trim()).filter(l=>l.length>3);
+    lines.forEach((line,li)=>{
+      // Try to extract: Sr, Name, Qty, etc.
+      const srMatch=line.match(/(?:^|[^\d])(\d{1,4})(?:\s*[.:\-)])/);
+      const qtyMatch=line.match(/(?:qty|quantity|pcs|nos?)[\s:]*(\d+)/i);
+      const nameMatch=line.match(/(?:tool|product|part|name)[\s:]*([A-Za-z0-9\s\-_\/]{3,40})/i);
+      const catMatch=line.match(/(?:category|cat)[\s:]*([A-Za-z\s]{3,20})/i);
+      const typeMatch=line.match(/(?:type|kind)[\s:]*([A-Za-z0-9\s\-_]{3,20})/i);
+      if(nameMatch||srMatch){
+        orders.push({
+          id:'p'+pi+'_l'+li,
+          page:pi,
+          sr:srMatch?parseInt(srMatch[1]):globalSr++,
+          name:(nameMatch?nameMatch[1]:line.slice(0,40)).trim(),
+          cat:(catMatch?catMatch[1]:'—').trim(),
+          type:(typeMatch?typeMatch[1]:'').trim(),
+          qty:qtyMatch?qtyMatch[1]:'',
+          status:'In Progress',
+          notes:'',
+          ocr:pg.ocrUsed
+        });
+      }
+    });
+  });
+  // Deduplicate by name similarity
+  const unique=[];
+  const seen=new Set();
+  orders.forEach(o=>{
+    const key=o.name.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,20);
+    if(!seen.has(key)){seen.add(key);unique.push(o);}
+  });
+  return unique.length?unique:[{id:'manual1',page:0,sr:1,name:'Order from PDF',cat:'—',type:'',qty:'',status:'In Progress',notes:'',ocr:false}];
+}
+function showPDFImportStep2(){
+  document.getElementById('pdf-import-step1').style.display='none';
+  document.getElementById('pdf-import-step2').style.display='block';
+  const data=A.pdfImportData;
+  // Show page thumbnails
+  const preview=document.getElementById('pdf-import-preview');
+  preview.innerHTML='';
+  data.pages.forEach((pg,i)=>{
+    const div=document.createElement('div');
+    div.style.cssText='flex-shrink:0;width:120px;text-align:center;cursor:pointer;border-radius:var(--r-sm);border:2px solid '+(i===0?'var(--blue)':'var(--border)')+';padding:4px;';
+    div.onclick=()=>{document.querySelectorAll('#pdf-import-preview > div').forEach(d=>d.style.borderColor='var(--border)');div.style.borderColor='var(--blue)';};
+    div.innerHTML='<img src="'+pg.imgData+'" style="width:100%;height:80px;object-fit:cover;border-radius:4px"><div style="font-size:10px;color:var(--text3);margin-top:4px">Page '+pg.page+'</div>';
+    preview.appendChild(div);
+  });
+  // Build table
+  const tbody=document.getElementById('pdf-import-tbody');
+  tbody.innerHTML='';
+  data.detected.forEach((o,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=
+      '<td><img src="'+data.pages[o.page].imgData+'" class="pdf-import-thumb"></td>'+
+      '<td><input type="text" value="'+o.sr+'" style="width:50px" id="pi-sr-'+i+'"></td>'+
+      '<td><input type="text" value="'+o.name.replace(/"/g,'&quot;')+'" id="pi-name-'+i+'"></td>'+
+      '<td><input type="text" value="'+o.cat+'" id="pi-cat-'+i+'" style="width:80px"></td>'+
+      '<td><input type="text" value="'+o.type+'" id="pi-type-'+i+'" style="width:80px"></td>'+
+      '<td><input type="text" value="'+o.qty+'" id="pi-qty-'+i+'" style="width:50px"></td>'+
+      '<td><select id="pi-status-'+i+'"><option>In Progress</option><option>Not Started</option><option>Ready to Dispatch</option><option>Delivered</option><option>On Hold</option></select></td>'+
+      '<td><input type="text" value="'+(o.ocr?'OCR extracted':'Text extracted')+'" id="pi-notes-'+i+'" style="width:100px"></td>';
+    tbody.appendChild(tr);
+  });
+  document.getElementById('pdf-import-count').textContent=data.detected.length;
+}
+function updatePDFImportParentName(){
+  if(A.pdfImportData)A.pdfImportData.parentName=document.getElementById('pdf-import-parent-name').value.trim();
+}
+async function confirmPDFImport(){
+  if(!A.pdfImportData||!A.pdfImportData.detected.length){toast('No orders to import');return;}
+  const btn=document.getElementById('btn-confirm-pdf-import');btn.disabled=true;
+  toast('Importing orders from PDF...',15000);
+  try{
+    const parentName=document.getElementById('pdf-import-parent-name').value.trim();
+    let parentSr='';
+    // If parent name provided, create parent order first
+    if(parentName){
+      const parentOrder={
+        sr:await getNextSrNo(),date:new Date().toISOString().slice(0,10),client:A.isAdmin?getVal('f-client-name'):A.perms.clientName,
+        po:'—',name:parentName,cat:'Assembly',type:'',qty:'',quoted:'No',price:'',
+        poRec:'No',approval:'No',tgt:'',stRM:'—',stShape:'—',stGrind:'—',stWire:'—',stLathe:'—',stHT:'—',stInsp:'—',stDisp:'—',
+        status:'In Progress',remarks:'Parent order — imported from PDF',parentSr:'',isParent:'YES'
+      };
+      const{rows,dataStart}=await findSheetLayout(C.masterSheet);
+      let last=dataStart;for(let i=dataStart;i<rows.length;i++){if(rows[i].some(v=>v))last=i+1;}
+      await writeOrderRow(parentOrder,last+1);
+      A.allOrders.push({...parentOrder,dateISO:parentOrder.date,tgtISO:parentOrder.tgt});
+      parentSr=String(parentOrder.sr);
+      toast('Parent order created: #'+parentSr);
+    }
+    // Import child orders
+    const{rows,dataStart}=await findSheetLayout(C.masterSheet);
+    let last=dataStart;for(let i=dataStart;i<rows.length;i++){if(rows[i].some(v=>v))last=i+1;}
+    for(let i=0;i<A.pdfImportData.detected.length;i++){
+      const d=A.pdfImportData.detected[i];
+      const order={
+        sr:await getNextSrNo(),date:new Date().toISOString().slice(0,10),client:A.isAdmin?getVal('f-client-name'):A.perms.clientName,
+        po:'—',name:document.getElementById('pi-name-'+i).value,cat:document.getElementById('pi-cat-'+i).value||'—',
+        type:document.getElementById('pi-type-'+i).value,qty:document.getElementById('pi-qty-'+i).value,
+        quoted:'No',price:'',poRec:'No',approval:'No',tgt:'',stRM:'—',stShape:'—',stGrind:'—',stWire:'—',stLathe:'—',stHT:'—',stInsp:'—',stDisp:'—',
+        status:document.getElementById('pi-status-'+i).value,remarks:document.getElementById('pi-notes-'+i).value,
+        parentSr:parentSr,isParent:''
+      };
+      last++;
+      await writeOrderRow(order,last);
+      A.allOrders.push({...order,dateISO:order.date,tgtISO:order.tgt});
+    }
+    A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
+    if(A.isAdmin){const cf=document.getElementById('f-client');const curr=cf.value;cf.innerHTML='<option value="">All clients</option>';[...new Set(A.allOrders.map(o=>o.client).filter(c=>c))].sort().forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;if(c===curr)o.selected=true;cf.appendChild(o);});}
+    closePDFImportModal();render();toast('✅ '+A.pdfImportData.detected.length+' orders imported from PDF!');
+  }catch(e){toast('Import failed: '+e.message,7000);console.error(e);}
+  finally{btn.disabled=false;}
+}
+
+
+function createChildOrder(){
+  if(!A.selOrder)return;
+  const parent=A.selOrder;
+  A.editOrder=null;A.selOrder=null;A.pendingImgFile=null;A.pendingPDFFile=null;A.pendingSTPFile=null;A.pendingWCFile=null;
+  document.getElementById('sp-title').textContent='New Child Order (Parent: #'+parent.sr+')';
+  document.getElementById('sp-sub').textContent='Fill in child order details for '+parent.name;
+  document.getElementById('btn-del-order').style.display='none';document.getElementById('sp-edit-btn').style.display='none';
+  document.getElementById('sp-view').style.display='none';document.getElementById('sp-edit').style.display='block';
+  document.getElementById('client-selector-section').style.display=A.isAdmin?'block':'none';
+  populateClientSelector();populateParentSrSelector();clearForm();
+  document.getElementById('f-sr').value='(Auto on save)';
+  document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
+  document.getElementById('f-client-name').value=parent.client||'';
+  document.getElementById('f-parent-sr').value=String(parent.sr);
+  document.getElementById('f-is-parent').checked=false;
+  toggleParentFields();
+  openSP('edit');
+}
+
 // Also setup immediately in case DOMContentLoaded already fired
 setupPasteListener();
 </script>
+
+<!-- ═══════════════════════════════════════
+     PDF IMPORT MODAL
+     ═══════════════════════════════════════ -->
+<div id="pdf-import-modal" class="modal" style="display:none">
+  <div class="modal-box" style="max-width:960px;width:95%">
+    <div class="modal-head">
+      <div class="modal-title">📄 Import Orders from PDF</div>
+      <button class="modal-close" onclick="closePDFImportModal()">✕</button>
+    </div>
+    <div class="modal-body" style="max-height:70vh;overflow:auto">
+      <div id="pdf-import-step1">
+        <div style="font-size:13px;color:var(--text2);margin-bottom:12px">
+          Upload a PDF containing order details. The system will extract text and images, then let you map each detected order before saving.
+        </div>
+        <div id="pdf-drop-zone" style="border:2px dashed var(--border);border-radius:var(--r-md);padding:32px;text-align:center;cursor:pointer;transition:.2s;background:var(--bg)" ondragover="event.preventDefault();this.style.borderColor='var(--blue)';this.style.background='#F0F7FF'" ondragleave="this.style.borderColor='var(--border)';this.style.background='var(--bg)'" ondrop="handlePDFDrop(event)" onclick="document.getElementById('pdf-import-input').click()">
+          <div style="font-size:32px;margin-bottom:8px">📤</div>
+          <div style="font-size:14px;font-weight:500;color:var(--text)">Drop PDF here or click to browse</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">Supports scanned PDFs (OCR) and text-based PDFs</div>
+        </div>
+        <input type="file" id="pdf-import-input" accept=".pdf" style="display:none" onchange="handlePDFImportFile(this.files[0])">
+        <div id="pdf-engine-status" style="margin-top:12px"></div>
+      </div>
+      <div id="pdf-import-step2" style="display:none">
+        <div id="pdf-import-progress" style="margin-bottom:12px;font-size:12px;color:var(--text2)"></div>
+        <div id="pdf-import-preview" style="display:flex;gap:12px;margin-bottom:16px;overflow-x:auto;padding-bottom:8px"></div>
+        <div style="margin-bottom:8px;font-size:12px;font-weight:600;color:var(--navy)">Detected Orders — Review & Edit before importing</div>
+        <input type="text" id="pdf-import-parent-name" class="pdf-import-parent-name" placeholder="Parent Order Name (optional — groups all imported rows as child parts)" oninput="updatePDFImportParentName()">
+        <div style="overflow:auto;max-height:40vh;border:1.5px solid var(--border);border-radius:var(--r-sm)">
+          <table class="pdf-import-table" id="pdf-import-table">
+            <thead><tr><th>Thumb</th><th>Sr</th><th>Product Name</th><th>Category</th><th>Type</th><th>Qty</th><th>Status</th><th>Notes</th></tr></thead>
+            <tbody id="pdf-import-tbody"></tbody>
+          </table>
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+          <button class="btn btn-ghost" onclick="closePDFImportModal()">Cancel</button>
+          <button class="btn btn-primary" id="btn-confirm-pdf-import" onclick="confirmPDFImport()">Import <span id="pdf-import-count">0</span> Orders</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
