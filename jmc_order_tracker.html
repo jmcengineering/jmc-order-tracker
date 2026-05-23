@@ -1146,6 +1146,8 @@ function isChildOrder(o){return !!(o.parentSr&&String(o.parentSr).trim()&&!isPar
 function isStandaloneOrder(o){return !isParentOrder(o)&&!isChildOrder(o);}
 function getChildrenOf(parentSr){return A.orders.filter(o=>isChildOrder(o)&&String(o.parentSr)===String(parentSr));}
 function getParentOf(childOrder){if(!isChildOrder(childOrder))return null;return A.orders.find(o=>isParentOrder(o)&&String(o.sr)===String(childOrder.parentSr));}
+</script>
+
 <script>
 // ═══════════════════════════════════════
 // PDF.js + Tesseract.js LAZY LOADING
