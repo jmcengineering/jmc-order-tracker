@@ -24,7 +24,6 @@
 html,body{height:100%;overflow:hidden}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
 
-/* SCREENS */
 #s-login{display:none;min-height:100vh;background:linear-gradient(135deg,var(--navy) 0%,#1a3a6e 50%,#0d4a7a 100%);align-items:center;justify-content:center;position:relative;overflow:hidden;width:100%;height:100vh}
 #s-login::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 50%,rgba(0,198,190,.08) 0%,transparent 60%)}
 .login-card{background:rgba(255,255,255,.04);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:48px 44px;width:380px;text-align:center;position:relative;z-index:1;box-shadow:0 24px 80px rgba(0,0,0,.3)}
@@ -43,7 +42,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);-we
 .err-box{background:var(--surface);border-radius:var(--r-xl);padding:40px;max-width:480px;width:100%;text-align:center;box-shadow:var(--shadow-md);border:1px solid var(--border)}
 #s-main{display:none;flex-direction:column;min-height:100vh;overflow:hidden;height:100vh;width:100%}
 
-/* TOPBAR */
 .topbar{background:var(--navy);height:56px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.15);flex-shrink:0}
 .tb-left{display:flex;align-items:center;gap:12px}
 .tb-logo{width:32px;height:32px;border-radius:7px;overflow:hidden;background:rgba(255,255,255,.12);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:12px}
@@ -59,13 +57,11 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);-we
 .btn-topbar:hover{background:rgba(255,255,255,.1);color:#fff}
 .btn-admin{background:rgba(0,198,190,.15);border-color:rgba(0,198,190,.4);color:var(--accent)}
 
-/* LAYOUT */
 .main-layout{display:flex;flex:1;overflow:hidden;height:calc(100vh - 56px);position:relative}
 .table-area{flex:1;overflow-y:auto;padding:20px 24px}
 .side-panel{width:480px;background:var(--surface);border-left:1px solid var(--border);overflow:hidden;flex-shrink:0;position:fixed;right:0;top:56px;bottom:0;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:150;box-shadow:var(--shadow-xl);display:flex;flex-direction:column}
 .side-panel.open{transform:translateX(0)}
 
-/* METRICS */
 .metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
 .met{background:var(--surface);border-radius:var(--r-lg);padding:14px 18px;border:1px solid var(--border);box-shadow:var(--shadow-sm);transition:transform .15s;cursor:default}
 .met:hover{transform:translateY(-1px)}
@@ -73,7 +69,6 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);-we
 .ml{font-size:11px;color:var(--text2);margin-top:4px;font-weight:500}
 .met-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px}
 
-/* TOOLBAR */
 .toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
 .srch-wrap{flex:1;min-width:180px;position:relative}
 .srch-wrap input{width:100%;height:34px;padding:0 12px 0 36px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);font-size:12px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s}
@@ -91,12 +86,10 @@ input[type=date].tbar-date{height:34px;padding:0 10px;border-radius:var(--r-sm);
 .btn-sel.visible{display:flex}
 .btn-sel:hover{background:#EDE9FE}
 
-/* TABS */
 .tabs{display:flex;gap:4px;margin-bottom:12px;background:var(--surface);padding:4px;border-radius:var(--r-md);border:1px solid var(--border);width:fit-content}
 .tab{font-size:12px;font-weight:500;padding:5px 16px;border-radius:var(--r-sm);border:none;background:transparent;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
 .tab.on{background:var(--navy);color:#fff;box-shadow:var(--shadow-sm)}
 
-/* TABLE */
 .tbl-wrap{background:var(--surface);border-radius:var(--r-lg);border:1px solid var(--border);box-shadow:var(--shadow-sm)}
 .tbl-scroll{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 275px);border-radius:var(--r-lg)}
 table{width:100%;border-collapse:collapse;table-layout:auto}
@@ -283,7 +276,7 @@ tbody tr.row.checked.sel{background:#EDE9FE}
 .perm-tag{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--bg);border:1px solid var(--border);color:var(--text2);font-weight:500}
 .perm-tag.on{background:#EBF4FF;color:var(--blue);border-color:#BDDEFF}
 
-/* ═══ PARENT-CHILD STYLES (NEW) ═══ */
+/* PARENT-CHILD STYLES */
 tbody tr.row.parent-row{background:#F0F7FF;box-shadow:inset 3px 0 0 var(--blue)}
 tbody tr.row.parent-row:hover{background:#E5F0FC}
 tbody tr.row.parent-row.sel{background:#DBEAFE}
@@ -301,7 +294,6 @@ tbody tr.row.child-row .child-name-cell{padding-left:32px;position:relative}
 tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;left:14px;top:0;bottom:0;width:2px;background:#BDDEFF}
 .child-prefix{color:#9AB5D4;margin-right:6px;font-family:'DM Mono',monospace;font-weight:600;font-size:11px}
 
-/* Sub-item toggle in add/edit form */
 .subitem-section{background:#F0F7FF;border:1.5px solid #BDDEFF;border-radius:var(--r-md);padding:12px 14px;margin-bottom:18px}
 .subitem-toggle-row{display:flex;align-items:flex-start;gap:10px;cursor:pointer;user-select:none}
 .subitem-toggle-row input{width:16px;height:16px;cursor:pointer;accent-color:var(--blue);flex-shrink:0;margin-top:2px}
@@ -313,7 +305,6 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
 .subitem-parent-select select{width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;font-family:'DM Sans',sans-serif;background:#fff;outline:none}
 .subitem-parent-select select:focus{border-color:var(--blue)}
 
-/* PDF Import modal */
 .pdfimp-bg{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:1100;padding:20px;backdrop-filter:blur(4px)}
 .pdfimp-box{background:var(--surface);border-radius:var(--r-xl);width:100%;max-width:1020px;max-height:92vh;display:flex;flex-direction:column;box-shadow:var(--shadow-xl);overflow:hidden}
 .pdfimp-head{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:var(--navy)}
@@ -345,7 +336,6 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
 .pdfimp-loading{text-align:center;padding:40px 24px}
 .pdfimp-loading .loader{margin:0 auto 16px}
 
-/* Child parts mini table */
 .child-parts-table{width:100%;border-collapse:collapse;background:var(--surface);border-radius:var(--r-md);border:1px solid var(--border);overflow:hidden;margin-top:8px}
 .child-parts-table thead th{background:#F8FAFD;font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;padding:7px 10px;text-align:left;border-bottom:1px solid var(--border)}
 .child-parts-table tbody td{font-size:11px;padding:8px 10px;border-bottom:1px solid #F0F4FA;cursor:pointer;vertical-align:middle}
@@ -353,7 +343,7 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
 .child-parts-table tbody tr:hover{background:#F0F7FF}
 .child-parts-table tbody tr:last-child td{border-bottom:none}
 .child-parts-table .cp-name{font-weight:500;color:var(--text)}
-.child-parts-table .cp-sr{font-family:'DM Mono',monospace;color:var(--text3);font-size:10px;width:38px}
+.child-parts-table .cp-sr{font-family:'DM Mono',monospace;color:var(--text3);font-size:10px;width:48px}
 .btn-add-child{padding:8px 14px;border-radius:var(--r-sm);background:#F0F7FF;border:1.5px dashed #BDDEFF;color:var(--blue);font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:8px;width:100%;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:5px}
 .btn-add-child:hover{background:#E0EFFF;border-style:solid;border-color:var(--blue)}
 
@@ -494,7 +484,6 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
             <select id="f-client-name"><option value="">— Select client —</option></select>
           </div>
         </div>
-        <!-- NEW: Sub-item toggle -->
         <div class="subitem-section" id="subitem-section">
           <label class="subitem-toggle-row">
             <input type="checkbox" id="f-is-child" onchange="toggleSubitemSelect()">
@@ -604,7 +593,6 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
     </div>
   </div>
 </div>
-<!-- MODALS -->
 <div id="img-modal" style="display:none" class="modal-bg" onclick="if(event.target===this)closeImgModal()">
   <div class="modal-box">
     <img id="m-img" class="modal-img" src="" alt="tool">
@@ -659,7 +647,6 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
     <button class="cf-btn cf-btn-apply" onclick="applyColFilter()">Apply</button>
   </div>
 </div>
-<!-- NEW: PDF IMPORT MODAL -->
 <div id="pdfimp-modal" style="display:none" class="pdfimp-bg">
   <div class="pdfimp-box">
     <div class="pdfimp-head">
@@ -671,7 +658,7 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
       <div id="pdfimp-content" style="display:none">
         <div class="pdfimp-parent-field">
           <label>Parent Order Name:</label>
-          <input id="pdfimp-parent-name" type="text" placeholder="e.g. EW2854">
+          <input id="pdfimp-parent-name" type="text" placeholder="e.g. EW2854 OP50 U BENDING TOOL">
         </div>
         <div class="pdfimp-table-wrap">
           <table class="pdfimp-table">
@@ -688,7 +675,6 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
     </div>
   </div>
 </div>
-<!-- ADMIN -->
 <div id="admin-overlay" style="display:none" class="admin-overlay" onclick="if(event.target===this)closeAdmin()"></div>
 <div id="admin-drawer" style="display:none" class="admin-drawer">
   <div class="adm-header"><div class="adm-title">⚙ Admin Control Panel</div><button class="sp-close" onclick="closeAdmin()">✕</button></div>
@@ -763,11 +749,10 @@ let A = {
   selectedRows:new Set(),
   colFilters:{},
   activeColFilter:null,
-  // NEW: parent-child
   expandedParents:new Set(),
   pdfjsLoaded:false, tesseractLoaded:false,
-  pdfImportData:null,        // { parts:[{page,partNo,partName,workOrder,qty,toolType,material,imageBlob,imageUrl,ocr,include}], parentName, sourcePdfFile }
-  preselectedParentSr:null,  // when admin clicks "+ Add Child Part" on parent
+  pdfImportData:null,
+  preselectedParentSr:null,
 };
 
 // ═══════════════════════════════════════
@@ -946,13 +931,13 @@ async function loadFolderRecursive(folderId){
   return out;
 }
 function findFileForSr(cache,sr){
-  if(!cache||!sr)return null;
-  const re=new RegExp('^0*'+sr+'[-_. ]','i');
+  if(!cache||sr===null||sr===undefined||sr==='')return null;
+  const re=new RegExp('^0*'+String(sr)+'[-_. ]','i');
   return cache.find(f=>re.test(f.name))||null;
 }
 
 // ═══════════════════════════════════════
-// EXCEL HELPERS — UPDATED FOR 25 COLS (A:Y)
+// EXCEL HELPERS — 25 COLS (A:Y)
 // ═══════════════════════════════════════
 async function readSheet(name){const d=await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(name)+'/usedRange');return d?(d.values||[]):[];}
 async function findSheetLayout(sheetName){
@@ -962,7 +947,19 @@ async function findSheetLayout(sheetName){
   return{rows,headerRow:hi,dataStart:hi+1};
 }
 async function getNextSrNo(){
-  try{const{rows,dataStart}=await findSheetLayout(C.masterSheet);let max=0;for(let i=dataStart;i<rows.length;i++){const v=parseInt(rows[i][0]);if(!isNaN(v)&&v>max)max=v;}return max+1;}catch(e){return 1;}
+  try{const{rows,dataStart}=await findSheetLayout(C.masterSheet);let max=0;for(let i=dataStart;i<rows.length;i++){const v=parseInt(rows[i][0]);if(!isNaN(v)&&v>max)max=v;}return String(max+1);}catch(e){return '1';}
+}
+async function getNextChildSr(parentSr){
+  const{rows,dataStart}=await findSheetLayout(C.masterSheet);
+  const prefix=String(parentSr);const used=new Set();
+  for(let i=dataStart;i<rows.length;i++){
+    const v=String(rows[i][0]||'').trim();
+    const m=v.match(new RegExp('^'+prefix+'([A-Z]+)$','i'));
+    if(m)used.add(m[1].toUpperCase());
+  }
+  for(let i=0;i<26;i++){const l=String.fromCharCode(65+i);if(!used.has(l))return prefix+l;}
+  for(let i=0;i<26;i++)for(let j=0;j<26;j++){const ll=String.fromCharCode(65+i)+String.fromCharCode(65+j);if(!used.has(ll))return prefix+ll;}
+  return prefix+'ZZ';
 }
 function excelDateSerial(isoDate){
   if(!isoDate)return '';
@@ -974,31 +971,31 @@ async function writeOrderRow(order,rowNum){
   const dateExcel=order.date?excelDateSerial(order.date):'';
   const tgtExcel=order.tgt?excelDateSerial(order.tgt):'';
   const row=[
-    order.sr,           // A - Sr No
-    dateExcel,          // B - Order Date
-    order.client||'',   // C - Client
-    order.po||'—',      // D - Client PO No
-    order.name,         // E - Product/Tool Name
-    order.cat,          // F - Category
-    order.type||'',     // G - Tool Type
-    order.qty||'',      // H - Qty
-    order.quoted||'No', // I - Quoted
-    order.poRec||'No',  // J - Client PO Received
-    order.approval||'No',// K - Approval to Start
-    tgtExcel,           // L - Target Delivery
-    order.stRM||'—',    // M - Raw Material
-    order.stShape||'—', // N - Shaping/Milling
-    order.stGrind||'—', // O - Surface/CG Grinding
-    order.stWire||'—',  // P - Wirecut/VMC
-    order.stLathe||'—', // Q - Jig Boring/Lathe
-    order.stHT||'—',    // R - Heat Treatment
-    order.stInsp||'—',  // S - Final Inspection
-    order.stDisp||'—',  // T - Dispatch
-    order.status||'In Progress', // U - Overall Status
-    order.price||'',    // V - Quoted Price
-    order.remarks||'',  // W - Remarks/Hold Reason
-    order.parentSr||'', // X - Parent Sr   ← NEW
-    order.isParent||''  // Y - Is Parent   ← NEW
+    order.sr,
+    dateExcel,
+    order.client||'',
+    order.po||'—',
+    order.name,
+    order.cat,
+    order.type||'',
+    order.qty||'',
+    order.quoted||'No',
+    order.poRec||'No',
+    order.approval||'No',
+    tgtExcel,
+    order.stRM||'—',
+    order.stShape||'—',
+    order.stGrind||'—',
+    order.stWire||'—',
+    order.stLathe||'—',
+    order.stHT||'—',
+    order.stInsp||'—',
+    order.stDisp||'—',
+    order.status||'In Progress',
+    order.price||'',
+    order.remarks||'',
+    order.parentSr||'',
+    order.isParent||''
   ];
   const range='A'+rowNum+':Y'+rowNum;
   await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\''+range+'\')',{method:'PATCH',body:JSON.stringify({values:[row]})});
@@ -1076,8 +1073,7 @@ async function doRefresh(){
 }
 
 // ═══════════════════════════════════════
-// PARSE ORDERS — UPDATED FOR COLS X, Y
-// 25 cols: Sr|Date|Client|PO|Name|Cat|Type|Qty|Quoted|POReceived|Approval|Target|RM|Shape|Grind|Wire|Lathe|HT|Insp|Disp|Status|Price|Remarks|ParentSr|IsParent
+// PARSE ORDERS — 25 COLS, Sr always String
 // ═══════════════════════════════════════
 function parseOrders(rows){
   const orders=[];let hi=-1;
@@ -1096,8 +1092,8 @@ function parseOrders(rows){
     lathe:col('jig boring','lathe'),ht:col('heat'),
     inspect:col('inspection','inspect'),dispatch:col('dispatch'),
     status:col('overall status','status'),remarks:col('remarks'),
-    parentSr:col('parent sr','parent'),  // NEW - col X
-    isParent:col('is parent','isparent') // NEW - col Y
+    parentSr:col('parent sr','parent'),
+    isParent:col('is parent','isparent')
   };
   if(cc.client>=0&&cc.po>=0&&cc.client===cc.po)cc.client=h.findIndex(x=>/^client(\s|$)|^client name/.test(x));
   const fmtD=v=>{
@@ -1112,7 +1108,7 @@ function parseOrders(rows){
     if(typeof v==='number'){const d=new Date((v-25569)*86400000);return d.toISOString().slice(0,10);}
     const s=String(v);if(s.match(/^\d{4}-\d{2}-\d{2}/))return s.slice(0,10);
     const m=s.match(/(\d{2})-([A-Za-z]{3})-(\d{2,4})/);
-    if(m){const mo={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};const yr=m[3].length===2?2000+parseInt(m[3]):parseInt(m[3]);return new Date(yr,mo[m[2]],parseInt(m[1])).toISOString().slice(0,10);}
+    if(m){const mo={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};const yr=m[3].length===2?2000+parseInt(m[3]):parseInt(m[3]);return new Date(yr,mo[m[2]],parseInt(m[1])).toISOString().slice(0,10);}
     return null;
   };
   for(let i=hi+1;i<rows.length;i++){
@@ -1120,7 +1116,8 @@ function parseOrders(rows){
     const parentSrRaw=cc.parentSr>=0?r[cc.parentSr]:'';
     const isParentRaw=cc.isParent>=0?r[cc.isParent]:'';
     orders.push({
-      sr:r[cc.sr]||i-hi,date:fmtD(r[cc.date]),dateISO:fmtISO(r[cc.date]),
+      sr: r[cc.sr]!=null&&r[cc.sr]!==''?String(r[cc.sr]).trim():String(i-hi),
+      date:fmtD(r[cc.date]),dateISO:fmtISO(r[cc.date]),
       client:cc.client>=0?(r[cc.client]||''):'',po:r[cc.po]||'—',
       name:r[cc.name]||'—',cat:r[cc.cat]||'—',type:r[cc.type]||'',
       qty:cc.qty>=0?r[cc.qty]:'',quoted:r[cc.quoted]||'No',
@@ -1144,18 +1141,14 @@ function daysToTarget(o){
   const today=new Date();today.setHours(0,0,0,0);
   return Math.ceil((new Date(o.tgtISO)-today)/86400000);
 }
-// Parent-child helpers (NEW)
 function isParentOrder(o){return (o.isParent||'').toUpperCase()==='YES';}
 function isChildOrder(o){return !!(o.parentSr&&String(o.parentSr).trim()&&!isParentOrder(o));}
 function isStandaloneOrder(o){return !isParentOrder(o)&&!isChildOrder(o);}
 function getChildrenOf(parentSr){return A.orders.filter(o=>isChildOrder(o)&&String(o.parentSr)===String(parentSr));}
 function getParentOf(childOrder){if(!isChildOrder(childOrder))return null;return A.orders.find(o=>isParentOrder(o)&&String(o.sr)===String(childOrder.parentSr));}
-</script>
-</body>
-</html>
 <script>
 // ═══════════════════════════════════════
-// PDF.js + Tesseract.js LAZY LOADING (NEW)
+// PDF.js + Tesseract.js LAZY LOADING
 // ═══════════════════════════════════════
 async function loadPDFJS(){
   if(A.pdfjsLoaded)return;
@@ -1185,7 +1178,7 @@ async function loadTesseract(){
 }
 
 // ═══════════════════════════════════════
-// PDF TEXT PARSING (NEW)
+// PDF TEXT PARSING
 // ═══════════════════════════════════════
 function parsePDFPageText(text){
   const lines=text.split(/[\r\n]+/).map(l=>l.trim()).filter(Boolean);
@@ -1193,19 +1186,15 @@ function parsePDFPageText(text){
   const out={workOrder:'',partName:'',partNo:'',qty:'',toolName:'',material:''};
   let foundCount=0;
 
-  // Work Order: e.g. EW2854, RT2727
   const woMatch=full.match(/\b([A-Z]{2,4}\d{3,6})\b/);
   if(woMatch){out.workOrder=woMatch[1];foundCount++;}
 
-  // Tool Name: "OP50 U BENDING TOOL", etc.
   const toolMatch=full.match(/(OP[\s-]*\d+[\s-]+[A-Z][A-Z\s]+?(?:TOOL|PUNCH|DIE|FIXTURE|JIG))/i);
   if(toolMatch){out.toolName=toolMatch[1].replace(/\s+/g,' ').trim();foundCount++;}
 
-  // Material: known tool steels
   const matMatch=full.match(/\b(OHNS|HCHCR(?:[-\s]?D2)?|D2|EN\s*\d+|SKD\s*\d+|HSS|MS|TOOL\s*STEEL|SS\s*\d{3}|HARDOX)\b/i);
   if(matMatch){out.material=matMatch[0].trim();foundCount++;}
 
-  // Part Name: contains keywords like LOCATOR, INSERT, etc.
   const partKw=/(LOCATOR|INSERT|PIN|PUNCH|DIE\b|HOLDER|PAD|PLATE|BLOCK|STRIPPER|GUIDE|BUSH(?:ING)?|FIXTURE|GAUGE|GAGE|SENSOR|SEINSER|STOPPER|EJECTOR|CORE|CAVITY|SLIDE|CAM|PILLAR|SHANK)/i;
   for(const line of lines){
     if(line.length>3&&line.length<80&&partKw.test(line)){
@@ -1222,7 +1211,6 @@ function parsePDFPageText(text){
     }
   }
 
-  // Part No: 2-4 digit standalone, not a year
   for(const line of lines){
     if(/^\d{2,4}$/.test(line)){
       const n=parseInt(line);
@@ -1230,7 +1218,6 @@ function parsePDFPageText(text){
     }
   }
 
-  // Qty: single/two-digit standalone, prefer one near material or heat-treat range
   let qtyCandidates=[];
   for(let i=0;i<lines.length;i++){
     if(/^\d{1,2}$/.test(lines[i])){
@@ -1252,7 +1239,7 @@ function parsePDFPageText(text){
 }
 
 // ═══════════════════════════════════════
-// TOP-RIGHT CROP (NEW)
+// TOP-RIGHT CROP
 // ═══════════════════════════════════════
 async function renderPageAndCrop(page,scale){
   const viewport=page.getViewport({scale});
@@ -1272,7 +1259,7 @@ async function renderPageAndCrop(page,scale){
 }
 
 // ═══════════════════════════════════════
-// PDF IMPORT FLOW (NEW)
+// PDF IMPORT FLOW
 // ═══════════════════════════════════════
 async function startPDFImport(){
   if(!A.pendingPDFFile){toast('Please upload a PDF first');return;}
@@ -1315,7 +1302,10 @@ async function startPDFImport(){
         imageBlob:blob,imageUrl:dataURL,ocr:isOcr,include:true
       });
     }
-    const parentName=parts[0]?.workOrder||A.pendingPDFFile.name.replace(/\.pdf$/i,'').slice(0,40);
+    // Default parent name = WorkOrder + Tool Name
+    const wo=parts[0]?.workOrder||'';
+    const tn=parts[0]?.toolType||'';
+    const parentName=(wo+(tn?' '+tn:'')).trim()||A.pendingPDFFile.name.replace(/\.pdf$/i,'').slice(0,40);
     A.pdfImportData={parts,parentName,sourcePdfFile:A.pendingPDFFile};
     renderPDFImportTable();
     document.getElementById('pdfimp-loading').style.display='none';
@@ -1384,7 +1374,7 @@ async function confirmPDFImport(){
     if(!A.pdfFolderId)A.pdfFolderId=await ensureFolder(C.pdfFolder);
     const today=new Date().toISOString().slice(0,10);
     const totalQty=checked.reduce((s,p)=>s+(parseInt(p.qty)||0),0);
-    // 1) Parent
+    // 1) Parent — integer-string Sr like "36"
     const parentSr=await getNextSrNo();
     const parentOrder={
       sr:parentSr,date:today,client,po:'—',name:parentName,cat:'Whole Fixture',type:'',
@@ -1396,17 +1386,17 @@ async function confirmPDFImport(){
     let nextRow=ds0+1;
     for(let i=ds0;i<r0.length;i++){if(r0[i].some(v=>v))nextRow=i+2;}
     await writeOrderRow(parentOrder,nextRow);
-    // Upload source PDF to drawings folder under parent's SR
     const cleanParent=parentName.toUpperCase().replace(/[^A-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,40);
     try{
       const{fileName,res}=await uploadFileToFolder(A.pdfImportData.sourcePdfFile,A.pdfFolderId,parentSr,cleanParent,'pdf');
       A.pdfFolderCache=refreshCacheAfterUpload(A.pdfFolderCache,parentSr,fileName,res?.id);
     }catch(e){console.warn('Parent PDF upload failed:',e);}
     A.allOrders.push({...parentOrder,dateISO:today,tgtISO:null});
-    // 2) Children
-    let childSr=parentSr;
+    // 2) Children — Sr = parentSr + A, B, C ...
+    let rowNum=nextRow;let childIdx=0;
     for(const p of checked){
-      childSr++;
+      rowNum++;childIdx++;
+      const childSr=String(parentSr)+String.fromCharCode(64+childIdx); // 65='A'
       const childName=(p.workOrder?p.workOrder+' – ':'')+(p.partNo?p.partNo+' – ':'')+p.partName;
       const childOrder={
         sr:childSr,date:today,client,po:'—',name:childName,cat:'Standard Order',type:p.toolType||'',
@@ -1414,8 +1404,7 @@ async function confirmPDFImport(){
         stRM:'—',stShape:'—',stGrind:'—',stWire:'—',stLathe:'—',stHT:'—',stInsp:'—',stDisp:'—',
         status:'In Progress',remarks:p.material?'Material: '+p.material:'',parentSr:String(parentSr),isParent:''
       };
-      await writeOrderRow(childOrder,nextRow+(childSr-parentSr));
-      // Upload cropped image
+      await writeOrderRow(childOrder,rowNum);
       const cleanChild=childName.toUpperCase().replace(/[^A-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,40);
       try{
         const imgFile=new File([p.imageBlob],childSr+'-'+cleanChild+'.png',{type:'image/png'});
@@ -1428,7 +1417,7 @@ async function confirmPDFImport(){
     A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
     A.expandedParents.add(String(parentSr));
     closePDFImport();closeSP();render();
-    toast('✅ Created parent #'+parentSr+' + '+checked.length+' parts!',5000);
+    toast('✅ Created parent #'+parentSr+' + '+checked.length+' parts ('+parentSr+'A → '+parentSr+String.fromCharCode(64+checked.length)+')!',5000);
     loadThumbImages(A.orders);
   }catch(e){
     console.error(e);
@@ -1552,7 +1541,7 @@ async function openPDFModal(fileItem,title){
 function downloadCurrentPDF(){if(!A._lastPdfBlobUrl)return;const a=document.createElement('a');a.href=A._lastPdfBlobUrl;a.download=A._lastPdfFileName||'drawing.pdf';a.click();}
 function closePDFModal(){document.getElementById('pdf-modal').style.display='none';document.getElementById('pdf-iframe').src='';if(A._lastPdfBlobUrl){URL.revokeObjectURL(A._lastPdfBlobUrl);A._lastPdfBlobUrl=null;}}
 async function quickViewFile(sr,kind){
-  const o=A.orders.find(x=>x.sr==sr);if(!o){toast('Order not found');return;}
+  const o=A.orders.find(x=>String(x.sr)===String(sr));if(!o){toast('Order not found');return;}
   A.selOrder=o;
   const cache=kind==='pdf'?A.pdfFolderCache:kind==='stp'?A.stpFolderCache:A.wcFolderCache;
   const match=findFileForSr(cache,sr);if(!match){toast('File not found');return;}
@@ -1705,23 +1694,23 @@ function clearColFilter(){if(!A.activeColFilter)return;delete A.colFilters[A.act
 function closeColFilterDD(){document.getElementById('col-filter-dd').style.display='none';A.activeColFilter=null;document.removeEventListener('click',outsideColFilterClick);}
 
 // ═══════════════════════════════════════
-// MULTI-SELECT
+// MULTI-SELECT — String keys
 // ═══════════════════════════════════════
 let _lastCheckedIdx=-1;
 function toggleRow(sr,checked,evt){
   const flat=getFiltered();
-  const idx=flat.findIndex(o=>o.sr==sr);
+  const idx=flat.findIndex(o=>String(o.sr)===String(sr));
   if(evt&&evt.shiftKey&&_lastCheckedIdx>=0&&idx>=0){
     const from=Math.min(_lastCheckedIdx,idx);const to=Math.max(_lastCheckedIdx,idx);
-    for(let i=from;i<=to;i++){if(checked)A.selectedRows.add(flat[i].sr);else A.selectedRows.delete(flat[i].sr);}
-  }else{ if(checked)A.selectedRows.add(sr);else A.selectedRows.delete(sr); }
+    for(let i=from;i<=to;i++){if(checked)A.selectedRows.add(String(flat[i].sr));else A.selectedRows.delete(String(flat[i].sr));}
+  }else{ if(checked)A.selectedRows.add(String(sr));else A.selectedRows.delete(String(sr)); }
   if(idx>=0)_lastCheckedIdx=idx;
   updateSelBar();render();
 }
 function toggleAllRows(cb){
   const list=getFiltered();
-  if(cb.checked)list.forEach(o=>A.selectedRows.add(o.sr));
-  else list.forEach(o=>A.selectedRows.delete(o.sr));
+  if(cb.checked)list.forEach(o=>A.selectedRows.add(String(o.sr)));
+  else list.forEach(o=>A.selectedRows.delete(String(o.sr)));
   updateSelBar();render();
 }
 function updateSelBar(){
@@ -1736,7 +1725,7 @@ function clearSelection(){A.selectedRows.clear();_lastCheckedIdx=-1;updateSelBar
 function getExportScope(){
   const selRadio=document.querySelector('input[name="exp-scope"]:checked');
   const useSelected=selRadio&&selRadio.value==='selected'&&A.selectedRows.size>0;
-  return useSelected?getFiltered().filter(o=>A.selectedRows.has(o.sr)):getFiltered();
+  return useSelected?getFiltered().filter(o=>A.selectedRows.has(String(o.sr))):getFiltered();
 }
 
 // ═══════════════════════════════════════
@@ -1775,29 +1764,24 @@ function getFiltered(){
     if(t==='late'){const d=daysToTarget(o);if(d===null||d>=0)return false;}
     return true;
   };
-  // First pass: which orders match basic criteria
   const direct=A.orders.filter(passesBasic);
-  const directSr=new Set(direct.map(o=>o.sr));
-  // Also include parents whose children matched, and children whose parents matched (so they appear together)
+  const directSr=new Set(direct.map(o=>String(o.sr)));
   const withFamily=new Set(directSr);
   for(const o of direct){
     if(isChildOrder(o)){
       const par=A.orders.find(x=>isParentOrder(x)&&String(x.sr)===String(o.parentSr));
-      if(par)withFamily.add(par.sr);
+      if(par)withFamily.add(String(par.sr));
     }
     if(isParentOrder(o)){
-      // include all children
-      getChildrenOf(o.sr).forEach(c=>withFamily.add(c.sr));
+      getChildrenOf(o.sr).forEach(c=>withFamily.add(String(c.sr)));
     }
   }
-  return A.orders.filter(o=>withFamily.has(o.sr));
+  return A.orders.filter(o=>withFamily.has(String(o.sr)));
 }
-// Returns ordered render list of {type:'parent'|'child'|'standalone', order, childCount?, expanded?}
 function getDisplay(){
   const filtered=getFiltered();
-  const filteredSet=new Set(filtered.map(o=>o.sr));
+  const filteredSet=new Set(filtered.map(o=>String(o.sr)));
   const isFiltering=isAnyTextFilterActive();
-  // Determine matched-by-search children — for auto-expand
   const matchedChildrenParents=new Set();
   for(const o of filtered){
     if(isChildOrder(o))matchedChildrenParents.add(String(o.parentSr));
@@ -1805,20 +1789,19 @@ function getDisplay(){
   if(isFiltering){matchedChildrenParents.forEach(p=>A.expandedParents.add(p));}
   const out=[];
   for(const o of A.orders){
-    if(!filteredSet.has(o.sr))continue;
+    if(!filteredSet.has(String(o.sr)))continue;
     if(isParentOrder(o)){
       const children=getChildrenOf(o.sr);
       const expanded=A.expandedParents.has(String(o.sr));
       out.push({type:'parent',order:o,childCount:children.length,expanded});
       if(expanded){
         for(const c of children){
-          if(filteredSet.has(c.sr))out.push({type:'child',order:c,parent:o});
+          if(filteredSet.has(String(c.sr)))out.push({type:'child',order:c,parent:o});
         }
       }
     } else if(isStandaloneOrder(o)){
       out.push({type:'standalone',order:o});
     }
-    // children handled via parent loop
   }
   return out;
 }
@@ -1831,12 +1814,11 @@ function toggleParentExpand(sr,evt){
 }
 
 // ═══════════════════════════════════════
-// RENDER — WITH PARENT/CHILD GROUPING
+// RENDER
 // ═══════════════════════════════════════
 function render(){
   const p=colsToShow();if(!A.perms)return;
   const flat=getFiltered();
-  // Metrics: parents count as 1, standalones as 1, children NOT in total
   const totalCount=flat.filter(o=>!isChildOrder(o)).length;
   document.getElementById('m-tot').textContent=totalCount;
   document.getElementById('m-prg').textContent=flat.filter(o=>(o.status||'').toLowerCase().includes('progress')).length;
@@ -1847,13 +1829,13 @@ function render(){
   const display=getDisplay();
   const tb=document.getElementById('t-body');tb.innerHTML='';
   if(!display.length){tb.innerHTML='<tr><td colspan="20"><div class="empty-state"><div style="font-size:40px;margin-bottom:12px">📋</div><div style="font-size:14px;font-weight:500">No orders found</div></div></td></tr>';return;}
-  const allChecked=flat.length>0&&flat.every(o=>A.selectedRows.has(o.sr));
+  const allChecked=flat.length>0&&flat.every(o=>A.selectedRows.has(String(o.sr)));
   const cbAll=document.getElementById('cb-all');if(cbAll)cbAll.checked=allChecked;
 
   display.forEach(item=>{
     const o=item.order;
-    const isChecked=A.selectedRows.has(o.sr);
-    const isSel=A.selOrder&&A.selOrder.sr===o.sr;
+    const isChecked=A.selectedRows.has(String(o.sr));
+    const isSel=A.selOrder&&String(A.selOrder.sr)===String(o.sr);
     const tr=document.createElement('tr');
     let rowCls='row';
     if(isSel)rowCls+=' sel';
@@ -1866,11 +1848,10 @@ function render(){
     const ne=String(o.name).replace(/"/g,'&quot;').replace(/'/g,"\\'");
     const te=String(o.type||'').replace(/"/g,'&quot;').replace(/'/g,"\\'");
 
-    let h=`<td style="text-align:center;padding:0 8px"><input type="checkbox" class="row-cb" ${isChecked?'checked':''} onclick="event.stopPropagation();toggleRow(${o.sr},this.checked,event)"></td>`;
-    // Sr cell — parent gets toggle, child indented
+    let h=`<td style="text-align:center;padding:0 8px"><input type="checkbox" class="row-cb" ${isChecked?'checked':''} onclick="event.stopPropagation();toggleRow('${o.sr}',this.checked,event)"></td>`;
     if(item.type==='parent'){
       const exp=item.expanded;
-      h+=`<td><span class="parent-toggle ${exp?'expanded':''}" onclick="toggleParentExpand(${o.sr},event)"><span class="parent-toggle-arrow">${exp?'▼':'▶'}</span>#${o.sr} · ${item.childCount}</span></td>`;
+      h+=`<td><span class="parent-toggle ${exp?'expanded':''}" onclick="toggleParentExpand('${o.sr}',event)"><span class="parent-toggle-arrow">${exp?'▼':'▶'}</span>#${o.sr} · ${item.childCount}</span></td>`;
     } else if(item.type==='child'){
       h+=`<td style="color:var(--text3);font-size:10px;font-family:DM Mono,monospace;padding-left:24px">${o.sr}</td>`;
     } else {
@@ -1879,7 +1860,6 @@ function render(){
     h+=`<td style="font-size:11px;color:var(--text2)">${o.date}</td>`;
     if(p.client)h+=`<td><span class="b-client">${o.client||'—'}</span></td>`;
     if(p.po)h+=`<td style="font-size:11px;font-family:DM Mono,monospace;color:var(--text2)">${o.po}</td>`;
-    // Name cell
     if(item.type==='parent'){
       h+=`<td style="font-weight:${isSel?700:600};max-width:240px"><span class="parent-name-wrap">${o.name}<span class="parent-badge">📦 ${item.childCount} part${item.childCount===1?'':'s'}</span></span></td>`;
     } else if(item.type==='child'){
@@ -1889,14 +1869,14 @@ function render(){
     }
     h+=`<td>${catB(o.cat)}</td>`;
     if(p.images){
-      h+=`<td style="text-align:center"><div class="thumb" onclick="event.stopPropagation();openImgModal(${o.sr},'${ne}','${te}')"><img id="thumb-${o.sr}" src="${svgD}" alt="tool" style="opacity:.4;width:100%;height:100%;object-fit:contain"></div></td>`;
+      h+=`<td style="text-align:center"><div class="thumb" onclick="event.stopPropagation();openImgModal('${o.sr}','${ne}','${te}')"><img id="thumb-${o.sr}" src="${svgD}" alt="tool" style="opacity:.4;width:100%;height:100%;object-fit:contain"></div></td>`;
       const hasPDF=!!findFileForSr(A.pdfFolderCache,o.sr);
       const hasSTP=!!findFileForSr(A.stpFolderCache,o.sr);
       const hasWC=!!findFileForSr(A.wcFolderCache,o.sr);
       h+=`<td><div style="display:flex;gap:3px;justify-content:center">`;
-      h+=`<div class="file-chip ${hasPDF?'fc-pdf':'fc-empty'}" onclick="event.stopPropagation();${hasPDF?`quickViewFile(${o.sr},'pdf')`:''}" title="${hasPDF?'View PDF':'No PDF'}">PDF</div>`;
-      h+=`<div class="file-chip ${hasSTP?'fc-stp':'fc-empty'}" onclick="event.stopPropagation();${hasSTP?`quickViewFile(${o.sr},'stp')`:''}" title="${hasSTP?'View STP':'No STP'}">STP</div>`;
-      h+=`<div class="file-chip ${hasWC?'fc-wc':'fc-empty'}" onclick="event.stopPropagation();${hasWC?`quickViewFile(${o.sr},'wc')`:''}" title="${hasWC?'View WC':'No WC'}">WC</div>`;
+      h+=`<div class="file-chip ${hasPDF?'fc-pdf':'fc-empty'}" onclick="event.stopPropagation();${hasPDF?`quickViewFile('${o.sr}','pdf')`:''}" title="${hasPDF?'View PDF':'No PDF'}">PDF</div>`;
+      h+=`<div class="file-chip ${hasSTP?'fc-stp':'fc-empty'}" onclick="event.stopPropagation();${hasSTP?`quickViewFile('${o.sr}','stp')`:''}" title="${hasSTP?'View STP':'No STP'}">STP</div>`;
+      h+=`<div class="file-chip ${hasWC?'fc-wc':'fc-empty'}" onclick="event.stopPropagation();${hasWC?`quickViewFile('${o.sr}','wc')`:''}" title="${hasWC?'View WC':'No WC'}">WC</div>`;
       h+=`</div></td>`;
     }
     if(p.qty)h+=`<td style="text-align:center;font-size:12px">${o.qty||'—'}</td>`;
@@ -1926,7 +1906,7 @@ function clearFilters(){
 function setTab(t,el){A.tab=t;A.selOrder=null;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));el.classList.add('on');render();}
 
 // ═══════════════════════════════════════
-// DETAIL VIEW — WITH CHILD PARTS
+// DETAIL VIEW
 // ═══════════════════════════════════════
 function showDet(o){
   A.selOrder=o;const p=colsToShow();
@@ -1943,7 +1923,7 @@ function showDet(o){
   if(isParentOrder(o)){dc('Type','<span class="parent-badge">📦 Parent</span>');}
   if(isChildOrder(o)){
     const par=getParentOf(o);
-    if(par)dc('Part of',`<a style="color:var(--blue);font-weight:600;text-decoration:none;cursor:pointer" onclick="event.stopPropagation();showDet(A.orders.find(x=>x.sr==${par.sr}))">📦 #${par.sr} ${par.name}</a>`);
+    if(par)dc('Part of',`<a style="color:var(--blue);font-weight:600;text-decoration:none;cursor:pointer" onclick="event.stopPropagation();showDet(A.orders.find(x=>String(x.sr)==='${par.sr}'))">📦 #${par.sr} ${par.name}</a>`);
   }
   if(p.qty)dc('Qty',o.qty);
   if(p.target)dc('Target delivery',o.tgt+' '+daysB(o));
@@ -1952,7 +1932,6 @@ function showDet(o){
   dc('Status',stB(o.status));
   if(o.client)dc('Client',`<span class="b-client">${o.client}</span>`);
   if(p.remarks&&o.remarks)dc('Remarks',o.remarks);
-  // Stages — hide for parents (parent stages don't make sense; only children have stages)
   const sd=document.getElementById('det-stages');
   if(p.stages!=='NO'&&!isParentOrder(o)){
     sd.style.display='block';
@@ -1961,7 +1940,6 @@ function showDet(o){
     const stgs=[['RM',o.stRM],['Shape',o.stShape],['Grind',o.stGrind],['Wire/VMC',o.stWire],['Lathe',o.stLathe],['HT',o.stHT],['Inspect',o.stInsp],['Dispatch',o.stDisp]];
     stgs.forEach(([l,v])=>{if(!v||v==='—')return;const vs=v.toString();const cl=vs.toLowerCase()==='done'?'sch-done':vs.toLowerCase()==='pending'?'sch-pend':vs.toLowerCase().includes('hold')?'sch-hold':'sch-na';ss.innerHTML+=`<span class="sch ${cl}">${l}: ${vs}</span>`;});
   }else sd.style.display='none';
-  // Child parts (parents only)
   const ch=document.getElementById('det-children');
   if(isParentOrder(o)){
     const children=getChildrenOf(o.sr);
@@ -1971,28 +1949,26 @@ function showDet(o){
     if(children.length){
       let h='<table class="child-parts-table"><thead><tr><th>Sr</th><th>Part name</th><th style="width:40px">Qty</th><th style="width:90px">Status</th><th style="width:80px">Stages</th></tr></thead><tbody>';
       children.forEach(c=>{
-        const ne2=String(c.name).replace(/"/g,'&quot;').replace(/'/g,"\\'");
-        h+=`<tr onclick="showDet(A.orders.find(x=>x.sr==${c.sr}))"><td class="cp-sr">#${c.sr}</td><td class="cp-name">${c.name}</td><td style="text-align:center">${c.qty||'—'}</td><td>${stB(c.status)}</td><td>${stagesDots(c)}</td></tr>`;
+        h+=`<tr onclick="showDet(A.orders.find(x=>String(x.sr)==='${c.sr}'))"><td class="cp-sr">#${c.sr}</td><td class="cp-name">${c.name}</td><td style="text-align:center">${c.qty||'—'}</td><td>${stB(c.status)}</td><td>${stagesDots(c)}</td></tr>`;
       });
       h+='</tbody></table>';
       cl.innerHTML=h;
     }else{cl.innerHTML='<div style="font-size:11px;color:var(--text3);padding:8px;text-align:center">No child parts yet</div>';}
     document.getElementById('det-add-child-btn').style.display=A.isAdmin?'flex':'none';
   } else { ch.style.display='none'; }
-  // Files
   const fl=document.getElementById('sp-files-list');fl.innerHTML='';let hasAnyFile=false;
   const pdfMatch=findFileForSr(A.pdfFolderCache,o.sr);
   const stpMatch=findFileForSr(A.stpFolderCache,o.sr);
   const wcMatch=findFileForSr(A.wcFolderCache,o.sr);
-  if(pdfMatch){hasAnyFile=true;fl.innerHTML+=`<div class="file-row" onclick="quickViewFile(${o.sr},'pdf')"><div class="file-row-icon" style="background:#FEE2E2;color:#DC2626">PDF</div><div style="flex:1;min-width:0"><div class="file-row-name">${pdfMatch.name}</div><div class="file-row-meta">${fmtBytes(pdfMatch.size)}</div></div><button class="file-row-btn">View</button></div>`;}
-  if(stpMatch){hasAnyFile=true;fl.innerHTML+=`<div class="file-row" onclick="quickViewFile(${o.sr},'stp')"><div class="file-row-icon" style="background:#E0E7FF;color:#4338CA">STP</div><div style="flex:1;min-width:0"><div class="file-row-name">${stpMatch.name}</div><div class="file-row-meta">${fmtBytes(stpMatch.size)}</div></div><button class="file-row-btn">Info</button></div>`;}
-  if(wcMatch){hasAnyFile=true;fl.innerHTML+=`<div class="file-row" onclick="quickViewFile(${o.sr},'wc')"><div class="file-row-icon" style="background:#FCE7F3;color:#9D174D">WC</div><div style="flex:1;min-width:0"><div class="file-row-name">${wcMatch.name}</div><div class="file-row-meta">${fmtBytes(wcMatch.size)}</div></div><button class="file-row-btn">Info</button></div>`;}
+  if(pdfMatch){hasAnyFile=true;fl.innerHTML+=`<div class="file-row" onclick="quickViewFile('${o.sr}','pdf')"><div class="file-row-icon" style="background:#FEE2E2;color:#DC2626">PDF</div><div style="flex:1;min-width:0"><div class="file-row-name">${pdfMatch.name}</div><div class="file-row-meta">${fmtBytes(pdfMatch.size)}</div></div><button class="file-row-btn">View</button></div>`;}
+  if(stpMatch){hasAnyFile=true;fl.innerHTML+=`<div class="file-row" onclick="quickViewFile('${o.sr}','stp')"><div class="file-row-icon" style="background:#E0E7FF;color:#4338CA">STP</div><div style="flex:1;min-width:0"><div class="file-row-name">${stpMatch.name}</div><div class="file-row-meta">${fmtBytes(stpMatch.size)}</div></div><button class="file-row-btn">Info</button></div>`;}
+  if(wcMatch){hasAnyFile=true;fl.innerHTML+=`<div class="file-row" onclick="quickViewFile('${o.sr}','wc')"><div class="file-row-icon" style="background:#FCE7F3;color:#9D174D">WC</div><div style="flex:1;min-width:0"><div class="file-row-name">${wcMatch.name}</div><div class="file-row-meta">${fmtBytes(wcMatch.size)}</div></div><button class="file-row-btn">Info</button></div>`;}
   document.getElementById('sp-files').style.display=hasAnyFile?'block':'none';
   openSP('view');render();
 }
 
 // ═══════════════════════════════════════
-// ADD / EDIT / SAVE / DELETE — WITH PARENT-CHILD
+// ADD / EDIT / SAVE / DELETE
 // ═══════════════════════════════════════
 function populateClientSelector(){
   const sel=document.getElementById('f-client-name');sel.innerHTML='<option value="">— Select client —</option>';
@@ -2024,7 +2000,6 @@ async function openAddOrder(){
   populateClientSelector();clearForm();
   document.getElementById('f-sr').value='(Auto on save)';
   document.getElementById('f-date').value=new Date().toISOString().slice(0,10);
-  // If preselected parent (from "+ Add Child Part" button)
   if(A.preselectedParentSr){
     const par=A.allOrders.find(x=>String(x.sr)===String(A.preselectedParentSr));
     if(par){
@@ -2049,7 +2024,6 @@ function switchToEdit(){
   document.getElementById('sp-edit-btn').style.display='none';document.getElementById('btn-del-order').style.display='inline-flex';
   document.getElementById('sp-view').style.display='none';document.getElementById('sp-edit').style.display='block';
   document.getElementById('client-selector-section').style.display=A.isAdmin?'block':'none';
-  // Hide sub-item toggle when editing a parent (can't make parent a child)
   if(isParentOrder(o)){document.getElementById('subitem-section').style.display='none';}
   else{
     document.getElementById('subitem-section').style.display='block';
@@ -2120,7 +2094,10 @@ async function saveOrder(){
   document.getElementById('btn-save-order').disabled=true;
   toast('Saving order...',10000);
   try{
-    if(!A.editOrder){o.sr=await getNextSrNo();}else{o.sr=parseInt(A.editOrder.sr);}
+    if(!A.editOrder){
+      if(o.parentSr){o.sr=await getNextChildSr(o.parentSr);}
+      else{o.sr=await getNextSrNo();}
+    }else{o.sr=A.editOrder.sr;}
     const cleanName=o.name.toUpperCase().replace(/[^A-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,40);
     if(!A.imgFolderId)A.imgFolderId=await ensureFolder(C.imgFolder);
     if(!A.pdfFolderId)A.pdfFolderId=await ensureFolder(C.pdfFolder);
@@ -2132,10 +2109,10 @@ async function saveOrder(){
     if(A.pendingWCFile&&A.wcFolderId){const ext=A.pendingWCFile.name.split('.').pop().toLowerCase();const{fileName,res}=await uploadFileToFolder(A.pendingWCFile,A.wcFolderId,o.sr,cleanName,ext);A.wcFolderCache=refreshCacheAfterUpload(A.wcFolderCache,o.sr,fileName,res?.id);}
     const{rows,dataStart}=await findSheetLayout(C.masterSheet);
     let rowNum=null;
-    if(A.editOrder){for(let i=dataStart;i<rows.length;i++){if(parseInt(rows[i][0])===parseInt(o.sr)){rowNum=i+1;break;}}}
+    if(A.editOrder){for(let i=dataStart;i<rows.length;i++){if(String(rows[i][0]||'').trim()===String(o.sr).trim()){rowNum=i+1;break;}}}
     if(!rowNum){let last=dataStart;for(let i=dataStart;i<rows.length;i++){if(rows[i].some(v=>v))last=i+1;}rowNum=last+1;}
     await writeOrderRow(o,rowNum);
-    if(A.editOrder){const idx=A.allOrders.findIndex(x=>x.sr==o.sr);if(idx>=0)Object.assign(A.allOrders[idx],o,{dateISO:o.date,tgtISO:o.tgt});}
+    if(A.editOrder){const idx=A.allOrders.findIndex(x=>String(x.sr)===String(o.sr));if(idx>=0)Object.assign(A.allOrders[idx],o,{dateISO:o.date,tgtISO:o.tgt});}
     else{A.allOrders.push({...o,dateISO:o.date,tgtISO:o.tgt});}
     A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
     if(o.parentSr)A.expandedParents.add(String(o.parentSr));
@@ -2155,13 +2132,13 @@ async function deleteOrder(){
   if(!confirm(msg))return;
   toast('Deleting...',5000);
   try{
-    const sr=parseInt(o.sr);const{rows,dataStart}=await findSheetLayout(C.masterSheet);
+    const sr=String(o.sr).trim();const{rows,dataStart}=await findSheetLayout(C.masterSheet);
     for(let i=dataStart;i<rows.length;i++){
-      if(parseInt(rows[i][0])===sr){
+      if(String(rows[i][0]||'').trim()===sr){
         await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\'A'+(i+1)+':Y'+(i+1)+'\')/clear',{method:'POST',body:JSON.stringify({applyTo:'Contents'})});break;
       }
     }
-    A.allOrders=A.allOrders.filter(x=>x.sr!=sr);
+    A.allOrders=A.allOrders.filter(x=>String(x.sr)!==sr);
     A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
     A.selOrder=null;A.editOrder=null;closeSP();render();toast('✅ Order deleted!');
   }catch(e){toast('Delete failed: '+e.message,5000);}
@@ -2180,7 +2157,7 @@ function closeSP(){
 }
 
 // ═══════════════════════════════════════
-// EXPORT — INCLUDES PARENT-CHILD GROUPING
+// EXPORT — Two Sr cols + ASCII prefix + wide Name
 // ═══════════════════════════════════════
 function showExpModal(){
   const list=getFiltered();
@@ -2193,30 +2170,29 @@ function showExpModal(){
 function closeExpModal(){document.getElementById('exp-modal').style.display='none';}
 async function exportSelected(type){
   if(A.selectedRows.size===0){toast('No rows selected');return;}
-  const list=getFiltered().filter(o=>A.selectedRows.has(o.sr));
+  const list=getFiltered().filter(o=>A.selectedRows.has(String(o.sr)));
   if(type==='excel'){doExcelExportList(list);}
   else if(type==='pdf-fast'){doPDFList(list,false);}
   else if(type==='pdf-img'){doPDFList(list,true);}
 }
-// Reorder list so parents are immediately followed by their children
 function reorderForExport(list){
-  const set=new Set(list.map(o=>o.sr));
+  const set=new Set(list.map(o=>String(o.sr)));
   const out=[];const seen=new Set();
   for(const o of list){
-    if(seen.has(o.sr))continue;
+    if(seen.has(String(o.sr)))continue;
     if(isChildOrder(o)){
       const par=list.find(x=>isParentOrder(x)&&String(x.sr)===String(o.parentSr));
-      if(par&&!seen.has(par.sr)){
-        out.push(par);seen.add(par.sr);
-        getChildrenOf(par.sr).forEach(c=>{if(set.has(c.sr)&&!seen.has(c.sr)){out.push(c);seen.add(c.sr);}});
+      if(par&&!seen.has(String(par.sr))){
+        out.push(par);seen.add(String(par.sr));
+        getChildrenOf(par.sr).forEach(c=>{if(set.has(String(c.sr))&&!seen.has(String(c.sr))){out.push(c);seen.add(String(c.sr));}});
         continue;
       }
     }
     if(isParentOrder(o)){
-      out.push(o);seen.add(o.sr);
-      getChildrenOf(o.sr).forEach(c=>{if(set.has(c.sr)&&!seen.has(c.sr)){out.push(c);seen.add(c.sr);}});
+      out.push(o);seen.add(String(o.sr));
+      getChildrenOf(o.sr).forEach(c=>{if(set.has(String(c.sr))&&!seen.has(String(c.sr))){out.push(c);seen.add(String(c.sr));}});
     } else {
-      out.push(o);seen.add(o.sr);
+      out.push(o);seen.add(String(o.sr));
     }
   }
   return out;
@@ -2225,7 +2201,7 @@ function orderTypeTag(o){return isParentOrder(o)?'Parent':isChildOrder(o)?'Child
 function getExportData(list){
   const p=colsToShow();
   const ordered=reorderForExport(list||getFiltered());
-  const h=['Sr','Type','Date'];
+  const h=['S.No','JMC Sr','Type','Date'];
   if(p.client)h.push('Client');
   if(p.po)h.push('PO No.');
   h.push('Product / Tool Name','Category');
@@ -2235,10 +2211,10 @@ function getExportData(list){
   if(p.price)h.push('Quoted Price (₹)');
   h.push('Status');
   if(p.remarks)h.push('Remarks');
-  const rows=ordered.map(o=>{
+  const rows=ordered.map((o,idx)=>{
     const isCh=isChildOrder(o);
-    const namePrefix=isCh?'   └ ':'';
-    const r=[o.sr,orderTypeTag(o),o.date];
+    const namePrefix=isCh?'   > ':'';   // ASCII-safe
+    const r=[idx+1,o.sr,orderTypeTag(o),o.date];
     if(p.client)r.push(o.client||'');
     if(p.po)r.push(o.po);
     r.push(namePrefix+o.name,o.cat);
@@ -2257,15 +2233,28 @@ function doExcelExportList(list){
   try{
     const{h,rows,list:ordered}=getExportData(list);
     const wb=XLSX.utils.book_new();const ws=XLSX.utils.aoa_to_sheet([h,...rows]);
-    ws['!cols']=h.map(()=>({wch:22}));
-    // Highlight parent rows with blue fill (best-effort with XLSX community build)
+    ws['!cols']=h.map(label=>{
+      const lc=String(label).toLowerCase();
+      if(lc==='s.no')return{wch:6};
+      if(lc==='jmc sr')return{wch:10};
+      if(lc==='type')return{wch:9};
+      if(lc==='product / tool name')return{wch:40};
+      if(lc==='remarks')return{wch:30};
+      return{wch:18};
+    });
     ordered.forEach((o,i)=>{
       if(isParentOrder(o)){
-        const rowIdx=i+1; // +1 for header
+        const rowIdx=i+1;
         h.forEach((_,colIdx)=>{
           const ref=XLSX.utils.encode_cell({r:rowIdx,c:colIdx});
           if(ws[ref]){ws[ref].s={fill:{fgColor:{rgb:'EBF4FF'}},font:{bold:true}};}
         });
+      }
+      // bold the JMC Sr column for every row
+      const jmcCol=h.findIndex(x=>String(x).toLowerCase()==='jmc sr');
+      if(jmcCol>=0){
+        const ref=XLSX.utils.encode_cell({r:i+1,c:jmcCol});
+        if(ws[ref]){ws[ref].s=Object.assign({},ws[ref].s||{},{font:{bold:true}});}
       }
     });
     XLSX.utils.book_append_sheet(wb,ws,'Orders');
@@ -2277,7 +2266,7 @@ function doPDF(withImages){
   closeExpModal();
   const selRadio=document.querySelector('input[name="exp-scope"]:checked');
   const useSelected=selRadio&&selRadio.value==='selected'&&A.selectedRows.size>0;
-  const list=useSelected?getFiltered().filter(o=>A.selectedRows.has(o.sr)):getFiltered();
+  const list=useSelected?getFiltered().filter(o=>A.selectedRows.has(String(o.sr))):getFiltered();
   doPDFList(list,withImages);
 }
 async function doPDFList(list,withImages){
@@ -2288,7 +2277,7 @@ async function doPDFList(list,withImages){
     const imgDataMap={};
     if(withImages){for(const o of ordered){const url=await getImgUrl(o.sr);if(url){try{const resp=await fetch(url);const blob=await resp.blob();const du=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(blob);});imgDataMap[o.sr]=du;}catch(e){}}}}
     const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
-    const ML=10,MT=10,PW=287;
+    const ML=8,MT=10,PW=289;
     if(A.logoUrl){try{const resp=await fetch(A.logoUrl);const blob=await resp.blob();const du=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(blob);});doc.addImage(du,'PNG',ML,MT,16,16);}catch(e){}}
     doc.setFontSize(14);doc.setTextColor(15,33,68);doc.setFont(undefined,'bold');
     doc.text('JMC Engineering — Order Tracker',ML+20,MT+7);
@@ -2296,21 +2285,49 @@ async function doPDFList(list,withImages){
     doc.text(A.perms.clientName+' · '+ordered.length+' orders · '+new Date().toLocaleDateString('en-IN'),ML+20,MT+13);
     if(A.selectedRows.size>0&&ordered.length!==getFiltered().length)doc.text('(Selected orders only)',ML+20,MT+18);
     doc.setDrawColor(24,95,165);doc.setLineWidth(.5);doc.line(ML,MT+19,PW,MT+19);
+
     const headWithImg=withImages?[...h,'Image']:h;
     const bodyWithImg=withImages?rows.map(r=>[...r,'']):rows;
     const imgColIdx=headWithImg.length-1;
+
+    // Column widths by header label — keeps Name wide so text wraps cleanly
+    const colStyles={};
+    headWithImg.forEach((label,i)=>{
+      const lc=String(label).toLowerCase();
+      if(lc==='s.no')colStyles[i]={cellWidth:9,halign:'center'};
+      else if(lc==='jmc sr')colStyles[i]={cellWidth:14,fontStyle:'bold',textColor:[15,33,68],fillColor:[235,244,255],halign:'center'};
+      else if(lc==='type')colStyles[i]={cellWidth:14,halign:'center'};
+      else if(lc==='date')colStyles[i]={cellWidth:18};
+      else if(lc==='client')colStyles[i]={cellWidth:20};
+      else if(lc==='po no.')colStyles[i]={cellWidth:18};
+      else if(lc==='product / tool name')colStyles[i]={cellWidth:62,overflow:'linebreak'};
+      else if(lc==='category')colStyles[i]={cellWidth:20};
+      else if(lc==='qty')colStyles[i]={cellWidth:10,halign:'center'};
+      else if(lc==='target')colStyles[i]={cellWidth:18};
+      else if(lc==='quoted')colStyles[i]={cellWidth:14,halign:'center'};
+      else if(lc.includes('price'))colStyles[i]={cellWidth:20,halign:'right'};
+      else if(lc==='status')colStyles[i]={cellWidth:22};
+      else if(lc==='remarks')colStyles[i]={cellWidth:22,overflow:'linebreak'};
+      else if(lc==='image')colStyles[i]={cellWidth:22};
+    });
+
     doc.autoTable({
       head:[headWithImg],body:bodyWithImg,startY:MT+23,
-      styles:{fontSize:8,cellPadding:3,font:'helvetica',overflow:'linebreak',minCellHeight:withImages?20:10},
-      headStyles:{fillColor:[15,33,68],textColor:255,fontStyle:'bold'},
-      alternateRowStyles:{fillColor:[244,247,251]},
+      styles:{fontSize:7.5,cellPadding:2.5,font:'helvetica',overflow:'linebreak',minCellHeight:withImages?20:8,valign:'middle'},
+      headStyles:{fillColor:[15,33,68],textColor:255,fontStyle:'bold',fontSize:8},
+      alternateRowStyles:{fillColor:[248,250,253]},
       margin:{left:ML,right:ML},
-      columnStyles:withImages?{[imgColIdx]:{cellWidth:22}}:{},
+      columnStyles:colStyles,
       didParseCell:(data)=>{
         if(data.section==='body'){
           const o=ordered[data.row.index];
-          if(o&&isParentOrder(o)){data.cell.styles.fillColor=[235,244,255];data.cell.styles.fontStyle='bold';data.cell.styles.textColor=[15,33,68];}
-          else if(o&&isChildOrder(o)){data.cell.styles.fillColor=[250,252,255];}
+          const isJmcSrCol=String(headWithImg[data.column.index]||'').toLowerCase()==='jmc sr';
+          if(o&&isParentOrder(o)){
+            if(!isJmcSrCol){data.cell.styles.fillColor=[219,234,254];}
+            data.cell.styles.fontStyle='bold';data.cell.styles.textColor=[15,33,68];
+          }else if(o&&isChildOrder(o)&&!isJmcSrCol){
+            data.cell.styles.fillColor=[250,252,255];
+          }
         }
       },
       didDrawCell:withImages?(data)=>{
@@ -2322,13 +2339,12 @@ async function doPDFList(list,withImages){
       didDrawRow:(data)=>{
         if(data.section==='body'){
           const o=ordered[data.row.index];
-          if(o&&isChildOrder(o)){
-            // Draw left colored bar
+          if(o&&isParentOrder(o)){
+            doc.setDrawColor(24,95,165);doc.setLineWidth(1.5);
+            doc.line(data.row.cells[0].x,data.row.cells[0].y,data.row.cells[0].x,data.row.cells[0].y+data.row.height);
+          }else if(o&&isChildOrder(o)){
             doc.setDrawColor(189,222,255);doc.setLineWidth(.8);
             doc.line(data.row.cells[0].x+2,data.row.cells[0].y,data.row.cells[0].x+2,data.row.cells[0].y+data.row.height);
-          } else if(o&&isParentOrder(o)){
-            doc.setDrawColor(24,95,165);doc.setLineWidth(1.2);
-            doc.line(data.row.cells[0].x,data.row.cells[0].y,data.row.cells[0].x,data.row.cells[0].y+data.row.height);
           }
         }
       }
