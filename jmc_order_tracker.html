@@ -758,6 +758,7 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
 </div>
 <script>
 const C = {
+  claudeApiKey:'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',
   clientId:'248daf88-bf2b-4f29-9295-ab2e707fa3ef',
   tenantId:'ae273161-7bde-4004-9e52-0ebbee8e3c0d',
   scopes:['Files.ReadWrite.All','User.Read'],
@@ -1143,141 +1144,423 @@ function getChildrenOf(parentSr){return A.orders.filter(o=>isChildOrder(o)&&Stri
 function getParentOf(childOrder){if(!isChildOrder(childOrder))return null;return A.orders.find(o=>isParentOrder(o)&&String(o.sr)===String(childOrder.parentSr));}
 </script>
 <script>
-// ═══════════════════════════════════════
-// PDF.js + Tesseract.js LAZY LOADING
-// ═══════════════════════════════════════
-async function loadPDFJS(){
-  if(A.pdfjsLoaded)return;
-  await new Promise((resolve,reject)=>{
-    const s=document.createElement('script');
-    s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-    s.onload=()=>{
-      try{
-        if(window.pdfjsLib){window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}
-        else if(window['pdfjs-dist/build/pdf']){window.pdfjsLib=window['pdfjs-dist/build/pdf'];window.pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}
-        A.pdfjsLoaded=true;resolve();
-      }catch(e){reject(e);}
+// ============================================================
+// JMC ORDER TRACKER — CLAUDE VISION PDF IMPORT PATCH
+// ============================================================
+// HOW TO USE THIS FILE:
+//   In your HTML, find the comment block:
+//     // ═══════════════════════════════════════
+//     // PDF.js + Tesseract.js LAZY LOADING
+//     // ═══════════════════════════════════════
+//   DELETE everything from that block down to (and including)
+//   the function: loadTesseract()
+//   THEN DELETE these two functions entirely:
+//     - renderPageAndCrop()
+//     - parsePDFPageText()
+//   THEN PASTE THIS ENTIRE FILE content in their place.
+//
+// WHAT THIS REPLACES:
+//   ✗ loadTesseract()         → removed entirely
+//   ✗ renderPageAndCrop()     → replaced by renderFullPage() + claudeCropAndExtract()
+//   ✗ parsePDFPageText()      → replaced by Claude Vision (same API call)
+//   ✗ Fixed 55%/40% crop      → Claude Vision detects optimal region
+//   ✗ All OCR/Tesseract code  → Claude Vision reads image directly
+//
+// WHAT STAYS UNCHANGED:
+//   ✓ loadPDFJS()
+//   ✓ startPDFImport()        → minor edit needed (see bottom of file)
+//   ✓ renderPDFImportTable()
+//   ✓ confirmPDFImport()
+//   ✓ All other functions
+// ============================================================
+
+
+// ── 1. PDF.js LAZY LOAD (keep this, unchanged) ──────────────
+async function loadPDFJS() {
+  if (A.pdfjsLoaded) return;
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => {
+      try {
+        if (window.pdfjsLib) {
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        } else if (window['pdfjs-dist/build/pdf']) {
+          window.pdfjsLib = window['pdfjs-dist/build/pdf'];
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+        A.pdfjsLoaded = true;
+        resolve();
+      } catch (e) { reject(e); }
     };
-    s.onerror=()=>reject(new Error('Failed to load PDF.js'));
-    document.head.appendChild(s);
-  });
-}
-async function loadTesseract(){
-  if(A.tesseractLoaded)return;
-  await new Promise((resolve,reject)=>{
-    const s=document.createElement('script');
-    s.src='https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js';
-    s.onload=()=>{A.tesseractLoaded=true;resolve();};
-    s.onerror=()=>reject(new Error('Failed to load Tesseract.js'));
+    s.onerror = () => reject(new Error('Failed to load PDF.js'));
     document.head.appendChild(s);
   });
 }
 
-// ═══════════════════════════════════════
-// PDF TEXT PARSING
-// ═══════════════════════════════════════
-function parsePDFPageText(text){
-  const lines=text.split(/[\r\n]+/).map(l=>l.trim()).filter(Boolean);
-  const full=lines.join('\n');
-  const out={workOrder:'',partName:'',partNo:'',qty:'',toolName:'',material:''};
-  let foundCount=0;
-  const woMatch=full.match(/\b([A-Z]{2,4}\d{3,6})\b/);
-  if(woMatch){out.workOrder=woMatch[1];foundCount++;}
-  const toolMatch=full.match(/(OP[\s-]*\d+[\s-]+[A-Z][A-Z\s]+?(?:TOOL|PUNCH|DIE|FIXTURE|JIG))/i);
-  if(toolMatch){out.toolName=toolMatch[1].replace(/\s+/g,' ').trim();foundCount++;}
-  const matMatch=full.match(/\b(OHNS|HCHCR(?:[-\s]?D2)?|D2|EN\s*\d+|SKD\s*\d+|HSS|MS|TOOL\s*STEEL|SS\s*\d{3}|HARDOX)\b/i);
-  if(matMatch){out.material=matMatch[0].trim();foundCount++;}
-  const partKw=/(LOCATOR|INSERT|PIN|PUNCH|DIE\b|HOLDER|PAD|PLATE|BLOCK|STRIPPER|GUIDE|BUSH(?:ING)?|FIXTURE|GAUGE|GAGE|SENSOR|SEINSER|STOPPER|EJECTOR|CORE|CAVITY|SLIDE|CAM|PILLAR|SHANK)/i;
-  for(const line of lines){
-    if(line.length>3&&line.length<80&&partKw.test(line)){
-      if(!/BENDING\s+TOOL\b/i.test(line)&&!/^TOOL\s+NAME/i.test(line)){out.partName=line.replace(/\s+/g,' ').trim();foundCount++;break;}
-    }
-  }
-  if(!out.partName&&out.workOrder){
-    for(const line of lines){
-      if(line.includes(out.workOrder)&&line.length>out.workOrder.length+2&&line.length<80&&!/MUKUND|KRISHNAVEL|SARAVANAN/i.test(line)){out.partName=line.replace(/\s+/g,' ').trim();foundCount++;break;}
-    }
-  }
-  for(const line of lines){
-    if(/^\d{2,4}$/.test(line)){const n=parseInt(line);if(n>=10&&(n<1900||n>2100)){out.partNo=line;foundCount++;break;}}
-  }
-  let qtyCandidates=[];
-  for(let i=0;i<lines.length;i++){
-    if(/^\d{1,2}$/.test(lines[i])){
-      const n=parseInt(lines[i]);
-      if(n>=1&&n<=50&&String(n)!==out.partNo){
-        let score=0;
-        if(i>0&&/OHNS|HCHCR|D2|EN\s*\d+|HSS|MS\b|SKD/i.test(lines[i-1]))score+=10;
-        if(i>0&&/\d{1,3}\s*-\s*\d{1,3}/.test(lines[i-1]))score+=3;
-        if(n<=10)score+=1;
-        qtyCandidates.push({n,score,i});
-      }
-    }
-  }
-  if(qtyCandidates.length){qtyCandidates.sort((a,b)=>b.score-a.score);out.qty=String(qtyCandidates[0].n);foundCount++;}
-  if(!out.qty)out.qty='1';
-  out._foundCount=foundCount;
-  return out;
+
+// ── 2. RENDER FULL PAGE TO CANVAS ───────────────────────────
+// Renders entire PDF page at given scale.
+// Returns { fullCanvas, fullDataURL, width, height }
+async function renderFullPage(page, scale = 1.8) {
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  await page.render({ canvasContext: ctx, viewport }).promise;
+  const fullDataURL = canvas.toDataURL('image/jpeg', 0.88);
+  return { fullCanvas: canvas, fullDataURL, width: canvas.width, height: canvas.height };
 }
 
-async function renderPageAndCrop(page,scale){
-  const viewport=page.getViewport({scale});
-  const canvas=document.createElement('canvas');
-  canvas.width=viewport.width;canvas.height=viewport.height;
-  const ctx=canvas.getContext('2d');
-  await page.render({canvasContext:ctx,viewport}).promise;
-  const cropX=Math.floor(canvas.width*0.55),cropY=Math.floor(canvas.height*0.02);
-  const cropW=Math.floor(canvas.width*0.40),cropH=Math.floor(canvas.height*0.43);
-  const cc=document.createElement('canvas');cc.width=cropW;cc.height=cropH;
-  const cctx=cc.getContext('2d');
-  cctx.fillStyle='#fff';cctx.fillRect(0,0,cropW,cropH);
-  cctx.drawImage(canvas,cropX,cropY,cropW,cropH,0,0,cropW,cropH);
-  const blob=await new Promise(r=>cc.toBlob(r,'image/png'));
-  const dataURL=cc.toDataURL('image/png');
-  return{blob,dataURL,fullCanvas:canvas};
+
+// ── 3. CROP CANVAS BY PERCENTAGE COORDINATES ────────────────
+// Takes crop result from Claude ({ xPct, yPct, wPct, hPct })
+// and returns a cropped canvas as blob + dataURL.
+function cropCanvasByPct(fullCanvas, xPct, yPct, wPct, hPct) {
+  const W = fullCanvas.width;
+  const H = fullCanvas.height;
+
+  // Convert percentages → pixels, clamp to canvas bounds
+  const cx = Math.max(0, Math.floor(W * xPct / 100));
+  const cy = Math.max(0, Math.floor(H * yPct / 100));
+  const cw = Math.min(W - cx, Math.floor(W * wPct / 100));
+  const ch = Math.min(H - cy, Math.floor(H * hPct / 100));
+
+  // Guard: if Claude returned nonsense coords, fall back to center crop
+  const safeCx = cw > 20 && ch > 20 ? cx : Math.floor(W * 0.10);
+  const safeCy = cw > 20 && ch > 20 ? cy : Math.floor(H * 0.10);
+  const safeCw = cw > 20 && ch > 20 ? cw : Math.floor(W * 0.80);
+  const safeCh = cw > 20 && ch > 20 ? ch : Math.floor(H * 0.60);
+
+  const out = document.createElement('canvas');
+  out.width  = safeCw;
+  out.height = safeCh;
+  const ctx = out.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, safeCw, safeCh);
+  ctx.drawImage(fullCanvas, safeCx, safeCy, safeCw, safeCh, 0, 0, safeCw, safeCh);
+
+  const dataURL = out.toDataURL('image/png');
+  // Convert dataURL → Blob synchronously via fetch trick
+  const byteStr = atob(dataURL.split(',')[1]);
+  const ab = new ArrayBuffer(byteStr.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteStr.length; i++) ia[i] = byteStr.charCodeAt(i);
+  const blob = new Blob([ab], { type: 'image/png' });
+
+  return { blob, dataURL };
 }
 
-async function startPDFImport(){
-  if(!A.pendingPDFFile){toast('Please upload a PDF first');return;}
-  if(A.isAdmin){const cli=document.getElementById('f-client-name').value;if(!cli){toast('Please select a client first');return;}}
-  document.getElementById('pdfimp-modal').style.display='flex';
-  document.getElementById('pdfimp-loading').style.display='block';
-  document.getElementById('pdfimp-content').style.display='none';
-  document.getElementById('pdfimp-load-msg').textContent='Loading PDF engine...';
-  try{
+
+// ── 4. CORE: CLAUDE VISION — CROP + EXTRACT ─────────────────
+// Sends the full-page image to Claude API.
+// Claude returns JSON with:
+//   crop        → { xPct, yPct, wPct, hPct }  (percentages of full page)
+//   partName    → string
+//   partNo      → string
+//   workOrder   → string
+//   qty         → string
+//   material    → string
+//   toolName    → string (e.g. "OP50 U BENDING TOOL")
+//   viewType    → "isometric" | "orthographic" | "unknown"
+//   confidence  → "high" | "medium" | "low"
+//
+// Returns the parsed JSON object, or null on failure.
+async function claudeCropAndExtract(fullDataURL, pageNum) {
+  // Strip the data:image/...;base64, prefix — API needs raw base64
+  const base64Data = fullDataURL.split(',')[1];
+
+  const systemPrompt = `You are an expert at reading engineering manufacturing drawings for press tools, 
+jigs, fixtures, and precision machined parts. You analyze drawing pages and extract information.
+You ALWAYS respond with valid JSON only — no markdown, no explanation, no code fences.`;
+
+  const userPrompt = `This is page ${pageNum} of an engineering drawing PDF for a precision manufacturing company (JMC Engineering, Chennai) that makes press tools, jigs, fixtures, die inserts, punches, locators, and similar parts.
+
+Your task has TWO parts:
+
+PART A — FIND THE BEST THUMBNAIL CROP:
+Identify the single best rectangular region to use as a thumbnail image for this part.
+Priority order:
+1. FIRST CHOICE: The isometric / 3D pictorial view of the part (if present)
+2. SECOND CHOICE: The main orthographic view (front view or top view) that shows the part's shape clearly with dimension lines
+3. AVOID: Title block text areas, revision tables, drawing borders, company logos, blank areas
+
+PART B — EXTRACT TEXT DATA:
+Read the drawing and extract:
+- Part name / description (e.g. "DIE INSERT", "PUNCH HOLDER", "LOCATOR PIN")
+- Part number / drawing number (e.g. "201", "RT2727-201", "EW-054")  
+- Work order / project code (e.g. "RT2727", "EW2854", "OP50")
+- Quantity required (default "1" if not found)
+- Material specification (e.g. "OHNS", "HCHCR", "D2", "EN31", "HSS", "MS", "SS304")
+- Tool/assembly name (e.g. "OP50 U BENDING TOOL", "PROGRESSIVE DIE")
+
+Respond ONLY with this exact JSON structure (no other text):
+{
+  "crop": {
+    "xPct": <number 0-100, left edge of crop as % of page width>,
+    "yPct": <number 0-100, top edge of crop as % of page height>,
+    "wPct": <number 0-100, width of crop as % of page width>,
+    "hPct": <number 0-100, height of crop as % of page height>
+  },
+  "viewType": "<isometric|orthographic|unknown>",
+  "confidence": "<high|medium|low>",
+  "partName": "<part name or empty string>",
+  "partNo": "<part number or empty string>",
+  "workOrder": "<work order code or empty string>",
+  "qty": "<quantity as string, default 1>",
+  "material": "<material spec or empty string>",
+  "toolName": "<full assembly/tool name or empty string>"
+}`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': C.claudeApiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: 'image/jpeg',
+                data: base64Data
+              }
+            },
+            {
+              type: 'text',
+              text: userPrompt
+            }
+          ]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.warn(`Claude API error page ${pageNum}:`, response.status, errText.slice(0, 200));
+      return null;
+    }
+
+    const data = await response.json();
+    const rawText = data.content
+      ?.filter(b => b.type === 'text')
+      ?.map(b => b.text)
+      ?.join('') || '';
+
+    // Strip any accidental markdown fences
+    const cleaned = rawText.replace(/```json|```/gi, '').trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch (parseErr) {
+      console.warn(`Claude returned non-JSON for page ${pageNum}:`, rawText.slice(0, 300));
+      return null;
+    }
+
+    // Validate crop object exists and has required fields
+    if (!parsed.crop ||
+        typeof parsed.crop.xPct !== 'number' ||
+        typeof parsed.crop.yPct !== 'number' ||
+        typeof parsed.crop.wPct !== 'number' ||
+        typeof parsed.crop.hPct !== 'number') {
+      console.warn(`Claude returned invalid crop for page ${pageNum}:`, parsed);
+      return null;
+    }
+
+    return parsed;
+
+  } catch (networkErr) {
+    console.warn(`Network error calling Claude for page ${pageNum}:`, networkErr.message);
+    return null;
+  }
+}
+
+
+// ── 5. FALLBACK CROP (if Claude fails) ──────────────────────
+// Returns safe center-of-page crop covering 70% of the drawing area.
+// Better than the old fixed top-right 55%/40% assumption.
+function getFallbackCrop() {
+  return { xPct: 5, yPct: 5, wPct: 65, hPct: 65 };
+}
+
+
+// ── 6. REPLACEMENT startPDFImport() ─────────────────────────
+// REPLACE your existing startPDFImport() with this version.
+// Key changes:
+//   - Calls renderFullPage() instead of renderPageAndCrop()
+//   - Calls claudeCropAndExtract() instead of parsePDFPageText() + Tesseract
+//   - Uses Claude's crop coords to crop the canvas
+//   - Uses Claude's text extraction for part data
+//   - Shows "AI analysing..." in progress message
+async function startPDFImport() {
+  if (!A.pendingPDFFile) { toast('Please upload a PDF first'); return; }
+  if (A.isAdmin) {
+    const cli = document.getElementById('f-client-name').value;
+    if (!cli) { toast('Please select a client first'); return; }
+  }
+
+  document.getElementById('pdfimp-modal').style.display = 'flex';
+  document.getElementById('pdfimp-loading').style.display = 'block';
+  document.getElementById('pdfimp-content').style.display = 'none';
+  document.getElementById('pdfimp-load-msg').textContent = 'Loading PDF engine...';
+
+  try {
     await loadPDFJS();
-    document.getElementById('pdfimp-load-msg').textContent='Reading PDF pages...';
-    const arrayBuf=await A.pendingPDFFile.arrayBuffer();
-    const pdf=await window.pdfjsLib.getDocument({data:arrayBuf}).promise;
-    const parts=[];let needsOCR=false;
-    for(let p=1;p<=pdf.numPages;p++){
-      document.getElementById('pdfimp-load-msg').textContent='Processing page '+p+' of '+pdf.numPages+'...';
-      const page=await pdf.getPage(p);
-      const{blob,dataURL,fullCanvas}=await renderPageAndCrop(page,1.5);
-      const tc=await page.getTextContent();
-      const pageText=tc.items.map(it=>it.str).join('\n');
-      let parsed=parsePDFPageText(pageText);
-      let isOcr=false;
-      if(parsed._foundCount<3){
-        document.getElementById('pdfimp-load-msg').textContent='Page '+p+': OCR fallback...';
-        try{
-          if(!A.tesseractLoaded){await loadTesseract();}
-          const{data}=await window.Tesseract.recognize(fullCanvas,'eng');
-          const ocrParsed=parsePDFPageText(data.text||'');
-          if(ocrParsed._foundCount>parsed._foundCount){parsed=ocrParsed;isOcr=true;needsOCR=true;}
-        }catch(e){console.warn('OCR failed:',e);}
+
+    document.getElementById('pdfimp-load-msg').textContent = 'Reading PDF pages...';
+    const arrayBuf = await A.pendingPDFFile.arrayBuffer();
+    const pdf = await window.pdfjsLib.getDocument({ data: arrayBuf }).promise;
+
+    const parts = [];
+
+    for (let p = 1; p <= pdf.numPages; p++) {
+      document.getElementById('pdfimp-load-msg').textContent =
+        `Page ${p} of ${pdf.numPages} — AI analysing drawing...`;
+
+      const page = await pdf.getPage(p);
+
+      // Render full page at scale 1.8 (good balance of quality vs token size)
+      const { fullCanvas, fullDataURL } = await renderFullPage(page, 1.8);
+
+      // Call Claude Vision — crop + extract in one shot
+      let claudeResult = await claudeCropAndExtract(fullDataURL, p);
+
+      let crop, partName, partNo, workOrder, qty, material, toolName, isAiFailed;
+
+      if (claudeResult) {
+        // Claude succeeded — use its crop
+        crop = claudeResult.crop;
+        partName  = claudeResult.partName  || ('Part ' + p);
+        partNo    = claudeResult.partNo    || String(100 + p);
+        workOrder = claudeResult.workOrder || '';
+        qty       = claudeResult.qty       || '1';
+        material  = claudeResult.material  || '';
+        toolName  = claudeResult.toolName  || '';
+        isAiFailed = false;
+
+        console.log(`Page ${p} | Claude: viewType=${claudeResult.viewType} confidence=${claudeResult.confidence} crop=(${crop.xPct.toFixed(1)}%,${crop.yPct.toFixed(1)}%,${crop.wPct.toFixed(1)}%,${crop.hPct.toFixed(1)}%)`);
+      } else {
+        // Claude failed (network issue / API error) — use safe fallback crop
+        // and blank text fields so user fills manually
+        console.warn(`Page ${p}: Claude failed, using fallback crop`);
+        crop = getFallbackCrop();
+        partName  = 'Part ' + p;
+        partNo    = String(100 + p);
+        workOrder = '';
+        qty       = '1';
+        material  = '';
+        toolName  = '';
+        isAiFailed = true;
       }
-      parts.push({page:p,workOrder:parsed.workOrder||'',partName:parsed.partName||('Part '+p),partNo:parsed.partNo||String(100+p),qty:parsed.qty||'1',toolType:parsed.toolName||'',material:parsed.material||'',imageBlob:blob,imageUrl:dataURL,ocr:isOcr,include:true});
+
+      // Crop the canvas using Claude's (or fallback) coordinates
+      const { blob, dataURL } = cropCanvasByPct(
+        fullCanvas,
+        crop.xPct,
+        crop.yPct,
+        crop.wPct,
+        crop.hPct
+      );
+
+      parts.push({
+        page: p,
+        workOrder,
+        partName,
+        partNo,
+        qty,
+        toolType: toolName,
+        material,
+        imageBlob: blob,
+        imageUrl:  dataURL,
+        aiFailed:  isAiFailed,
+        include:   true
+      });
     }
-    const wo=parts[0]?.workOrder||'';
-    const tn=parts[0]?.toolType||'';
-    const parentName=(wo+(tn?' '+tn:'')).trim()||A.pendingPDFFile.name.replace(/\.pdf$/i,'').slice(0,40);
-    A.pdfImportData={parts,parentName,sourcePdfFile:A.pendingPDFFile};
+
+    // Determine parent order name from page 1 data
+    const first  = parts[0];
+    const wo     = first?.workOrder || '';
+    const tn     = first?.toolType  || '';
+    const parentName = (wo + (tn ? ' ' + tn : '')).trim()
+      || A.pendingPDFFile.name.replace(/\.pdf$/i, '').slice(0, 40);
+
+    A.pdfImportData = { parts, parentName, sourcePdfFile: A.pendingPDFFile };
+
     renderPDFImportTable();
-    document.getElementById('pdfimp-loading').style.display='none';
-    document.getElementById('pdfimp-content').style.display='block';
-    if(needsOCR)toast('Some pages used OCR — please review',5000);
-  }catch(e){console.error(e);closePDFImport();toast('PDF import failed: '+e.message,6000);}
+
+    document.getElementById('pdfimp-loading').style.display  = 'none';
+    document.getElementById('pdfimp-content').style.display  = 'block';
+
+    // Warn user if any pages failed Claude
+    const failedCount = parts.filter(p => p.aiFailed).length;
+    if (failedCount > 0) {
+      toast(`⚠ ${failedCount} page(s) used fallback crop — please review`, 6000);
+    } else {
+      toast(`✅ AI analysed ${parts.length} page(s) — please review before importing`, 5000);
+    }
+
+  } catch (e) {
+    console.error(e);
+    closePDFImport();
+    toast('PDF import failed: ' + e.message, 6000);
+  }
+}
+
+
+// ── 7. UPDATED renderPDFImportTable() ───────────────────────
+// REPLACE your existing renderPDFImportTable() with this version.
+// Only change: shows "AI" badge instead of "OCR" badge.
+function renderPDFImportTable() {
+  if (!A.pdfImportData) return;
+  document.getElementById('pdfimp-parent-name').value = A.pdfImportData.parentName || '';
+  const tb = document.getElementById('pdfimp-rows');
+  tb.innerHTML = '';
+
+  A.pdfImportData.parts.forEach((p, i) => {
+    const tr = document.createElement('tr');
+    if (!p.include) tr.className = 'pdfimp-row-excluded';
+
+    // Badge: green "AI" if Claude succeeded, amber "?" if fallback
+    const badge = p.aiFailed
+      ? '<br><span class="pi-ocr" style="background:#FEE2E2;color:#991B1B">FALLBACK</span>'
+      : '<br><span class="pi-ocr" style="background:#D1FAE5;color:#065F46">AI ✓</span>';
+
+    tr.innerHTML = `
+      <td class="pi-cb">
+        <input type="checkbox" ${p.include ? 'checked' : ''}
+          onchange="togglePDFImportRow(${i}, this.checked)">
+      </td>
+      <td class="pi-page">${p.page}${badge}</td>
+      <td><input type="text" value="${(p.partNo   || '').replace(/"/g, '&quot;')}"
+            onchange="updatePDFImportField(${i}, 'partNo',    this.value)"></td>
+      <td><input type="text" value="${(p.partName || '').replace(/"/g, '&quot;')}"
+            onchange="updatePDFImportField(${i}, 'partName',  this.value)"></td>
+      <td><input type="text" value="${(p.workOrder|| '').replace(/"/g, '&quot;')}"
+            onchange="updatePDFImportField(${i}, 'workOrder', this.value)"></td>
+      <td><input type="number" value="${p.qty || '1'}" min="1"
+            onchange="updatePDFImportField(${i}, 'qty',       this.value)"></td>
+      <td><img class="pi-thumb" src="${p.imageUrl}"
+            title="Material: ${p.material || '—'} | Tool: ${p.toolType || '—'}"></td>`;
+    tb.appendChild(tr);
+  });
+
+  updatePDFImportSummary();
 }
 function renderPDFImportTable(){
   if(!A.pdfImportData)return;
