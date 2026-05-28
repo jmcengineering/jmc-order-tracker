@@ -930,11 +930,19 @@ Your tasks:
    - dimensions: overall part dimensions from title block (e.g. "30X244X260", "150X75X20") — look for DIMENSION field in title block
 
 2. THUMBNAIL: Best rectangle to use as part thumbnail (fractions of full image):
-   - Prefer isometric/3D view, then main orthographic view with dimensions
-   - Avoid title blocks, borders, revision tables, BOM tables, notes
-   - thumbX, thumbY = top-left corner (0.0–1.0)
-   - thumbW, thumbH = width and height (0.0–1.0)
-   - Default fallback: thumbX=0.05, thumbY=0.05, thumbW=0.60, thumbH=0.65
+   - JMC Engineering drawings follow AutoCAD standard layout:
+     * TOP-RIGHT corner (roughly thumbX=0.55, thumbY=0.02, thumbW=0.42, thumbH=0.45) — this is where the ISOMETRIC or 3D view sits. ALWAYS check here first.
+     * CENTER-LEFT area — main orthographic front/top/side views with dimension lines
+     * BOTTOM-RIGHT corner — title block (NEVER use this)
+   - Priority order:
+     1. BEST: Isometric/3D pictorial view — usually top-right quadrant, shows the part in 3D
+     2. GOOD: Main orthographic view (front or top) — center area, has dimension lines
+     3. AVOID: Title block, BOM table, revision table, notes, empty white space
+   - The isometric view is typically a small 3D sketch in the top-right — crop tightly around it
+   - If you see a 3D-looking part drawing anywhere, prefer that over flat orthographic views
+   - thumbX, thumbY = top-left corner of your chosen crop region (0.0–1.0)
+   - thumbW, thumbH = width and height of crop region (0.0–1.0)
+   - If truly no distinguishable view found: thumbX=0.05, thumbY=0.05, thumbW=0.58, thumbH=0.60
 
 Respond ONLY with a single JSON object, no markdown, no explanation:
 {"partName":"","partNo":"","workOrder":"","qty":1,"material":"","assemblyName":"","dimensions":"","thumbX":0.05,"thumbY":0.05,"thumbW":0.60,"thumbH":0.65}`;
@@ -1552,6 +1560,7 @@ async function confirmPDFImport(){
     try{const{fileName,res}=await uploadFileToFolder(A.pdfImportData.sourcePdfFile,A.pdfFolderId,parentSr,cleanParent,'pdf');A.pdfFolderCache=refreshCacheAfterUpload(A.pdfFolderCache,parentSr,fileName,res?.id);}catch(e){console.warn('PDF upload:',e);}
     A.allOrders.push({...parentOrder,dateISO:today,tgtISO:null});
     let rowNum=nextRow;let childIdx=0;
+    let firstChildBlob=null; // track first child image for parent
     for(const p of checked){
       rowNum++;childIdx++;
       const childSr=String(parentSr)+String.fromCharCode(64+childIdx);
@@ -1562,8 +1571,25 @@ async function confirmPDFImport(){
       const childOrder={sr:childSr,date:today,client,po:'—',name:childName,cat:'Standard Order',type:p.toolType||'',qty:String(p.qty||'1'),dims:p.dimensions||'',quoted:'No',price:'',poRec:'No',approval:'No',tgt:'',stRM:'—',stShape:'—',stGrind:'—',stWire:'—',stLathe:'—',stHT:'—',stInsp:'—',stDisp:'—',status:'In Progress',remarks:childRemarks,parentSr:String(parentSr),isParent:''};
       await writeOrderRow(childOrder,rowNum);
       const cleanChild=childName.toUpperCase().replace(/[^A-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,40);
-      try{const imgFile=new File([p.imageBlob],childSr+'-'+cleanChild+'.png',{type:'image/png'});const{fileName,res}=await uploadFileToFolder(imgFile,A.imgFolderId,childSr,cleanChild,'png');A.imgFolderCache=refreshCacheAfterUpload(A.imgFolderCache,childSr,fileName,res?.id);delete A.imgCache['sr-'+childSr];}catch(e){console.warn('Image upload:',e);}
+      try{
+        const imgFile=new File([p.imageBlob],childSr+'-'+cleanChild+'.png',{type:'image/png'});
+        const{fileName,res}=await uploadFileToFolder(imgFile,A.imgFolderId,childSr,cleanChild,'png');
+        A.imgFolderCache=refreshCacheAfterUpload(A.imgFolderCache,childSr,fileName,res?.id);
+        delete A.imgCache['sr-'+childSr];
+        // Save first child blob to use as parent image
+        if(childIdx===1)firstChildBlob=p.imageBlob;
+      }catch(e){console.warn('Image upload:',e);}
       A.allOrders.push({...childOrder,dateISO:today,tgtISO:null});
+    }
+    // Upload first child image as parent image too
+    if(firstChildBlob&&A.imgFolderId){
+      try{
+        const cleanP=parentName.toUpperCase().replace(/[^A-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,40);
+        const parentImgFile=new File([firstChildBlob],parentSr+'-'+cleanP+'.png',{type:'image/png'});
+        const{fileName,res}=await uploadFileToFolder(parentImgFile,A.imgFolderId,parentSr,cleanP,'png');
+        A.imgFolderCache=refreshCacheAfterUpload(A.imgFolderCache,parentSr,fileName,res?.id);
+        delete A.imgCache['sr-'+parentSr];
+      }catch(e){console.warn('Parent image upload:',e);}
     }
     A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
     A.expandedParents.add(String(parentSr));
