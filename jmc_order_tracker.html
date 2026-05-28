@@ -900,7 +900,7 @@ async function testClaudeKey(){
         'anthropic-version':'2023-06-01',
         'anthropic-dangerous-direct-browser-access':'true'
       },
-      body:JSON.stringify({model:'claude-sonnet-latest',max_tokens:16,messages:[{role:'user',content:'Reply with only: OK'}]})
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:16,messages:[{role:'user',content:'Reply with only: OK'}]})
     });
     const data=await resp.json();
     if(data.content&&data.content[0]){toast('✅ Claude key valid · '+data.content[0].text.trim());}
@@ -946,7 +946,7 @@ Respond ONLY with a single JSON object, no markdown, no explanation:
       'anthropic-dangerous-direct-browser-access':'true'
     },
     body:JSON.stringify({
-      model:'claude-sonnet-latest',
+      model:'claude-sonnet-4-5',
       max_tokens:400,
       system:systemPrompt,
       messages:[{role:'user',content:[
