@@ -928,7 +928,13 @@ Read these fields from the title block carefully:
 - qty        → QUANTITY field    (integer, default 1 if not found)
 - material   → MATERIAL field    (e.g. "OHNS", "HCHCR", "EN31", "MS", "SKD11", "48-50 HRC")
 - assemblyName → TOOL NAME field (e.g. "welding fixture", "U BENDING TOOL", "PRESS TOOL")
-- dimensions → DIMENSION field   (copy exactly as written, e.g. "20x95x100", "30X244X260", "Ø8.00 p6")
+- dimensions → DIMENSION field   — IMPORTANT: Look carefully for a field labelled DIMENSION or SIZE in the title block. It contains the raw stock or blank size of the part. Copy the value EXACTLY as written (e.g. "20x95x100", "30X244X260", "Ø8.00 p6", "10x40x100", "Ø16x15"). If the DIMENSION field is present but hard to read, do your best. Only return empty string "" if the field is completely absent from the title block.
+
+IMPORTANT RULES:
+- Read the actual text from the drawing — do not guess or invent values
+- If a field is not visible or not present, return empty string "" for strings, 1 for qty
+- partNo is usually a 3-digit number like 101, 102, 103... found near PART NO label
+- workOrder usually starts with EW, RT, or similar prefix followed by numbers
 
 RESPOND ONLY WITH THIS JSON — NO OTHER TEXT, NO MARKDOWN:
 {"partName":"","partNo":"","workOrder":"","qty":1,"material":"","assemblyName":"","dimensions":""}`;
@@ -1448,12 +1454,11 @@ async function startPDFImport(){
         catch(e){console.warn('Claude failed page '+p+':',e.message);aiResult=null;usedFallback=true;}
       }else{usedFallback=true;}
       // ── FIXED SMART CROP ──────────────────────────────────────────
-      // Start inside the drawing border (skip outer frame lines)
-      // Extend height down further to capture all views like Image 2
+      // Push start further inside to fully eliminate border frame lines
       const isPortrait=canvas.height>canvas.width;
       const thumbCanvas=isPortrait
-        ? cropCanvasByFraction(canvas,0.03,0.03,0.93,0.80)   // portrait: inside border, top 80%
-        : cropCanvasByFraction(canvas,0.03,0.03,0.60,0.82);  // landscape: inside border, left 60%, top 82%
+        ? cropCanvasByFraction(canvas,0.06,0.04,0.88,0.78)   // portrait: inside border, top 78%
+        : cropCanvasByFraction(canvas,0.06,0.04,0.55,0.80);  // landscape: inside border, left 55%, top 80%
       const{dataURL:imageUrl,blob:imageBlob}=await canvasToOutputs(thumbCanvas);
       parts.push({
         page:p,
@@ -1506,7 +1511,7 @@ function renderPDFImportTable(){
       <td><input type="text" value="${(p.partName||'').replace(/"/g,'&quot;')}" onchange="updatePDFImportField(${i},'partName',this.value)"></td>
       <td><input type="text" value="${(p.workOrder||'').replace(/"/g,'&quot;')}" onchange="updatePDFImportField(${i},'workOrder',this.value)"></td>
       <td><input type="number" value="${p.qty||'1'}" min="1" onchange="updatePDFImportField(${i},'qty',this.value)"></td>
-      <td><input type="text" value="${(p.dimensions||'').replace(/"/g,'&quot;')}" placeholder="e.g. 30X244X260" onchange="updatePDFImportField(${i},'dimensions',this.value)"></td>
+      <td><input type="text" value="${(p.dimensions||'').replace(/"/g,'&quot;')}" placeholder="— not found —" onchange="updatePDFImportField(${i},'dimensions',this.value)"></td>
       <td><img class="pi-thumb" src="${p.imageUrl}" title="${p.material?'Material: '+p.material:''}"></td>`;
     tb.appendChild(tr);
   });
