@@ -507,6 +507,7 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
             <div class="field"><label>Product / Tool Name <span class="req">*</span></label><input id="f-name" type="text" placeholder="e.g. RT 2727 - 201 - Die Insert"></div>
             <div class="field"><label>Category</label><select id="f-cat2"><option>Standard Order</option><option>Priority Order</option><option>Rework</option><option>Whole Fixture</option><option>Other</option></select></div>
             <div class="field"><label>Tool Type</label><input id="f-type" type="text" placeholder="e.g. Die Insert, Punch, Locator"></div>
+            <div class="field"><label>Dimensions</label><input id="f-dims" type="text" placeholder="e.g. 30X244X260"></div>
           </div>
         </div>
         <div class="sp-section">
@@ -668,7 +669,7 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
         </div>
         <div class="pdfimp-table-wrap">
           <table class="pdfimp-table">
-            <thead><tr><th class="pi-cb">✓</th><th style="width:70px">Page</th><th style="width:80px">Part No</th><th>Part Name</th><th style="width:140px">Work Order</th><th style="width:70px">Qty</th><th style="width:64px">Thumbnail</th></tr></thead>
+            <thead><tr><th class="pi-cb">✓</th><th style="width:70px">Page</th><th style="width:80px">Part No</th><th>Part Name</th><th style="width:140px">Work Order</th><th style="width:70px">Qty</th><th style="width:100px">Dimensions</th><th style="width:64px">Thumbnail</th></tr></thead>
             <tbody id="pdfimp-rows"></tbody>
           </table>
         </div>
@@ -775,8 +776,8 @@ const C = {
 // ═══════════════════════════════════════════════════════════════
 function defaultPdfPrefs(){
   return{
-    columns:{'S.No':true,'JMC Sr':true,'Type':true,'Date':true,'Client':true,'PO No.':true,'Product / Tool Name':true,'Category':true,'Qty':true,'Target':true,'Quoted in System Books':false,'Quoted Price (₹)':true,'Status':true,'Remarks':true,'Image':true},
-    widths:{'S.No':9,'JMC Sr':14,'Type':12,'Date':18,'Client':20,'PO No.':18,'Product / Tool Name':55,'Category':18,'Qty':10,'Target':18,'Quoted in System Books':16,'Quoted Price (₹)':18,'Status':20,'Remarks':20,'Image':18},
+    columns:{'S.No':true,'JMC Sr':true,'Type':true,'Date':true,'Client':true,'PO No.':true,'Product / Tool Name':true,'Category':true,'Qty':true,'Dimensions':true,'Target':true,'Quoted in System Books':false,'Quoted Price (₹)':true,'Status':true,'Remarks':true,'Image':true},
+    widths:{'S.No':9,'JMC Sr':14,'Type':12,'Date':18,'Client':20,'PO No.':18,'Product / Tool Name':52,'Category':18,'Qty':10,'Dimensions':22,'Target':18,'Quoted in System Books':16,'Quoted Price (₹)':18,'Status':20,'Remarks':20,'Image':18},
     fontSize:9
   };
 }
@@ -900,7 +901,7 @@ async function testClaudeKey(){
         'anthropic-version':'2023-06-01',
         'anthropic-dangerous-direct-browser-access':'true'
       },
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:16,messages:[{role:'user',content:'Reply with only: OK'}]})
+      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:16,messages:[{role:'user',content:'Reply with only: OK'}]})
     });
     const data=await resp.json();
     if(data.content&&data.content[0]){toast('✅ Claude key valid · '+data.content[0].text.trim());}
@@ -926,6 +927,7 @@ Your tasks:
    - qty: quantity required (integer, default 1)
    - material: material spec (e.g. "OHNS", "HCHCR D2", "EN31", "HSS", "MS", "SKD11")
    - assemblyName: overall assembly/tool name if visible (e.g. "EW2854 OP50 U BENDING TOOL")
+   - dimensions: overall part dimensions from title block (e.g. "30X244X260", "150X75X20") — look for DIMENSION field in title block
 
 2. THUMBNAIL: Best rectangle to use as part thumbnail (fractions of full image):
    - Prefer isometric/3D view, then main orthographic view with dimensions
@@ -935,7 +937,7 @@ Your tasks:
    - Default fallback: thumbX=0.05, thumbY=0.05, thumbW=0.60, thumbH=0.65
 
 Respond ONLY with a single JSON object, no markdown, no explanation:
-{"partName":"","partNo":"","workOrder":"","qty":1,"material":"","assemblyName":"","thumbX":0.05,"thumbY":0.05,"thumbW":0.60,"thumbH":0.65}`;
+{"partName":"","partNo":"","workOrder":"","qty":1,"material":"","assemblyName":"","dimensions":"","thumbX":0.05,"thumbY":0.05,"thumbW":0.60,"thumbH":0.65}`;
 
   const response=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
@@ -946,8 +948,7 @@ Respond ONLY with a single JSON object, no markdown, no explanation:
       'anthropic-dangerous-direct-browser-access':'true'
     },
     body:JSON.stringify({
-      model:'claude-sonnet-4-6',
-      max_tokens:400,
+      model:'claude-sonnet-4-5',
       system:systemPrompt,
       messages:[{role:'user',content:[
         {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
@@ -1159,7 +1160,19 @@ async function findSheetLayout(sheetName){
   return{rows,headerRow:hi,dataStart:hi+1};
 }
 async function getNextSrNo(){
-  try{const{rows,dataStart}=await findSheetLayout(C.masterSheet);let max=0;for(let i=dataStart;i<rows.length;i++){const v=parseInt(rows[i][0]);if(!isNaN(v)&&v>max)max=v;}return String(max+1);}catch(e){return'1';}
+  try{
+    const{rows,dataStart}=await findSheetLayout(C.masterSheet);
+    const used=new Set();
+    for(let i=dataStart;i<rows.length;i++){
+      const v=rows[i][0];
+      if(v===null||v===undefined||v==='')continue;
+      const s=String(v).trim();
+      if(/^\d+$/.test(s))used.add(parseInt(s));
+    }
+    let next=1;
+    while(used.has(next))next++;
+    return String(next);
+  }catch(e){return'1';}
 }
 async function getNextChildSr(parentSr){
   const{rows,dataStart}=await findSheetLayout(C.masterSheet);
@@ -1181,9 +1194,9 @@ async function writeOrderRow(order,rowNum){
     order.stRM||'—',order.stShape||'—',order.stGrind||'—',order.stWire||'—',
     order.stLathe||'—',order.stHT||'—',order.stInsp||'—',order.stDisp||'—',
     order.status||'In Progress',order.price||'',order.remarks||'',
-    order.parentSr||'',order.isParent||''
+    order.parentSr||'',order.isParent||'',order.dims||''
   ];
-  await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\'A'+rowNum+':Y'+rowNum+'\')',
+  await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\'A'+rowNum+':Z'+rowNum+'\')',
     {method:'PATCH',body:JSON.stringify({values:[row]})});
 }
 
@@ -1285,10 +1298,12 @@ function parseOrders(rows){
     wire:col('wirecut','wire','vmc'),lathe:col('jig boring','lathe'),ht:col('heat'),
     inspect:col('inspection','inspect'),dispatch:col('dispatch'),
     status:col('overall status','status'),remarks:col('remarks'),
-    parentSr:col('parent sr','parent'),isParent:col('is parent','isparent')
+    parentSr:col('parent sr','parent'),isParent:col('is parent','isparent'),
+    dims:col('dimension','dims','size')
   };
   if(cc.parentSr<0)cc.parentSr=23;
   if(cc.isParent<0)cc.isParent=24;
+  if(cc.dims<0)cc.dims=25;
   if(cc.client>=0&&cc.po>=0&&cc.client===cc.po)cc.client=h.findIndex(x=>/^client(\s|$)|^client name/.test(x));
   const fmtD=v=>{
     if(!v||v==='—')return'—';
@@ -1322,6 +1337,7 @@ function parseOrders(rows){
       stLathe:cc.lathe>=0?r[cc.lathe]:'—',stHT:cc.ht>=0?r[cc.ht]:'—',
       stInsp:cc.inspect>=0?r[cc.inspect]:'—',stDisp:cc.dispatch>=0?r[cc.dispatch]:'—',
       status:r[cc.status]||'In Progress',remarks:r[cc.remarks]||'',
+      dims:cc.dims>=0&&cc.dims<r.length?(r[cc.dims]||''):'',
       parentSr:parentSrRaw?String(parentSrRaw).trim():'',
       isParent:isParentRaw?String(isParentRaw).trim().toUpperCase():''
     });
@@ -1407,8 +1423,8 @@ async function startPDFImport(){
       const{canvas}=await renderFullPage(page,1.5);
       // Downsample large pages for API efficiency
       let apiCanvas=canvas;
-      if(canvas.width>1600){
-        const sc=1600/canvas.width;
+      if(canvas.width>800){
+        const sc=800/canvas.width;
         const dc=document.createElement('canvas');
         dc.width=Math.floor(canvas.width*sc);dc.height=Math.floor(canvas.height*sc);
         const dctx=dc.getContext('2d');
@@ -1443,6 +1459,7 @@ async function startPDFImport(){
         toolType:'',
         material:(aiResult&&aiResult.material)||'',
         assemblyName:(aiResult&&aiResult.assemblyName)||'',
+        dimensions:(aiResult&&aiResult.dimensions)||'',
         imageBlob,imageUrl,usedAI,usedFallback,include:true
       });
     }
@@ -1484,6 +1501,7 @@ function renderPDFImportTable(){
       <td><input type="text" value="${(p.partName||'').replace(/"/g,'&quot;')}" onchange="updatePDFImportField(${i},'partName',this.value)"></td>
       <td><input type="text" value="${(p.workOrder||'').replace(/"/g,'&quot;')}" onchange="updatePDFImportField(${i},'workOrder',this.value)"></td>
       <td><input type="number" value="${p.qty||'1'}" min="1" onchange="updatePDFImportField(${i},'qty',this.value)"></td>
+      <td><input type="text" value="${(p.dimensions||'').replace(/"/g,'&quot;')}" placeholder="e.g. 30X244X260" onchange="updatePDFImportField(${i},'dimensions',this.value)"></td>
       <td><img class="pi-thumb" src="${p.imageUrl}" title="${p.material?'Material: '+p.material:''}"></td>`;
     tb.appendChild(tr);
   });
@@ -1536,7 +1554,7 @@ async function confirmPDFImport(){
       let base=p.material?'Material: '+p.material:'';
       if(p.usedAI)base=(base?base+' · ':'')+'✦ Extracted by Claude Vision';
       const childRemarks=appendActivityLog(base,'Created via PDF import');
-      const childOrder={sr:childSr,date:today,client,po:'—',name:childName,cat:'Standard Order',type:p.toolType||'',qty:String(p.qty||'1'),quoted:'No',price:'',poRec:'No',approval:'No',tgt:'',stRM:'—',stShape:'—',stGrind:'—',stWire:'—',stLathe:'—',stHT:'—',stInsp:'—',stDisp:'—',status:'In Progress',remarks:childRemarks,parentSr:String(parentSr),isParent:''};
+      const childOrder={sr:childSr,date:today,client,po:'—',name:childName,cat:'Standard Order',type:p.toolType||'',qty:String(p.qty||'1'),dims:p.dimensions||'',quoted:'No',price:'',poRec:'No',approval:'No',tgt:'',stRM:'—',stShape:'—',stGrind:'—',stWire:'—',stLathe:'—',stHT:'—',stInsp:'—',stDisp:'—',status:'In Progress',remarks:childRemarks,parentSr:String(parentSr),isParent:''};
       await writeOrderRow(childOrder,rowNum);
       const cleanChild=childName.toUpperCase().replace(/[^A-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,40);
       try{const imgFile=new File([p.imageBlob],childSr+'-'+cleanChild+'.png',{type:'image/png'});const{fileName,res}=await uploadFileToFolder(imgFile,A.imgFolderId,childSr,cleanChild,'png');A.imgFolderCache=refreshCacheAfterUpload(A.imgFolderCache,childSr,fileName,res?.id);delete A.imgCache['sr-'+childSr];}catch(e){console.warn('Image upload:',e);}
@@ -2074,6 +2092,7 @@ function showDet(o){
   if(isParentOrder(o)){dc('Type','<span class="parent-badge">📦 Parent</span>');}
   if(isChildOrder(o)){const par=getParentOf(o);if(par)dc('Part of',`<a style="color:var(--blue);font-weight:600;text-decoration:none;cursor:pointer" onclick="event.stopPropagation();showDet(A.orders.find(x=>String(x.sr)==='${par.sr}'))">📦 #${par.sr} ${par.name}</a>`);}
   if(p.qty)dc('Qty',o.qty);
+  if(o.dims)dc('Dimensions',o.dims);
   if(p.target)dc('Target delivery',o.tgt+' '+daysB(o));
   if(p.po)dc('PO No.',o.po);
   if(A.isAdmin){dc('Quoted in System Books',o.quoted);if(p.price)dc('Quoted Price',fmtPrice(o.price));dc('PO Received',o.poRec);dc('Approval',o.approval);}
@@ -2159,7 +2178,7 @@ function switchToEdit(){
   populateClientSelector();fillForm(o);openSP('edit');
 }
 function clearForm(){
-  ['f-sr','f-date','f-po','f-qty','f-name','f-type','f-tgt','f-remarks','f-client-name','f-price','f-parent-sr'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-sr','f-date','f-po','f-qty','f-name','f-type','f-dims','f-tgt','f-remarks','f-client-name','f-price','f-parent-sr'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['f-cat2','f-quoted','f-po-rec','f-approval','f-status'].forEach(id=>{const el=document.getElementById(id);if(el)el.selectedIndex=0;});
   ['st-rm','st-shape','st-grind','st-wire','st-lathe','st-ht','st-insp','st-disp'].forEach(id=>{const el=document.getElementById(id);if(el)el.selectedIndex=0;});
   ['img-name','pdf-name','stp-name','wc-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='';});
@@ -2170,6 +2189,7 @@ function fillForm(o){
   document.getElementById('f-sr').value=o.sr;document.getElementById('f-date').value=o.dateISO||'';
   document.getElementById('f-po').value=o.po==='—'?'':o.po;document.getElementById('f-qty').value=o.qty||'';
   document.getElementById('f-name').value=o.name;document.getElementById('f-type').value=o.type||'';
+  document.getElementById('f-dims').value=o.dims||'';
   document.getElementById('f-tgt').value=o.tgtISO||'';document.getElementById('f-remarks').value=o.remarks||'';
   document.getElementById('f-price').value=o.price||'';
   setSelect('f-cat2',o.cat);setSelect('f-quoted',o.quoted);setSelect('f-po-rec',o.poRec);setSelect('f-approval',o.approval);setSelect('f-status',o.status);
@@ -2184,7 +2204,7 @@ function setSelect(id,val){const el=document.getElementById(id);if(!el)return;fo
 function getVal(id){return(document.getElementById(id)||{}).value||'';}
 function getFormOrder(){
   const isChild=document.getElementById('f-is-child').checked;
-  return{sr:getVal('f-sr'),date:getVal('f-date'),client:A.isAdmin?getVal('f-client-name'):A.perms.clientName,po:getVal('f-po')||'—',name:getVal('f-name'),cat:getVal('f-cat2'),type:getVal('f-type'),qty:getVal('f-qty'),quoted:getVal('f-quoted'),price:getVal('f-price'),poRec:getVal('f-po-rec'),approval:getVal('f-approval'),tgt:getVal('f-tgt'),remarks:getVal('f-remarks'),status:getVal('f-status'),stRM:getVal('st-rm'),stShape:getVal('st-shape'),stGrind:getVal('st-grind'),stWire:getVal('st-wire'),stLathe:getVal('st-lathe'),stHT:getVal('st-ht'),stInsp:getVal('st-insp'),stDisp:getVal('st-disp'),parentSr:isChild?getVal('f-parent-sr'):'',isParent:(A.editOrder&&isParentOrder(A.editOrder))?'YES':''};
+  return{sr:getVal('f-sr'),date:getVal('f-date'),client:A.isAdmin?getVal('f-client-name'):A.perms.clientName,po:getVal('f-po')||'—',name:getVal('f-name'),cat:getVal('f-cat2'),type:getVal('f-type'),qty:getVal('f-qty'),dims:getVal('f-dims'),quoted:getVal('f-quoted'),price:getVal('f-price'),poRec:getVal('f-po-rec'),approval:getVal('f-approval'),tgt:getVal('f-tgt'),remarks:getVal('f-remarks'),status:getVal('f-status'),stRM:getVal('st-rm'),stShape:getVal('st-shape'),stGrind:getVal('st-grind'),stWire:getVal('st-wire'),stLathe:getVal('st-lathe'),stHT:getVal('st-ht'),stInsp:getVal('st-insp'),stDisp:getVal('st-disp'),parentSr:isChild?getVal('f-parent-sr'):'',isParent:(A.editOrder&&isParentOrder(A.editOrder))?'YES':''};
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2311,13 +2331,15 @@ function getExportData(list){
   const h=['S.No','JMC Sr','Type','Date'];
   if(p.client)h.push('Client');if(p.po)h.push('PO No.');
   h.push('Product / Tool Name','Category');
-  if(p.qty)h.push('Qty');if(p.target)h.push('Target');if(p.quoted)h.push('Quoted in System Books');if(p.price)h.push('Quoted Price (₹)');
+  if(p.qty)h.push('Qty');
+  h.push('Dimensions');if(p.target)h.push('Target');if(p.quoted)h.push('Quoted in System Books');if(p.price)h.push('Quoted Price (₹)');
   h.push('Status');if(p.remarks)h.push('Remarks');
   const rows=ordered.map((o,idx)=>{
     const r=[idx+1,o.sr,orderTypeTag(o),o.date];
     if(p.client)r.push(o.client||'');if(p.po)r.push(o.po);
     r.push((isChildOrder(o)?'   > ':'')+o.name,o.cat);
-    if(p.qty)r.push(o.qty||'');if(p.target)r.push(o.tgt);if(p.quoted)r.push(o.quoted||'No');if(p.price)r.push(o.price||'');
+    if(p.qty)r.push(o.qty||'');
+    r.push(o.dims||'');if(p.target)r.push(o.tgt);if(p.quoted)r.push(o.quoted||'No');if(p.price)r.push(o.price||'');
     r.push(o.status);if(p.remarks)r.push(o.remarks||'');
     return r;
   });
@@ -2377,6 +2399,7 @@ async function doPDFList(list,withImages){
       else if(lc==='product / tool name'){style.overflow='linebreak';style.fontStyle='bold';style.fontSize=(prefs.fontSize||9)+0.5;}
       else if(lc==='category'){style.halign='center';style.fontSize=(prefs.fontSize||9)-0.5;}
       else if(lc==='qty'){style.halign='center';style.fontStyle='bold';}
+      else if(lc==='dimensions'){style.halign='center';style.fontStyle='bold';style.fontSize=(prefs.fontSize||9)-0.5;}
       else if(lc==='target'){style.halign='center';}
       else if(lc==='quoted in system books'){style.halign='center';style.fontSize=(prefs.fontSize||9)-0.5;}
       else if(lc.includes('price')){style.halign='right';style.fontStyle='bold';}
@@ -2450,7 +2473,7 @@ function closeAdmin(){document.getElementById('admin-overlay').style.display='no
 
 function renderAdmPDFSettings(){
   const ct=document.getElementById('adm-pdf-cols');if(!ct)return;ct.innerHTML='';
-  ['S.No','JMC Sr','Type','Date','Client','PO No.','Product / Tool Name','Category','Qty','Target','Quoted in System Books','Quoted Price (₹)','Status','Remarks','Image'].forEach(label=>{
+  ['S.No','JMC Sr','Type','Date','Client','PO No.','Product / Tool Name','Category','Qty','Dimensions','Target','Quoted in System Books','Quoted Price (₹)','Status','Remarks','Image'].forEach(label=>{
     const enabled=A.pdfPrefs.columns[label]!==false;const width=A.pdfPrefs.widths[label]||18;
     const row=document.createElement('div');row.className='pdf-col-row';
     row.innerHTML=`<label><input type="checkbox" ${enabled?'checked':''} data-col="${label}"><span>${label}</span></label><div style="display:flex;align-items:center;gap:5px"><input type="number" class="pdf-col-width" value="${width}" min="6" max="120" step="1" data-col="${label}"><span style="color:var(--text3);font-size:10px">mm</span></div>`;
