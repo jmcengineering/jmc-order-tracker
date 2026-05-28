@@ -949,6 +949,7 @@ Respond ONLY with a single JSON object, no markdown, no explanation:
     },
     body:JSON.stringify({
       model:'claude-sonnet-4-5',
+      max_tokens:400,
       system:systemPrompt,
       messages:[{role:'user',content:[
         {type:'image',source:{type:'base64',media_type:mediaType,data:base64}},
