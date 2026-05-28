@@ -915,27 +915,23 @@ async function testClaudeKey(){
 async function claudeAnalyzeDrawingPage(fullPageDataUrl){
   const base64=fullPageDataUrl.split(',')[1];
   const mediaType=fullPageDataUrl.split(';')[0].split(':')[1]||'image/png';
-  const systemPrompt=`You are an engineering drawing analyser for JMC Engineering, Chennai — a precision tooling company.
+  const systemPrompt=`You are an engineering drawing analyser for JMC Engineering, Chennai — a precision tooling company making press tools, die inserts, punches, locators, jig fixtures and wirecut components.
 
-You will receive one page from an engineering drawing PDF (AutoCAD, A3/A4 landscape).
+You will receive one page from a multi-page engineering drawing PDF (AutoCAD format, A3/A4 landscape or portrait).
 
-TASK 1 — EXTRACT from the title block (bottom-right corner):
-- partName: part name (e.g. "Bottom Plate", "Locator Pin", "Die Insert")
-- partNo: part number (e.g. "101", "201")
-- workOrder: work order or drawing number (e.g. "EW-2838", "RT2727")
-- qty: quantity as integer (default 1)
-- material: material (e.g. "OHNS", "HCHCR", "EN31", "MS")
-- assemblyName: full assembly name if visible (e.g. "EW-2838 WELDING FIXTURE")
-- dimensions: part dimensions if shown in title block (e.g. "30X244X260")
+YOUR ONLY JOB IS TEXT EXTRACTION from the title block (bottom-right corner of the page).
 
-TASK 2 — THUMBNAIL crop: Look at the drawing area (everything except the title block border at bottom-right). Find the clearest view of the part — whichever view best shows the part shape. Return the crop region as fractions (0.0 to 1.0) of the full image width/height:
-- thumbX, thumbY: top-left of crop
-- thumbW, thumbH: width and height of crop
-- Crop tightly around the part view, avoid blank whitespace and the title block
-- If only one view exists, use that. If multiple views, pick the one showing the most detail.
+Read these fields from the title block carefully:
+- partName   → PART NAME field   (e.g. "BOTTOM PLATE", "GUIDE PIN", "DIE INSERT", "SUPPORT BLOCK")
+- partNo     → PART NO field     (e.g. "101", "102", "108", "201")
+- workOrder  → WORK ORDER NO field (e.g. "EW-2838", "RT-2727", "EW2854")
+- qty        → QUANTITY field    (integer, default 1 if not found)
+- material   → MATERIAL field    (e.g. "OHNS", "HCHCR", "EN31", "MS", "SKD11", "48-50 HRC")
+- assemblyName → TOOL NAME field (e.g. "welding fixture", "U BENDING TOOL", "PRESS TOOL")
+- dimensions → DIMENSION field   (copy exactly as written, e.g. "20x95x100", "30X244X260", "Ø8.00 p6")
 
-Respond ONLY with this JSON, no extra text:
-{"partName":"","partNo":"","workOrder":"","qty":1,"material":"","assemblyName":"","dimensions":"","thumbX":0.05,"thumbY":0.05,"thumbW":0.60,"thumbH":0.65}`;
+RESPOND ONLY WITH THIS JSON — NO OTHER TEXT, NO MARKDOWN:
+{"partName":"","partNo":"","workOrder":"","qty":1,"material":"","assemblyName":"","dimensions":""}`;
 
   const response=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
@@ -959,7 +955,17 @@ Respond ONLY with this JSON, no extra text:
   const data=await response.json();
   const raw=(data.content&&data.content[0]&&data.content[0].text)||'';
   const cleaned=raw.replace(/```json|```/gi,'').trim();
-  return JSON.parse(cleaned);
+  // Parse only text fields — crop is handled by fixed code
+  const parsed=JSON.parse(cleaned);
+  return{
+    partName:parsed.partName||'',
+    partNo:parsed.partNo||'',
+    workOrder:parsed.workOrder||'',
+    qty:parsed.qty||1,
+    material:parsed.material||'',
+    assemblyName:parsed.assemblyName||'',
+    dimensions:parsed.dimensions||''
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1441,17 +1447,15 @@ async function startPDFImport(){
         try{aiResult=await claudeAnalyzeDrawingPage(fullPageDataUrl);usedAI=true;}
         catch(e){console.warn('Claude failed page '+p+':',e.message);aiResult=null;usedFallback=true;}
       }else{usedFallback=true;}
-      // Build thumbnail
-      let thumbCanvas;
-      if(aiResult&&typeof aiResult.thumbX==='number'){
-        const fx=Math.max(0,Math.min(0.9,aiResult.thumbX||0));
-        const fy=Math.max(0,Math.min(0.9,aiResult.thumbY||0));
-        const fw=Math.max(0.1,Math.min(1-fx,aiResult.thumbW||0.55));
-        const fh=Math.max(0.1,Math.min(1-fy,aiResult.thumbH||0.65));
-        thumbCanvas=cropCanvasByFraction(canvas,fx,fy,fw,fh);
-      }else{
-        thumbCanvas=centerCropCanvas(canvas);
-      }
+      // ── FIXED SMART CROP ──────────────────────────────────────────
+      // Always crop: full width left side (drawing views), top 72% (skip title block)
+      // This matches Image 2 exactly — all orthographic views, no title block, no tag table
+      // For landscape A3: views are left ~65%, title block bottom ~28%, tag table right ~35%
+      // Taking left 63% × top 72% captures all drawing views cleanly on any JMC drawing
+      const isPortrait=canvas.height>canvas.width;
+      const thumbCanvas=isPortrait
+        ? cropCanvasByFraction(canvas,0.01,0.01,0.97,0.74)   // portrait: full width, top 74%
+        : cropCanvasByFraction(canvas,0.01,0.01,0.63,0.72);  // landscape: left 63%, top 72%
       const{dataURL:imageUrl,blob:imageBlob}=await canvasToOutputs(thumbCanvas);
       parts.push({
         page:p,
