@@ -1448,14 +1448,12 @@ async function startPDFImport(){
         catch(e){console.warn('Claude failed page '+p+':',e.message);aiResult=null;usedFallback=true;}
       }else{usedFallback=true;}
       // ── FIXED SMART CROP ──────────────────────────────────────────
-      // Always crop: full width left side (drawing views), top 72% (skip title block)
-      // This matches Image 2 exactly — all orthographic views, no title block, no tag table
-      // For landscape A3: views are left ~65%, title block bottom ~28%, tag table right ~35%
-      // Taking left 63% × top 72% captures all drawing views cleanly on any JMC drawing
+      // Start inside the drawing border (skip outer frame lines)
+      // Extend height down further to capture all views like Image 2
       const isPortrait=canvas.height>canvas.width;
       const thumbCanvas=isPortrait
-        ? cropCanvasByFraction(canvas,0.01,0.01,0.97,0.74)   // portrait: full width, top 74%
-        : cropCanvasByFraction(canvas,0.01,0.01,0.63,0.72);  // landscape: left 63%, top 72%
+        ? cropCanvasByFraction(canvas,0.03,0.03,0.93,0.80)   // portrait: inside border, top 80%
+        : cropCanvasByFraction(canvas,0.03,0.03,0.60,0.82);  // landscape: inside border, left 60%, top 82%
       const{dataURL:imageUrl,blob:imageBlob}=await canvasToOutputs(thumbCanvas);
       parts.push({
         page:p,
