@@ -917,24 +917,29 @@ async function claudeAnalyzeDrawingPage(fullPageDataUrl){
   const mediaType=fullPageDataUrl.split(';')[0].split(':')[1]||'image/png';
   const systemPrompt=`You are an engineering drawing analyser for JMC Engineering, Chennai — a precision tooling company making press tools, die inserts, punches, locators, jig fixtures and wirecut components.
 
-You will receive one page from a multi-page engineering drawing PDF (AutoCAD format, A3/A4 landscape or portrait).
+You will receive a CROPPED IMAGE of just the TITLE BLOCK from one page of an engineering drawing (AutoCAD format). The title block is the information panel at the bottom-right of the drawing — you are receiving exactly that section, nothing else.
 
-YOUR ONLY JOB IS TEXT EXTRACTION from the title block (bottom-right corner of the page).
+The title block has a grid of labelled cells. Find these labels and read the value below or beside each label:
 
-Read these fields from the title block carefully:
-- partName   → PART NAME field   (e.g. "BOTTOM PLATE", "GUIDE PIN", "DIE INSERT", "SUPPORT BLOCK")
-- partNo     → PART NO field     (e.g. "101", "102", "108", "201")
-- workOrder  → WORK ORDER NO field (e.g. "EW-2838", "RT-2727", "EW2854")
-- qty        → QUANTITY field    (integer, default 1 if not found)
-- material   → MATERIAL field    (e.g. "OHNS", "HCHCR", "EN31", "MS", "SKD11", "48-50 HRC")
-- assemblyName → TOOL NAME field (e.g. "welding fixture", "U BENDING TOOL", "PRESS TOOL")
-- dimensions → DIMENSION field   — IMPORTANT: Look carefully for a field labelled DIMENSION or SIZE in the title block. It contains the raw stock or blank size of the part. Copy the value EXACTLY as written (e.g. "20x95x100", "30X244X260", "Ø8.00 p6", "10x40x100", "Ø16x15"). If the DIMENSION field is present but hard to read, do your best. Only return empty string "" if the field is completely absent from the title block.
+| Field        | Label in title block          | Example values                         |
+|--------------|-------------------------------|----------------------------------------|
+| partName     | PART NAME                     | BOTTOM PLATE, STOPPER BLOCK, GUIDE PIN |
+| partNo       | PART NO                       | 101, 102, 106, 201                     |
+| workOrder    | WORK ORDER NO                 | EW-2838, RT-2727, EW2854               |
+| qty          | QUANTITY                      | 01, 1, 2                               |
+| material     | MATERIAL                      | OHNS, HCHCR, EN31, MS, SKD11          |
+| assemblyName | TOOL NAME                     | welding fixture, U BENDING TOOL        |
+| dimensions   | DIMENSION (bottom-left cell)  | 15x30x120, 20x95x100, 30X244X260      |
 
-IMPORTANT RULES:
-- Read the actual text from the drawing — do not guess or invent values
-- If a field is not visible or not present, return empty string "" for strings, 1 for qty
-- partNo is usually a 3-digit number like 101, 102, 103... found near PART NO label
-- workOrder usually starts with EW, RT, or similar prefix followed by numbers
+CRITICAL — DIMENSION field:
+- Labelled "DIMENSION :" — bottom-left cell of the title block
+- Value is written BELOW the label: e.g. 15x30x120, 10x40x100, Ø16x15
+- Do NOT confuse with WEIGHT field (next to it)
+- This field is present on almost every drawing — look carefully
+
+RULES:
+- Read actual text only — do not guess or invent
+- Empty string "" if a field is absent, integer 1 if qty absent
 
 RESPOND ONLY WITH THIS JSON — NO OTHER TEXT, NO MARKDOWN:
 {"partName":"","partNo":"","workOrder":"","qty":1,"material":"","assemblyName":"","dimensions":""}`;
@@ -1432,25 +1437,31 @@ async function startPDFImport(){
       else{setImportProgress(pct,'Page '+p+' of '+numPages+' — rendering...','Set Claude API key in Admin for AI extraction');}
       const page=await pdf.getPage(p);
       const{canvas}=await renderFullPage(page,1.5);
-      // Downsample + JPEG compress for API efficiency (reduces payload ~10x vs PNG)
-      const MAX_W=900;
-      let apiCanvas=canvas;
-      if(canvas.width>MAX_W){
-        const sc=MAX_W/canvas.width;
-        const dc=document.createElement('canvas');
-        dc.width=Math.floor(canvas.width*sc);dc.height=Math.floor(canvas.height*sc);
-        const dctx=dc.getContext('2d');
-        dctx.fillStyle='#fff';dctx.fillRect(0,0,dc.width,dc.height);
-        dctx.drawImage(canvas,0,0,dc.width,dc.height);
-        apiCanvas=dc;
-      }
-      // Use JPEG at 0.82 quality — engineering drawings compress very well, text stays readable
-      const fullPageDataUrl=apiCanvas.toDataURL('image/jpeg',0.82);
-      const approxKB=Math.round(fullPageDataUrl.length*0.75/1024);
-      console.log('Page '+p+': '+apiCanvas.width+'×'+apiCanvas.height+'px, ~'+approxKB+'KB sending to Claude');
+
+      // ── TITLE BLOCK CROP FOR CLAUDE ───────────────────────────────
+      // Send only the bottom-right corner (title block area) to Claude
+      // This eliminates drawing view noise and improves text extraction accuracy
+      // UE Press Tools / JMC title block is always bottom-right ~40% width × 32% height
+      const isPortraitPage=canvas.height>canvas.width;
+      const tbCanvas=isPortraitPage
+        ? cropCanvasByFraction(canvas,0.0,0.68,1.0,0.32)   // portrait: full width, bottom 32%
+        : cropCanvasByFraction(canvas,0.45,0.68,0.55,0.32); // landscape: right 55%, bottom 32%
+
+      // Upscale title block for better text readability before sending to Claude
+      const tbScaled=document.createElement('canvas');
+      tbScaled.width=Math.min(tbCanvas.width*1.5,900);
+      tbScaled.height=Math.round(tbCanvas.height*(tbScaled.width/tbCanvas.width));
+      const tbCtx=tbScaled.getContext('2d');
+      tbCtx.fillStyle='#fff';tbCtx.fillRect(0,0,tbScaled.width,tbScaled.height);
+      tbCtx.drawImage(tbCanvas,0,0,tbScaled.width,tbScaled.height);
+
+      const titleBlockDataUrl=tbScaled.toDataURL('image/jpeg',0.92);
+      const approxKB=Math.round(titleBlockDataUrl.length*0.75/1024);
+      console.log('Page '+p+': title block '+tbScaled.width+'×'+tbScaled.height+'px ~'+approxKB+'KB → Claude');
+
       let aiResult=null;let usedAI=false;let usedFallback=false;
       if(useAI){
-        try{aiResult=await claudeAnalyzeDrawingPage(fullPageDataUrl);usedAI=true;}
+        try{aiResult=await claudeAnalyzeDrawingPage(titleBlockDataUrl);usedAI=true;}
         catch(e){console.warn('Claude failed page '+p+':',e.message);aiResult=null;usedFallback=true;}
       }else{usedFallback=true;}
       // ── FIXED SMART CROP ──────────────────────────────────────────
