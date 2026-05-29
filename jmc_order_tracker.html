@@ -923,13 +923,20 @@ The title block has a grid of labelled cells. Find these labels and read the val
 
 | Field        | Label in title block          | Example values                         |
 |--------------|-------------------------------|----------------------------------------|
-| partName     | PART NAME                     | BOTTOM PLATE, STOPPER BLOCK, GUIDE PIN |
+| partName     | PART NAME                     | BOTTOM PLATE, STOPPER BLOCK, GUIDE PIN, SUPPORT BLOCK, DIE INSERT, LOCATOR PIN, STRIPPER PLATE, PUNCH HOLDER, BACK PLATE |
 | partNo       | PART NO                       | 101, 102, 106, 201                     |
 | workOrder    | WORK ORDER NO                 | EW-2838, RT-2727, EW2854               |
 | qty          | QUANTITY                      | 01, 1, 2                               |
 | material     | MATERIAL                      | OHNS, HCHCR, EN31, MS, SKD11          |
 | assemblyName | TOOL NAME                     | welding fixture, U BENDING TOOL        |
 | dimensions   | DIMENSION (bottom-left cell)  | 15x30x120, 20x95x100, 30X244X260      |
+
+CRITICAL RULES FOR partName:
+- Read the EXACT text in the PART NAME cell — do not translate, summarize or guess
+- Copy character by character including spaces (e.g. "BOTTOM PLATE" not "Bottom_Plate")
+- If the cell has 2 lines like "SUPPORT" on first line and "BLOCK" on second line — combine as "SUPPORT BLOCK"
+- Common part names in press tooling: BOTTOM PLATE, TOP PLATE, BACK PLATE, SUPPORT BLOCK, STOPPER BLOCK, GUIDE PIN, LOCATOR PIN, LOCATOR BLOCK, DIE INSERT, PUNCH, PUNCH HOLDER, STRIPPER PLATE, STRIPPER BOLT, GUIDE PILLAR, GUIDE BUSH, SPRING PAD, HANDLE LOCK, DOWEL PIN, SENSOR BLOCK
+- If PART NAME cell is blank or unreadable return ""
 
 CRITICAL — DIMENSION field:
 - Labelled "DIMENSION :" — bottom-left cell of the title block
@@ -968,12 +975,20 @@ RESPOND ONLY WITH THIS JSON — NO OTHER TEXT, NO MARKDOWN:
   const cleaned=raw.replace(/```json|```/gi,'').trim();
   // Parse only text fields — crop is handled by fixed code
   const parsed=JSON.parse(cleaned);
+  // Normalize partName — Title Case, clean extra spaces/underscores
+  const normalizeName=s=>{
+    if(!s)return'';
+    return s.replace(/[_\-]+/g,' ')           // replace _ and - with space
+            .replace(/\s+/g,' ')               // collapse multiple spaces
+            .trim()
+            .replace(/\w\S*/g,w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()); // Title Case
+  };
   return{
-    partName:parsed.partName||'',
+    partName:normalizeName(parsed.partName)||'',
     partNo:parsed.partNo||'',
     workOrder:parsed.workOrder||'',
     qty:parsed.qty||1,
-    material:parsed.material||'',
+    material:(parsed.material||'').toUpperCase(),
     assemblyName:parsed.assemblyName||'',
     dimensions:parsed.dimensions||''
   };
@@ -2311,21 +2326,49 @@ async function saveOrder(){
 async function deleteOrder(){
   if(!A.editOrder)return;
   const o=A.editOrder;
-  let msg='Delete Order #'+o.sr+' — '+o.name+'?';
-  if(isParentOrder(o)){const cn=getChildrenOf(o.sr).length;if(cn>0)msg='⚠ This is a PARENT order with '+cn+' child part(s).\n\nDeleting will only remove the parent row. Children will be orphaned.\n\nProceed?';}
+  let msg='Delete Order #'+o.sr+' — '+o.name+'?\n\nThis will also delete all attached files (image, drawing, 3D model, NC program) from SharePoint.';
+  if(isParentOrder(o)){const cn=getChildrenOf(o.sr).length;if(cn>0)msg='⚠ This is a PARENT order with '+cn+' child part(s).\n\nDeleting will remove the parent row AND all its attached files.\nChildren will be orphaned (their files remain).\n\nProceed?';}
   if(!confirm(msg))return;
-  toast('Deleting...',5000);
+  toast('Deleting order and files...',10000);
   try{
-    const sr=String(o.sr).trim();const{rows,dataStart}=await findSheetLayout(C.masterSheet);
+    const sr=String(o.sr).trim();
+
+    // ── DELETE FILES FROM SHAREPOINT ──────────────────────────────
+    const deleteFileFromCache=async(cache,cacheKey)=>{
+      const match=findFileForSr(cache,sr);
+      if(!match)return cache;
+      try{
+        await gapi('/drives/'+A.driveId+'/items/'+match.id,{method:'DELETE'});
+        console.log('Deleted file:',match.name);
+        // Remove from cache
+        return cache.filter(f=>f.id!==match.id);
+      }catch(e){console.warn('File delete failed:',match.name,e.message);return cache;}
+    };
+    // Delete image
+    A.imgFolderCache=await deleteFileFromCache(A.imgFolderCache,'img');
+    delete A.imgCache['sr-'+sr];
+    // Delete PDF drawing
+    A.pdfFolderCache=await deleteFileFromCache(A.pdfFolderCache,'pdf');
+    // Delete STP model
+    A.stpFolderCache=await deleteFileFromCache(A.stpFolderCache,'stp');
+    // Delete wirecut NC file
+    A.wcFolderCache=await deleteFileFromCache(A.wcFolderCache,'wc');
+
+    // ── CLEAR EXCEL ROW ───────────────────────────────────────────
+    const{rows,dataStart}=await findSheetLayout(C.masterSheet);
     for(let i=dataStart;i<rows.length;i++){
       if(String(rows[i][0]||'').trim()===sr){
-        await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\'A'+(i+1)+':Y'+(i+1)+'\')/clear',{method:'POST',body:JSON.stringify({applyTo:'Contents'})});break;
+        await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\'A'+(i+1)+':Z'+(i+1)+'\')/clear',
+          {method:'POST',body:JSON.stringify({applyTo:'Contents'})});
+        break;
       }
     }
+
     A.allOrders=A.allOrders.filter(x=>String(x.sr)!==sr);
     A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
-    A.selOrder=null;A.editOrder=null;closeSP();render();toast('✅ Order deleted!');
-  }catch(e){toast('Delete failed: '+e.message,5000);}
+    A.selOrder=null;A.editOrder=null;closeSP();render();
+    toast('✅ Order and all files deleted!');
+  }catch(e){toast('Delete failed: '+e.message,5000);console.error(e);}
 }
 
 function openSP(mode){
