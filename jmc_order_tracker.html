@@ -2480,7 +2480,7 @@ async function doPDFList(list,withImages){
   const finalBody=fullRows.map(r=>{const out=enabledIndices.map(i=>r[i]);if(includeImage)out.push('');return out;});
   toast(includeImage?'Preparing PDF with images...':'Generating PDF...',15000);
   try{
-    const imgDataMap={};
+    const imgDataMap={};  // { sr: {dataUrl, w, h} }
     if(includeImage){
       for(const o of ordered){
         const url=await getImgUrl(o.sr);
@@ -2488,24 +2488,29 @@ async function doPDFList(list,withImages){
           try{
             const resp=await fetch(url);
             const blob=await resp.blob();
-            // Convert to high-res canvas for crisp PDF rendering
             const bmp=await createImageBitmap(blob);
-            const TARGET=400; // 400px — sharp at 300dpi print
-            const scale=Math.min(TARGET/bmp.width,TARGET/bmp.height,1); // never upscale
+            // Target 300px — good balance: sharp at print, reasonable file size
+            // Use JPEG not PNG — engineering thumbnails are photos/renders, JPEG is fine
+            const TARGET=300;
+            const scale=Math.min(TARGET/bmp.width,TARGET/bmp.height,2); // allow up to 2× upscale for tiny images
             const cw=Math.round(bmp.width*scale);
             const ch=Math.round(bmp.height*scale);
             const c=document.createElement('canvas');c.width=cw;c.height=ch;
             const ctx=c.getContext('2d');
             ctx.fillStyle='#ffffff';ctx.fillRect(0,0,cw,ch);
             ctx.drawImage(bmp,0,0,cw,ch);
-            // Use PNG for engineering drawings — lossless = sharp lines
-            imgDataMap[o.sr]=c.toDataURL('image/png');
+            // PNG for engineering drawings — CAD lines/text stay sharp
+            // 300px is enough for PDF thumbnail at A4 print
+            imgDataMap[o.sr]={
+              dataUrl:c.toDataURL('image/png'),
+              w:bmp.width,
+              h:bmp.height
+            };
           }catch(e){
-            // Fallback: direct base64 if canvas fails
             try{
               const blob2=await (await fetch(url)).blob();
-              const du=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(blob2);});
-              imgDataMap[o.sr]=du;
+              const du=await new Promise(r=>{const fr=new FileReader();fr.onload=ev=>r(ev.target.result);fr.readAsDataURL(blob2);});
+              imgDataMap[o.sr]={dataUrl:du,w:1,h:1};
             }catch(e2){}
           }
         }
@@ -2555,28 +2560,23 @@ async function doPDFList(list,withImages){
       didDrawCell:includeImage?(data)=>{
         if(data.section==='body'&&data.column.index===imageColIdx){
           const o=ordered[data.row.index];if(!o)return;
-          const du=imgDataMap[o.sr];
-          if(du){
+          const imgEntry=imgDataMap[o.sr];
+          if(imgEntry&&imgEntry.dataUrl){
             const pad=1.5;
             const availW=data.cell.width-pad*2;
             const availH=data.cell.height-pad*2;
-            // Parse image dimensions to maintain aspect ratio
-            let imgW=availW,imgH=availH;
-            try{
-              const tmp=new Image();tmp.src=du;
-              if(tmp.naturalWidth&&tmp.naturalHeight){
-                const ratio=tmp.naturalWidth/tmp.naturalHeight;
-                if(ratio>1){imgW=availW;imgH=availW/ratio;}
-                else{imgH=availH;imgW=availH*ratio;}
-                // Clamp to available space
-                if(imgW>availW){imgW=availW;imgH=imgW/ratio;}
-                if(imgH>availH){imgH=availH;imgW=imgH*ratio;}
-              }
-            }catch(er){}
+            // Use stored original dimensions for correct aspect ratio
+            const origW=imgEntry.w||1;
+            const origH=imgEntry.h||1;
+            const ratio=origW/origH;
+            let imgW=availW;
+            let imgH=imgW/ratio;
+            if(imgH>availH){imgH=availH;imgW=imgH*ratio;}
+            // Center in cell
             const x=data.cell.x+pad+(availW-imgW)/2;
             const y=data.cell.y+pad+(availH-imgH)/2;
-            try{doc.addImage(du,'PNG',x,y,imgW,imgH,undefined,'FAST');}
-            catch(e){try{doc.addImage(du,'JPEG',x,y,imgW,imgH);}catch(e2){}}
+            try{doc.addImage(imgEntry.dataUrl,'PNG',x,y,imgW,imgH,undefined,'FAST');}
+            catch(e){try{doc.addImage(imgEntry.dataUrl,'JPEG',x,y,imgW,imgH);}catch(e2){}}
           }
         }
       }:undefined,
