@@ -777,7 +777,7 @@ const C = {
 function defaultPdfPrefs(){
   return{
     columns:{'S.No':true,'JMC Sr':true,'Type':true,'Date':true,'Client':true,'PO No.':true,'Product / Tool Name':true,'Category':true,'Qty':true,'Dimensions':true,'Target':true,'Quoted in System Books':false,'Quoted Price (₹)':true,'Status':true,'Remarks':true,'Image':true},
-    widths:{'S.No':9,'JMC Sr':14,'Type':12,'Date':18,'Client':20,'PO No.':18,'Product / Tool Name':52,'Category':18,'Qty':10,'Dimensions':22,'Target':18,'Quoted in System Books':16,'Quoted Price (₹)':18,'Status':20,'Remarks':20,'Image':18},
+    widths:{'S.No':9,'JMC Sr':14,'Type':12,'Date':18,'Client':20,'PO No.':18,'Product / Tool Name':52,'Category':18,'Qty':10,'Dimensions':22,'Target':18,'Quoted in System Books':16,'Quoted Price (₹)':18,'Status':20,'Remarks':20,'Image':32},
     fontSize:9
   };
 }
@@ -2481,8 +2481,36 @@ async function doPDFList(list,withImages){
   toast(includeImage?'Preparing PDF with images...':'Generating PDF...',15000);
   try{
     const imgDataMap={};
-    if(includeImage){for(const o of ordered){const url=await getImgUrl(o.sr);if(url){try{const resp=await fetch(url);const blob=await resp.blob();const du=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(blob);});imgDataMap[o.sr]=du;}catch(e){}}}}
-    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    if(includeImage){
+      for(const o of ordered){
+        const url=await getImgUrl(o.sr);
+        if(url){
+          try{
+            const resp=await fetch(url);
+            const blob=await resp.blob();
+            // Convert to high-res canvas for crisp PDF rendering
+            const bmp=await createImageBitmap(blob);
+            const TARGET=400; // 400px — sharp at 300dpi print
+            const scale=Math.min(TARGET/bmp.width,TARGET/bmp.height,1); // never upscale
+            const cw=Math.round(bmp.width*scale);
+            const ch=Math.round(bmp.height*scale);
+            const c=document.createElement('canvas');c.width=cw;c.height=ch;
+            const ctx=c.getContext('2d');
+            ctx.fillStyle='#ffffff';ctx.fillRect(0,0,cw,ch);
+            ctx.drawImage(bmp,0,0,cw,ch);
+            // Use PNG for engineering drawings — lossless = sharp lines
+            imgDataMap[o.sr]=c.toDataURL('image/png');
+          }catch(e){
+            // Fallback: direct base64 if canvas fails
+            try{
+              const blob2=await (await fetch(url)).blob();
+              const du=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(blob2);});
+              imgDataMap[o.sr]=du;
+            }catch(e2){}
+          }
+        }
+      }
+    }    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
     const ML=8,MT=10,PW=289;
     if(A.logoUrl){try{const resp=await fetch(A.logoUrl);const blob=await resp.blob();const du=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(blob);});doc.addImage(du,'PNG',ML,MT,16,16);}catch(e){}}
     doc.setFontSize(14);doc.setTextColor(15,33,68);doc.setFont(undefined,'bold');
@@ -2514,7 +2542,7 @@ async function doPDFList(list,withImages){
     const imageColIdx=includeImage?finalHeaders.length-1:-1;
     doc.autoTable({
       head:[finalHeaders],body:finalBody,startY:MT+23,theme:'grid',
-      styles:{fontSize,cellPadding:{top:3,right:3,bottom:3,left:3},lineColor:[226,232,242],lineWidth:.15,textColor:[26,35,51],valign:'middle',overflow:'linebreak',minCellHeight:includeImage?28:9},
+      styles:{fontSize,cellPadding:{top:3,right:3,bottom:3,left:3},lineColor:[226,232,242],lineWidth:.15,textColor:[26,35,51],valign:'middle',overflow:'linebreak',minCellHeight:includeImage?36:9},
       headStyles:{fillColor:[15,33,68],textColor:255,fontStyle:'bold',fontSize:fontSize-0.5,halign:'center',cellPadding:{top:5,right:3,bottom:5,left:3},minCellHeight:11,lineWidth:0,valign:'middle'},
       alternateRowStyles:{fillColor:[248,250,253]},columnStyles:colStyles,
       margin:{left:ML,right:ML,top:MT+23,bottom:14},
@@ -2526,9 +2554,30 @@ async function doPDFList(list,withImages){
       },
       didDrawCell:includeImage?(data)=>{
         if(data.section==='body'&&data.column.index===imageColIdx){
-          const o=ordered[data.row.index];if(!o)return;const du=imgDataMap[o.sr];
-          if(du){const pad=2;const sz=Math.min(data.cell.width-pad*2,data.cell.height-pad*2,24);const x=data.cell.x+(data.cell.width-sz)/2;const y=data.cell.y+(data.cell.height-sz)/2;
-            try{doc.addImage(du,'JPEG',x,y,sz,sz);}catch(e){try{doc.addImage(du,'PNG',x,y,sz,sz);}catch(e2){}}}
+          const o=ordered[data.row.index];if(!o)return;
+          const du=imgDataMap[o.sr];
+          if(du){
+            const pad=1.5;
+            const availW=data.cell.width-pad*2;
+            const availH=data.cell.height-pad*2;
+            // Parse image dimensions to maintain aspect ratio
+            let imgW=availW,imgH=availH;
+            try{
+              const tmp=new Image();tmp.src=du;
+              if(tmp.naturalWidth&&tmp.naturalHeight){
+                const ratio=tmp.naturalWidth/tmp.naturalHeight;
+                if(ratio>1){imgW=availW;imgH=availW/ratio;}
+                else{imgH=availH;imgW=availH*ratio;}
+                // Clamp to available space
+                if(imgW>availW){imgW=availW;imgH=imgW/ratio;}
+                if(imgH>availH){imgH=availH;imgW=imgH*ratio;}
+              }
+            }catch(er){}
+            const x=data.cell.x+pad+(availW-imgW)/2;
+            const y=data.cell.y+pad+(availH-imgH)/2;
+            try{doc.addImage(du,'PNG',x,y,imgW,imgH,undefined,'FAST');}
+            catch(e){try{doc.addImage(du,'JPEG',x,y,imgW,imgH);}catch(e2){}}
+          }
         }
       }:undefined,
       didDrawRow:(data)=>{
