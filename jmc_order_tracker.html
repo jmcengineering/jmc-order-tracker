@@ -381,7 +381,7 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
   <div class="topbar">
     <div class="tb-left">
       <div class="tb-logo" id="tb-logo-wrap">JMC</div>
-      <div><div class="tb-brand">JMC Engineering</div><div class="tb-sub" id="tb-sub">Order Management</div></div>
+      <div><div class="tb-brand">JMC Engineering</div><div class="tb-sub" id="tb-sub">Order Management · <span style="color:var(--accent);font-weight:700">v2.6</span></div></div>
     </div>
     <div class="tb-right">
       <div class="tb-chip">
@@ -777,7 +777,7 @@ const C = {
 function defaultPdfPrefs(){
   return{
     columns:{'S.No':true,'JMC Sr':true,'Type':true,'Date':true,'Client':true,'PO No.':true,'Product / Tool Name':true,'Category':true,'Qty':true,'Dimensions':true,'Target':true,'Quoted in System Books':false,'Quoted Price (₹)':true,'Status':true,'Remarks':true,'Image':true},
-    widths:{'S.No':9,'JMC Sr':14,'Type':12,'Date':18,'Client':20,'PO No.':18,'Product / Tool Name':52,'Category':18,'Qty':10,'Dimensions':22,'Target':18,'Quoted in System Books':16,'Quoted Price (₹)':18,'Status':20,'Remarks':20,'Image':36},
+    widths:{'S.No':9,'JMC Sr':14,'Type':12,'Date':18,'Client':20,'PO No.':18,'Product / Tool Name':52,'Category':18,'Qty':10,'Dimensions':22,'Target':18,'Quoted in System Books':16,'Quoted Price (₹)':18,'Status':20,'Remarks':20,'Image':40},
     fontSize:9
   };
 }
@@ -2539,7 +2539,7 @@ async function doPDFList(list,withImages){
       else if(lc.includes('price')){style.halign='right';style.fontStyle='bold';}
       else if(lc==='status'){style.halign='center';style.fontSize=(prefs.fontSize||9)-0.5;}
       else if(lc==='remarks'){style.overflow='linebreak';style.fontSize=(prefs.fontSize||9)-1;}
-      else if(lc==='image'){style.halign='center';style.valign='middle';style.cellWidth=36;}
+      else if(lc==='image'){style.halign='center';style.valign='middle';style.cellWidth=40;}
       colStyles[i]=style;
     });
     const fontSize=prefs.fontSize||9;
@@ -2547,15 +2547,35 @@ async function doPDFList(list,withImages){
     const imageColIdx=includeImage?finalHeaders.length-1:-1;
     doc.autoTable({
       head:[finalHeaders],body:finalBody,startY:MT+23,theme:'grid',
-      styles:{fontSize,cellPadding:{top:3,right:3,bottom:3,left:3},lineColor:[226,232,242],lineWidth:.15,textColor:[26,35,51],valign:'middle',overflow:'linebreak',minCellHeight:includeImage?22:9},
+      styles:{fontSize,cellPadding:{top:3,right:3,bottom:3,left:3},lineColor:[226,232,242],lineWidth:.15,textColor:[26,35,51],valign:'middle',overflow:'linebreak',minCellHeight:9},
       headStyles:{fillColor:[15,33,68],textColor:255,fontStyle:'bold',fontSize:fontSize-0.5,halign:'center',cellPadding:{top:5,right:3,bottom:5,left:3},minCellHeight:11,lineWidth:0,valign:'middle'},
       alternateRowStyles:{fillColor:[248,250,253]},columnStyles:colStyles,
       margin:{left:ML,right:ML,top:MT+23,bottom:14},
       didParseCell:(data)=>{
-        if(data.section!=='body')return;const o=ordered[data.row.index];if(!o)return;
-        if(isParentOrder(o)){if(data.column.index===jmcSrColIdx){data.cell.styles.fillColor=[185,210,250];data.cell.styles.fontStyle='bold';data.cell.styles.textColor=[15,33,68];}else{data.cell.styles.fillColor=[230,242,255];data.cell.styles.fontStyle='bold';}}
-        else if(isChildOrder(o)){if(data.column.index===jmcSrColIdx){data.cell.styles.fillColor=[222,236,255];data.cell.styles.fontStyle='bold';data.cell.styles.textColor=[24,95,165];}else{data.cell.styles.fillColor=[250,252,255];}}
-        else{if(data.column.index===jmcSrColIdx){data.cell.styles.fillColor=[235,244,255];data.cell.styles.fontStyle='bold';data.cell.styles.textColor=[15,33,68];}}
+        if(data.section!=='body')return;
+        const o=ordered[data.row.index];if(!o)return;
+        // Set image cell height to drive row — autofit per row based on image
+        if(includeImage&&data.column.index===imageColIdx){
+          const imgEntry=imgDataMap[o.sr];
+          if(imgEntry&&imgEntry.w&&imgEntry.h){
+            const colW=40; // matches cellWidth above
+            const ratio=imgEntry.h/imgEntry.w;
+            const imgH=Math.min(colW*ratio,30); // max 30mm tall
+            data.cell.styles.minCellHeight=imgH+4; // +4mm padding
+          }else{
+            data.cell.styles.minCellHeight=22;
+          }
+        }
+        // Row colour coding
+        if(isParentOrder(o)){
+          if(data.column.index===jmcSrColIdx){data.cell.styles.fillColor=[185,210,250];data.cell.styles.fontStyle='bold';data.cell.styles.textColor=[15,33,68];}
+          else{data.cell.styles.fillColor=[230,242,255];data.cell.styles.fontStyle='bold';}
+        }else if(isChildOrder(o)){
+          if(data.column.index===jmcSrColIdx){data.cell.styles.fillColor=[222,236,255];data.cell.styles.fontStyle='bold';data.cell.styles.textColor=[24,95,165];}
+          else{data.cell.styles.fillColor=[250,252,255];}
+        }else{
+          if(data.column.index===jmcSrColIdx){data.cell.styles.fillColor=[235,244,255];data.cell.styles.fontStyle='bold';data.cell.styles.textColor=[15,33,68];}
+        }
       },
       didDrawCell:includeImage?(data)=>{
         if(data.section==='body'&&data.column.index===imageColIdx){
@@ -2568,12 +2588,11 @@ async function doPDFList(list,withImages){
             const origW=imgEntry.w||1;
             const origH=imgEntry.h||1;
             const ratio=origW/origH;
-            // Fit image to 90% of available space maintaining ratio
-            let imgW=availW*0.92;
+            // Fill 95% of available space maintaining ratio
+            let imgW=availW*0.95;
             let imgH=imgW/ratio;
-            if(imgH>availH*0.92){imgH=availH*0.92;imgW=imgH*ratio;}
+            if(imgH>availH*0.95){imgH=availH*0.95;imgW=imgH*ratio;}
             if(imgW>availW){imgW=availW;imgH=imgW/ratio;}
-            // Center in cell
             const x=data.cell.x+pad+(availW-imgW)/2;
             const y=data.cell.y+pad+(availH-imgH)/2;
             try{doc.addImage(imgEntry.dataUrl,'PNG',x,y,imgW,imgH,undefined,'FAST');}
@@ -2588,7 +2607,7 @@ async function doPDFList(list,withImages){
       }
     });
     const pages=doc.internal.getNumberOfPages();
-    for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(150,160,180);doc.text('JMC Engineering · jmcengg.com · '+new Date().toLocaleDateString('en-IN'),ML,210-4);doc.text('Page '+i+' of '+pages,ML+PW-20,210-4);}
+    for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(150,160,180);doc.text('JMC Engineering · jmcengg.com · v2.6 · '+new Date().toLocaleDateString('en-IN'),ML,210-4);doc.text('Page '+i+' of '+pages,ML+PW-20,210-4);}
     doc.save('JMC_Orders_'+new Date().toISOString().slice(0,10)+'.pdf');
     document.querySelectorAll('.toast').forEach(t=>t.remove());
     toast('✅ PDF downloaded!');
