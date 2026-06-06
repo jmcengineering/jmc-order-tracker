@@ -381,7 +381,7 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
   <div class="topbar">
     <div class="tb-left">
       <div class="tb-logo" id="tb-logo-wrap">JMC</div>
-      <div><div class="tb-brand">JMC Engineering</div><div class="tb-sub" id="tb-sub">Order Management · <span style="color:var(--accent);font-weight:700">v2.7</span></div></div>
+      <div><div class="tb-brand">JMC Engineering</div><div class="tb-sub" id="tb-sub">Order Management · <span style="color:var(--accent);font-weight:700">v2.8</span></div></div>
     </div>
     <div class="tb-right">
       <div class="tb-chip">
@@ -470,7 +470,11 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
             <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Child parts (<span id="det-children-count">0</span>)</div>
           </div>
           <div id="det-children-list"></div>
-          <button id="det-add-child-btn" class="btn-add-child" onclick="openAddChildToParent()" style="display:none">+ Add Child Part</button>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">
+            <button id="det-add-child-btn" class="btn-add-child" onclick="openAddChildToParent()" style="display:none">+ Add Child Part</button>
+            <button id="det-import-more-btn" class="btn-add-child" onclick="openImportToParent()" style="display:none;background:#5B21B6">✦ Add Parts from PDF</button>
+          </div>
+          <input type="file" id="import-to-parent-file" accept="application/pdf" style="display:none" onchange="handleImportToParentFile(this)">
         </div>
         <div id="sp-files" style="display:none;margin-top:8px">
           <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Attached files</div>
@@ -1276,7 +1280,7 @@ async function startApp(){
     document.getElementById('tb-role').textContent=A.isAdmin?'Admin':'Client';
     document.getElementById('tb-av').textContent=ini;
     const tbSubEl=document.getElementById('tb-sub');
-    if(tbSubEl)tbSubEl.innerHTML=(A.isAdmin?'Admin · all clients':ur.clientName+' orders')+' · <span style="color:var(--accent);font-weight:700">v2.7</span>';
+    if(tbSubEl)tbSubEl.innerHTML=(A.isAdmin?'Admin · all clients':ur.clientName+' orders')+' · <span style="color:var(--accent);font-weight:700">v2.8</span>';
     if(A.isAdmin){document.getElementById('admin-btn').style.display='inline-flex';document.getElementById('btn-add').style.display='inline-flex';}
     go('s-loading','Fetching orders...');
     const rows=await readSheet(C.masterSheet);
@@ -1386,6 +1390,20 @@ function daysToTarget(o){
   const today=new Date();today.setHours(0,0,0,0);
   return Math.ceil((new Date(o.tgtISO)-today)/86400000);
 }
+function levenshtein(a,b){
+  if(a===b)return 0;
+  const m=a.length,n=b.length;
+  if(!m)return n;if(!n)return m;
+  let prev=Array.from({length:n+1},(_, i)=>i);
+  for(let i=1;i<=m;i++){
+    let cur=[i];
+    for(let j=1;j<=n;j++){
+      cur[j]=a[i-1]===b[j-1]?prev[j-1]:1+Math.min(prev[j-1],prev[j],cur[j-1]);
+    }
+    prev=cur;
+  }
+  return prev[n];
+}
 function isParentOrder(o){return(o.isParent||'').toUpperCase()==='YES';}
 function isChildOrder(o){return!!(o.parentSr&&String(o.parentSr).trim()&&!isParentOrder(o));}
 function isStandaloneOrder(o){return!isParentOrder(o)&&!isChildOrder(o);}
@@ -1432,7 +1450,8 @@ function setImportProgress(pct,msg,sub){
 // ═══════════════════════════════════════════════════════════════
 async function startPDFImport(){
   if(!A.pendingPDFFile){toast('Please upload a PDF first');return;}
-  if(A.isAdmin){const cli=document.getElementById('f-client-name').value;if(!cli){toast('Please select a client first');return;}}
+  const targetParent=A.importTargetParent; // set when adding to existing parent
+  if(A.isAdmin&&!targetParent){const cli=document.getElementById('f-client-name').value;if(!cli){toast('Please select a client first');return;}}
   document.getElementById('pdfimp-modal').style.display='flex';
   document.getElementById('pdfimp-loading').style.display='block';
   document.getElementById('pdfimp-content').style.display='none';
@@ -1452,20 +1471,23 @@ async function startPDFImport(){
       if(useAI){setImportProgress(pct,'Page '+p+' of '+numPages+' — Claude Vision analysing...','Sending page image to Claude API');}
       else{setImportProgress(pct,'Page '+p+' of '+numPages+' — rendering...','Set Claude API key in Admin for AI extraction');}
       const page=await pdf.getPage(p);
-      const{canvas}=await renderFullPage(page,1.5);
+      const{canvas}=await renderFullPage(page,2.0);
 
-      // ── TITLE BLOCK CROP FOR CLAUDE (low-res 1.5 is fine for text) ──
+      // ── TITLE BLOCK CROP FOR CLAUDE (scale 2.0, WIDER to avoid clipping) ──
+      // Wider crop ensures last digit of part no (e.g. "103") isn't cut off
       const isPortraitPage=canvas.height>canvas.width;
       const tbCanvas=isPortraitPage
-        ? cropCanvasByFraction(canvas,0.0,0.68,1.0,0.32)
-        : cropCanvasByFraction(canvas,0.45,0.68,0.55,0.32);
+        ? cropCanvasByFraction(canvas,0.0,0.66,1.0,0.34)    // portrait: full width, bottom 34%
+        : cropCanvasByFraction(canvas,0.40,0.64,0.60,0.36); // landscape: right 60%, bottom 36% (wider+taller)
+      // Upscale to max 1400px for crisp text (was 900)
       const tbScaled=document.createElement('canvas');
-      tbScaled.width=Math.min(tbCanvas.width*1.5,900);
+      tbScaled.width=Math.min(tbCanvas.width*1.5,1400);
       tbScaled.height=Math.round(tbCanvas.height*(tbScaled.width/tbCanvas.width));
       const tbCtx=tbScaled.getContext('2d');
       tbCtx.fillStyle='#fff';tbCtx.fillRect(0,0,tbScaled.width,tbScaled.height);
+      tbCtx.imageSmoothingEnabled=true;tbCtx.imageSmoothingQuality='high';
       tbCtx.drawImage(tbCanvas,0,0,tbScaled.width,tbScaled.height);
-      const titleBlockDataUrl=tbScaled.toDataURL('image/jpeg',0.92);
+      const titleBlockDataUrl=tbScaled.toDataURL('image/jpeg',0.95);
       const approxKB=Math.round(titleBlockDataUrl.length*0.75/1024);
       console.log('Page '+p+': title block '+tbScaled.width+'×'+tbScaled.height+'px ~'+approxKB+'KB → Claude');
 
@@ -1475,15 +1497,12 @@ async function startPDFImport(){
         catch(e){console.warn('Claude failed page '+p+':',e.message);aiResult=null;usedFallback=true;}
       }else{usedFallback=true;}
 
-      // ── HI-RES THUMBNAIL — render the page AGAIN at scale 3.0 ─────
-      // Thin CAD lines need high scale to stay crisp & dark on print
+      // ── HI-RES THUMBNAIL — render the page at scale 3.0 ──────────
       const{canvas:hiCanvas}=await renderFullPage(page,3.0);
-      // ── FIXED SMART CROP (on hi-res canvas) ───────────────────────
-      // Push start inside to eliminate border frame lines
       const hiPortrait=hiCanvas.height>hiCanvas.width;
       const thumbCanvas=hiPortrait
-        ? cropCanvasByFraction(hiCanvas,0.06,0.04,0.88,0.78)   // portrait: inside border, top 78%
-        : cropCanvasByFraction(hiCanvas,0.06,0.04,0.55,0.80);  // landscape: inside border, left 55%, top 80%
+        ? cropCanvasByFraction(hiCanvas,0.06,0.04,0.88,0.78)
+        : cropCanvasByFraction(hiCanvas,0.06,0.04,0.55,0.80);
       const{dataURL:imageUrl,blob:imageBlob}=await canvasToOutputs(thumbCanvas);
       parts.push({
         page:p,
@@ -1499,11 +1518,74 @@ async function startPDFImport(){
       });
     }
     // Derive parent name
-    const firstWithAssembly=parts.find(p=>p.assemblyName);
-    const firstWithWO=parts.find(p=>p.workOrder);
+    // ── CROSS-PAGE VALIDATION (free accuracy boost) ──────────────
+    // Fix common OCR errors by comparing across all pages
+    (function validateParts(){
+      if(parts.length<2)return;
+      // 1. Work order: find the most common, fix outliers that are close
+      const woCount={};
+      parts.forEach(p=>{if(p.workOrder)woCount[p.workOrder]=(woCount[p.workOrder]||0)+1;});
+      const woEntries=Object.entries(woCount).sort((a,b)=>b[1]-a[1]);
+      if(woEntries.length>0){
+        const dominantWO=woEntries[0][0];
+        const dominantCount=woEntries[0][1];
+        if(dominantCount>=parts.length*0.5){
+          parts.forEach(p=>{
+            if(p.workOrder&&p.workOrder!==dominantWO){
+              // If similar (1-2 char diff), auto-correct to dominant
+              if(Math.abs(p.workOrder.length-dominantWO.length)<=2&&levenshtein(p.workOrder,dominantWO)<=2){
+                console.log('Validation: corrected WO "'+p.workOrder+'" → "'+dominantWO+'" on page '+p.page);
+                p.workOrder=dominantWO;
+              }
+            }else if(!p.workOrder){p.workOrder=dominantWO;}
+          });
+        }
+      }
+      // 2. Part numbers: detect truncation (e.g. 101,102,10,104 → 10 likely 103)
+      const nums=parts.map(p=>parseInt(p.partNo)).filter(n=>!isNaN(n));
+      if(nums.length>=3){
+        // Check if they form a near-sequence
+        const sorted=[...nums].sort((a,b)=>a-b);
+        const base=sorted[0];
+        parts.forEach((p,idx)=>{
+          const n=parseInt(p.partNo);
+          // If a number is suspiciously short vs neighbors (e.g. "10" when others are 3-digit)
+          const others=nums.filter(x=>x!==n);
+          const avgLen=Math.round(others.reduce((s,x)=>s+String(x).length,0)/others.length);
+          if(!isNaN(n)&&String(n).length<avgLen&&avgLen>=3){
+            // Likely truncated — try to infer from position
+            const expected=base+idx;
+            if(String(expected).length===avgLen){
+              console.log('Validation: partNo "'+p.partNo+'" looks truncated, suggesting '+expected+' on page '+p.page);
+              p.partNoSuspect=true; // flag for highlight, don't auto-change (risky)
+            }
+          }
+        });
+      }
+    })();
+
+    // ── DUPLICATE DETECTION (when adding to existing parent) ─────
+    if(targetParent){
+      const existingChildren=A.allOrders.filter(x=>isChildOrder(x)&&String(x.parentSr)===String(targetParent.sr));
+      parts.forEach(p=>{
+        // Match by part number OR by part name against existing children
+        const dup=existingChildren.find(c=>{
+          const cName=(c.name||'').toLowerCase();
+          const pPartNo=String(p.partNo||'').toLowerCase();
+          const pName=(p.partName||'').toLowerCase();
+          return (pPartNo&&cName.includes(pPartNo))||(pName&&cName.includes(pName));
+        });
+        if(dup){p.include=false;p.alreadyExists=true;p.existingSr=dup.sr;}
+      });
+    }
+
+    // Parent title = Work Order + Tool Name (e.g. "EW-2838 – WELDING FIXTURE")
+    const firstWO=(parts.find(p=>p.workOrder)||{}).workOrder||'';
+    const firstTool=(parts.find(p=>p.assemblyName)||{}).assemblyName||'';
     let parentName='';
-    if(firstWithAssembly)parentName=firstWithAssembly.assemblyName;
-    else if(firstWithWO)parentName=firstWithWO.workOrder;
+    if(firstWO&&firstTool)parentName=firstWO+' – '+firstTool.toUpperCase();
+    else if(firstTool)parentName=firstTool.toUpperCase();
+    else if(firstWO)parentName=firstWO;
     else parentName=A.pendingPDFFile.name.replace(/\.pdf$/i,'').slice(0,50);
     A.pdfImportData={parts,parentName,sourcePdfFile:A.pendingPDFFile};
     setImportProgress(100,'Done!','');
@@ -1523,16 +1605,25 @@ async function startPDFImport(){
 
 function renderPDFImportTable(){
   if(!A.pdfImportData)return;
-  document.getElementById('pdfimp-parent-name').value=A.pdfImportData.parentName||'';
+  const targetParent=A.importTargetParent;
+  const pnRow=document.getElementById('pdfimp-parent-name').closest('div');
+  if(targetParent){
+    document.getElementById('pdfimp-parent-name').value='Adding to #'+targetParent.sr+' — '+targetParent.name;
+    document.getElementById('pdfimp-parent-name').disabled=true;
+  }else{
+    document.getElementById('pdfimp-parent-name').value=A.pdfImportData.parentName||'';
+    document.getElementById('pdfimp-parent-name').disabled=false;
+  }
   const tb=document.getElementById('pdfimp-rows');tb.innerHTML='';
   A.pdfImportData.parts.forEach((p,i)=>{
     const tr=document.createElement('tr');
     if(!p.include)tr.className='pdfimp-row-excluded';
-    const badge=p.usedAI?'<span class="pi-ai">✦ AI</span>':p.usedFallback?'<span class="pi-fallback">Fallback</span>':'';
+    let badge=p.usedAI?'<span class="pi-ai">✦ AI</span>':p.usedFallback?'<span class="pi-fallback">Fallback</span>':'';
+    if(p.alreadyExists)badge+=' <span style="background:#FEE2E2;color:#DC2626;font-size:8px;padding:1px 5px;border-radius:8px;font-weight:700">EXISTS #'+p.existingSr+'</span>';
     tr.innerHTML=`
       <td class="pi-cb"><input type="checkbox" ${p.include?'checked':''} onchange="togglePDFImportRow(${i},this.checked)"></td>
       <td class="pi-page">${p.page}${badge}</td>
-      <td><input type="text" value="${(p.partNo||'').replace(/"/g,'&quot;')}" onchange="updatePDFImportField(${i},'partNo',this.value)"></td>
+      <td><input type="text" value="${(p.partNo||'').replace(/"/g,'&quot;')}" ${p.partNoSuspect?'style="background:#FEF3C7;border-color:#F59E0B" title="⚠ This part number may be misread — please verify"':''} onchange="updatePDFImportField(${i},'partNo',this.value)"></td>
       <td><input type="text" value="${(p.partName||'').replace(/"/g,'&quot;')}" onchange="updatePDFImportField(${i},'partName',this.value)"></td>
       <td><input type="text" value="${(p.workOrder||'').replace(/"/g,'&quot;')}" onchange="updatePDFImportField(${i},'workOrder',this.value)"></td>
       <td><input type="number" value="${p.qty||'1'}" min="1" onchange="updatePDFImportField(${i},'qty',this.value)"></td>
@@ -1552,15 +1643,41 @@ function updatePDFImportSummary(){
   let summary=`<strong>${checked}</strong> part${checked===1?'':'s'} · Total qty: <strong>${totalQty}</strong>`;
   if(aiCount>0)summary+=` · <span style="color:#5B21B6;font-weight:600">✦ ${aiCount} AI-extracted</span>`;
   document.getElementById('pdfimp-summary').innerHTML=summary;
-  document.getElementById('pdfimp-confirm').textContent='Create 1 parent + '+checked+' part'+(checked===1?'':'s');
+  if(A.importTargetParent){
+    document.getElementById('pdfimp-confirm').textContent='Add '+checked+' part'+(checked===1?'':'s')+' to #'+A.importTargetParent.sr;
+  }else{
+    document.getElementById('pdfimp-confirm').textContent='Create 1 parent + '+checked+' part'+(checked===1?'':'s');
+  }
   document.getElementById('pdfimp-confirm').disabled=checked===0;
 }
-function closePDFImport(){document.getElementById('pdfimp-modal').style.display='none';A.pdfImportData=null;}
+function closePDFImport(){document.getElementById('pdfimp-modal').style.display='none';A.pdfImportData=null;A.importTargetParent=null;}
+
+// ═══════════════════════════════════════════════════════════════
+// IMPORT PARTS INTO EXISTING PARENT
+// ═══════════════════════════════════════════════════════════════
+function openImportToParent(){
+  if(!A.selOrder||!isParentOrder(A.selOrder)){toast('Open a parent order first');return;}
+  document.getElementById('import-to-parent-file').click();
+}
+function handleImportToParentFile(input){
+  if(!input.files.length)return;
+  const file=input.files[0];
+  input.value=''; // reset so same file can be re-selected later
+  A.importTargetParent={sr:A.selOrder.sr,name:A.selOrder.name,client:A.selOrder.client};
+  A.pendingPDFFile=file;
+  startPDFImport();
+}
 
 async function confirmPDFImport(){
   if(!A.pdfImportData)return;
   const checked=A.pdfImportData.parts.filter(p=>p.include);
   if(checked.length===0){toast('No parts selected');return;}
+
+  // ── BRANCH: adding to existing parent ────────────────────────
+  if(A.importTargetParent){
+    return await confirmImportToExistingParent(checked);
+  }
+
   const parentName=document.getElementById('pdfimp-parent-name').value.trim();
   if(!parentName){toast('Parent order name required');return;}
   const client=A.isAdmin?document.getElementById('f-client-name').value:A.perms.clientName;
@@ -1620,6 +1737,65 @@ async function confirmPDFImport(){
     toast(aiCount>0?'✅ Created #'+parentSr+' + '+checked.length+' parts · ✦ '+aiCount+' AI-extracted!':'✅ Created #'+parentSr+' + '+checked.length+' parts!',5000);
     loadThumbImages(A.orders);
   }catch(e){console.error(e);toast('Import failed: '+e.message,7000);document.getElementById('pdfimp-confirm').disabled=false;}
+}
+
+// Add selected parts as children to an EXISTING parent
+async function confirmImportToExistingParent(checked){
+  const target=A.importTargetParent;
+  const parentSr=target.sr;
+  const client=target.client||(A.isAdmin?'':A.perms.clientName);
+  document.getElementById('pdfimp-confirm').disabled=true;
+  toast('Adding '+checked.length+' parts to #'+parentSr+'...',30000);
+  try{
+    if(!A.imgFolderId)A.imgFolderId=await ensureFolder(C.imgFolder);
+    const today=new Date().toISOString().slice(0,10);
+    const{rows,dataStart}=await findSheetLayout(C.masterSheet);
+    // find last used row
+    let rowNum=dataStart;for(let i=dataStart;i<rows.length;i++){if(rows[i].some(v=>v))rowNum=i+1;}
+    let added=0;
+    for(const p of checked){
+      const childSr=await getNextChildSr(parentSr); // continues letter sequence (I, J, K...)
+      rowNum++;
+      const childName=(p.workOrder?p.workOrder+' – ':'')+(p.partNo?p.partNo+' – ':'')+p.partName;
+      let base=p.material?'Material: '+p.material:'';
+      if(p.usedAI)base=(base?base+' · ':'')+'✦ Extracted by Claude Vision';
+      const childRemarks=appendActivityLog(base,'Added to existing parent #'+parentSr+' via PDF import');
+      const childOrder={sr:childSr,date:today,client,po:'—',name:childName,cat:'Standard Order',type:p.toolType||'',qty:String(p.qty||'1'),dims:p.dimensions||'',quoted:'No',price:'',poRec:'No',approval:'No',tgt:'',stRM:'—',stShape:'—',stGrind:'—',stWire:'—',stLathe:'—',stHT:'—',stInsp:'—',stDisp:'—',status:'In Progress',remarks:childRemarks,parentSr:String(parentSr),isParent:''};
+      // ensure we write to an empty row (getNextChildSr doesn't change rowNum)
+      let writeRow=rowNum;
+      // recompute actual next empty row each time to be safe
+      const{rows:rNow}=await findSheetLayout(C.masterSheet);
+      let lastUsed=dataStart;for(let i=dataStart;i<rNow.length;i++){if(rNow[i].some(v=>v))lastUsed=i+1;}
+      writeRow=lastUsed+1;
+      await writeOrderRow(childOrder,writeRow);
+      const cleanChild=childName.toUpperCase().replace(/[^A-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,40);
+      try{
+        const imgFile=new File([p.imageBlob],childSr+'-'+cleanChild+'.png',{type:'image/png'});
+        const{fileName,res}=await uploadFileToFolder(imgFile,A.imgFolderId,childSr,cleanChild,'png');
+        A.imgFolderCache=refreshCacheAfterUpload(A.imgFolderCache,childSr,fileName,res?.id);
+        delete A.imgCache['sr-'+childSr];
+      }catch(e){console.warn('Image upload:',e);}
+      A.allOrders.push({...childOrder,dateISO:today,tgtISO:null});
+      added++;
+    }
+    // Update parent qty total
+    const parentObj=A.allOrders.find(x=>String(x.sr)===String(parentSr));
+    if(parentObj){
+      const allKids=A.allOrders.filter(x=>isChildOrder(x)&&String(x.parentSr)===String(parentSr));
+      const newTotal=allKids.reduce((s,k)=>s+(parseInt(k.qty)||0),0);
+      parentObj.qty=String(newTotal);
+      // write updated qty to parent row (col H = index 8)
+      for(let i=dataStart;i<rows.length;i++){if(String(rows[i][0]||'').trim()===String(parentSr)){
+        await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\'H'+(i+1)+'\')',{method:'PATCH',body:JSON.stringify({values:[[String(newTotal)]]})});
+        break;
+      }}
+    }
+    A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
+    A.expandedParents.add(String(parentSr));
+    closePDFImport();render();
+    toast('✅ Added '+added+' part'+(added===1?'':'s')+' to #'+parentSr+'!',5000);
+    loadThumbImages(A.orders);
+  }catch(e){console.error(e);toast('Add failed: '+e.message,7000);document.getElementById('pdfimp-confirm').disabled=false;}
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1931,6 +2107,28 @@ function showQuickStatusDD(sr,evt){
   document.body.appendChild(dd);
   setTimeout(()=>{document.addEventListener('click',function close(){dd.remove();document.removeEventListener('click',close);});},10);
 }
+// ═══════════════════════════════════════════════════════════════
+// CASCADE "DELIVERED" STATUS TO CHILDREN
+// ═══════════════════════════════════════════════════════════════
+// When a parent is marked Delivered, all its children become Delivered too.
+// Returns number of children updated.
+async function cascadeDeliveredToChildren(parentSr,rows,dataStart){
+  const children=A.allOrders.filter(x=>isChildOrder(x)&&String(x.parentSr)===String(parentSr));
+  let updated=0;
+  for(const child of children){
+    if((child.status||'')==='Delivered')continue; // already delivered, skip
+    let rowIdx=-1;
+    for(let i=dataStart;i<rows.length;i++){if(String(rows[i][0]||'').trim()===String(child.sr)){rowIdx=i+1;break;}}
+    if(rowIdx<0)continue;
+    const oldStatus=child.status||'';
+    const newRemarks=appendActivityLog(child.remarks,'Status: '+(oldStatus||'(blank)')+' → Delivered (auto: parent delivered)');
+    await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\'U'+rowIdx+':W'+rowIdx+'\')',
+      {method:'PATCH',body:JSON.stringify({values:[['Delivered',child.price||'',newRemarks]]})});
+    child.status='Delivered';child.remarks=newRemarks;updated++;
+  }
+  return updated;
+}
+
 async function quickUpdateStatus(sr,newStatus){
   const o=A.allOrders.find(x=>String(x.sr)===String(sr));if(!o)return;
   const oldStatus=o.status||'';if(oldStatus===newStatus)return;
@@ -1942,7 +2140,14 @@ async function quickUpdateStatus(sr,newStatus){
     const newRemarks=appendActivityLog(o.remarks,'Status: '+(oldStatus||'(blank)')+' → '+newStatus);
     await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\'U'+rowIdx+':W'+rowIdx+'\')',
       {method:'PATCH',body:JSON.stringify({values:[[newStatus,o.price||'',newRemarks]]})});
-    o.status=newStatus;o.remarks=newRemarks;render();toast('✅ Updated to "'+newStatus+'"');
+    o.status=newStatus;o.remarks=newRemarks;
+    // Cascade Delivered to children if this is a parent
+    let cascaded=0;
+    if(isParentOrder(o)&&newStatus==='Delivered'){
+      cascaded=await cascadeDeliveredToChildren(o.sr,rows,dataStart);
+    }
+    render();
+    toast(cascaded>0?'✅ Updated to "Delivered" · '+cascaded+' child part'+(cascaded===1?'':'s')+' also delivered':'✅ Updated to "'+newStatus+'"');
   }catch(e){toast('Update failed: '+e.message,5000);}
 }
 
@@ -2170,6 +2375,7 @@ function showDet(o){
       html+='</tbody></table>';cl.innerHTML=html;
     }else{cl.innerHTML='<div style="font-size:11px;color:var(--text3);padding:8px;text-align:center">No child parts yet</div>';}
     document.getElementById('det-add-child-btn').style.display=A.isAdmin?'flex':'none';
+    document.getElementById('det-import-more-btn').style.display=A.isAdmin?'flex':'none';
   }else{ch.style.display='none';}
   const fl=document.getElementById('sp-files-list');fl.innerHTML='';let hasAnyFile=false;
   const pdfMatch=findFileForSr(A.pdfFolderCache,o.sr);const stpMatch=findFileForSr(A.stpFolderCache,o.sr);const wcMatch=findFileForSr(A.wcFolderCache,o.sr);
@@ -2313,8 +2519,16 @@ async function saveOrder(){
     else A.allOrders.push({...o,dateISO:o.date,tgtISO:o.tgt});
     A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
     if(o.parentSr)A.expandedParents.add(String(o.parentSr));
+    // Cascade Delivered to children when editing a parent
+    let cascaded=0;
+    if(A.editOrder&&isParentOrder(o)&&o.status==='Delivered'){
+      cascaded=await cascadeDeliveredToChildren(o.sr,rows,dataStart);
+      A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
+    }
     if(A.isAdmin){const cf=document.getElementById('f-client');const curr=cf.value;cf.innerHTML='<option value="">All clients</option>';[...new Set(A.allOrders.map(x=>x.client).filter(c=>c))].sort().forEach(c=>{const op=document.createElement('option');op.value=c;op.textContent=c;if(c===curr)op.selected=true;cf.appendChild(op);});}
-    closeSP();render();toast('✅ Order saved!');loadThumbImages(getFiltered());
+    closeSP();render();
+    toast(cascaded>0?'✅ Order saved · '+cascaded+' child part'+(cascaded===1?'':'s')+' also marked Delivered':'✅ Order saved!');
+    loadThumbImages(getFiltered());
   }catch(e){toast('Save failed: '+e.message,7000);console.error(e);}
   finally{document.getElementById('btn-save-order').disabled=false;}
 }
@@ -2673,7 +2887,7 @@ async function doPDFList(list,withImages){
       });
     }
     const pages=doc.internal.getNumberOfPages();
-    for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(150,160,180);doc.text('JMC Engineering · jmcengg.com · v2.7 · '+new Date().toLocaleDateString('en-IN'),ML,210-4);doc.text('Page '+i+' of '+pages,ML+PW-20,210-4);}
+    for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(150,160,180);doc.text('JMC Engineering · jmcengg.com · v2.8 · '+new Date().toLocaleDateString('en-IN'),ML,210-4);doc.text('Page '+i+' of '+pages,ML+PW-20,210-4);}
     doc.save('JMC_Orders_'+new Date().toISOString().slice(0,10)+'.pdf');
     document.querySelectorAll('.toast').forEach(t=>t.remove());
     toast('✅ PDF downloaded!');
