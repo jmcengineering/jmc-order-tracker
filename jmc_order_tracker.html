@@ -2573,32 +2573,43 @@ async function doPDFList(list,withImages){
     const imageColIdx=includeImage?finalHeaders.length-1:-1;
 
     // ── EQUAL ROW HEIGHT CALCULATION ─────────────────────────────
-    // A4 landscape usable height = 210mm - top margin - bottom margin - header
-    const PAGE_H=210; // A4 portrait height (landscape width)
-    const headerH=MT+23+11+2; // logo+title area + table header row
-    const footerH=14;
-    const usableFirstPage=PAGE_H-headerH-footerH; // ~145mm
-    const usableOtherPages=PAGE_H-MT-23-footerH;  // ~161mm
+    // A4 landscape: physical width=297mm, height=210mm
+    // We use portrait orientation internally — jsPDF landscape uses 297×210
+    // Available page height for rows:
+    const FOOTER_H=12;
+    const TABLE_HEADER_H=13; // height of the blue header row
+    // Page 1: logo(10mm) + title(10mm) + line(2mm) + table start(1mm) + table header
+    const PAGE1_USED=MT+19+2+TABLE_HEADER_H; // ~46mm used before rows
+    // Page 2+: top margin + table header only (no logo)
+    const PAGE2_USED=MT+TABLE_HEADER_H;       // ~23mm used before rows
+
+    const PAGE_H=210;
+    const usableP1=PAGE_H-PAGE1_USED-FOOTER_H;  // ~152mm
+    const usableP2=PAGE_H-PAGE2_USED-FOOTER_H;  // ~175mm
+
     const ROWS_FIRST=4;
     const ROWS_OTHER=5;
-    const rowHFirst=Math.floor(usableFirstPage/ROWS_FIRST);   // ~36mm
-    const rowHOther=Math.floor(usableOtherPages/ROWS_OTHER);  // ~32mm
-    // Each row gets uniform fixed height — image will scale to fit inside
+    const rowHFirst=Math.floor(usableP1/ROWS_FIRST);   // ~38mm
+    const rowHOther=Math.floor(usableP2/ROWS_OTHER);   // ~35mm
 
     doc.autoTable({
       head:[finalHeaders],body:finalBody,startY:MT+23,theme:'grid',
       styles:{fontSize,cellPadding:{top:2,right:3,bottom:2,left:3},lineColor:[226,232,242],lineWidth:.15,textColor:[26,35,51],valign:'middle',overflow:'linebreak'},
-      headStyles:{fillColor:[15,33,68],textColor:255,fontStyle:'bold',fontSize:fontSize-0.5,halign:'center',cellPadding:{top:5,right:3,bottom:5,left:3},minCellHeight:11,lineWidth:0,valign:'middle'},
+      headStyles:{fillColor:[15,33,68],textColor:255,fontStyle:'bold',fontSize:fontSize-0.5,halign:'center',cellPadding:{top:4,right:3,bottom:4,left:3},minCellHeight:TABLE_HEADER_H,lineWidth:0,valign:'middle'},
       alternateRowStyles:{fillColor:[248,250,253]},columnStyles:colStyles,
-      margin:{left:ML,right:ML,top:MT+23,bottom:footerH},
+      margin:{left:ML,right:ML,top:MT,bottom:FOOTER_H},
       didParseCell:(data)=>{
         if(data.section!=='body')return;
         const o=ordered[data.row.index];if(!o)return;
-        // Equal row height — page 1 gets 4 rows, rest get 5 rows
+        // Strictly enforce equal row height — both min AND max
         const rowIdx=data.row.index;
-        const isPage1Row=rowIdx<ROWS_FIRST;
-        const fixedH=isPage1Row?rowHFirst:rowHOther;
+        const fixedH=rowIdx<ROWS_FIRST?rowHFirst:rowHOther;
         data.cell.styles.minCellHeight=fixedH;
+        // For image cell — prevent portrait images from growing the row
+        // by capping the content to the fixed height
+        if(includeImage&&data.column.index===imageColIdx){
+          data.cell.styles.overflow='hidden';
+        }
         // Row colour coding
         if(isParentOrder(o)){
           if(data.column.index===jmcSrColIdx){data.cell.styles.fillColor=[185,210,250];data.cell.styles.fontStyle='bold';data.cell.styles.textColor=[15,33,68];}
