@@ -1275,7 +1275,8 @@ async function startApp(){
     document.getElementById('tb-uname').textContent=ur.clientName;
     document.getElementById('tb-role').textContent=A.isAdmin?'Admin':'Client';
     document.getElementById('tb-av').textContent=ini;
-    document.getElementById('tb-sub').textContent=A.isAdmin?'Admin · all clients':ur.clientName+' orders';
+    const tbSubEl=document.getElementById('tb-sub');
+    if(tbSubEl)tbSubEl.innerHTML=(A.isAdmin?'Admin · all clients':ur.clientName+' orders')+' · <span style="color:var(--accent);font-weight:700">v2.6</span>';
     if(A.isAdmin){document.getElementById('admin-btn').style.display='inline-flex';document.getElementById('btn-add').style.display='inline-flex';}
     go('s-loading','Fetching orders...');
     const rows=await readSheet(C.masterSheet);
@@ -2327,33 +2328,41 @@ async function deleteOrder(){
   if(!A.editOrder)return;
   const o=A.editOrder;
   const children=isParentOrder(o)?getChildrenOf(o.sr):[];
+
+  // Step 1 — confirm delete of this order
   let msg='Delete Order #'+o.sr+' — '+o.name+'?\n\nThis will also delete all attached files from SharePoint.';
-  if(isParentOrder(o)&&children.length>0){
-    msg='⚠ This is a PARENT order with '+children.length+' child part(s).\n\nThis will DELETE:\n→ Parent order #'+o.sr+'\n→ All '+children.length+' child parts\n→ All attached files for parent and children\n\nThis cannot be undone. Proceed?';
-  }
   if(!confirm(msg))return;
-  toast('Deleting order and all files...',15000);
+
+  // Step 2 — if parent, ask about children separately
+  let deleteChildren=false;
+  if(isParentOrder(o)&&children.length>0){
+    deleteChildren=confirm(
+      '⚠ This parent has '+children.length+' child part(s):\n\n'+
+      children.map(c=>'  • #'+c.sr+' — '+c.name).join('\n')+
+      '\n\nClick OK to DELETE all child parts and their files too.\nClick Cancel to keep the child parts (they will become standalone orders).'
+    );
+  }
+
+  toast('Deleting...',15000);
   try{
-    // ── HELPER: delete all files for a given Sr from all folders ──
+    // ── HELPER: delete all files for a given Sr ───────────────────
     const deleteAllFilesForSr=async(sr)=>{
       const srStr=String(sr).trim();
-      const tryDelete=async(cache,setCacheFn)=>{
+      const tryDel=async(cache)=>{
         const match=findFileForSr(cache,srStr);
         if(!match)return cache;
-        try{
-          await gapi('/drives/'+A.driveId+'/items/'+match.id,{method:'DELETE'});
-          console.log('Deleted:',match.name);
-          return cache.filter(f=>f.id!==match.id);
-        }catch(e){console.warn('File delete failed:',match.name,e.message);return cache;}
+        try{await gapi('/drives/'+A.driveId+'/items/'+match.id,{method:'DELETE'});console.log('Deleted:',match.name);}
+        catch(e){console.warn('File delete failed:',match.name,e.message);}
+        return cache.filter(f=>f.id!==match.id);
       };
-      A.imgFolderCache=await tryDelete(A.imgFolderCache);
+      A.imgFolderCache=await tryDel(A.imgFolderCache);
       delete A.imgCache['sr-'+srStr];
-      A.pdfFolderCache=await tryDelete(A.pdfFolderCache);
-      A.stpFolderCache=await tryDelete(A.stpFolderCache);
-      A.wcFolderCache=await tryDelete(A.wcFolderCache);
+      A.pdfFolderCache=await tryDel(A.pdfFolderCache);
+      A.stpFolderCache=await tryDel(A.stpFolderCache);
+      A.wcFolderCache=await tryDel(A.wcFolderCache);
     };
 
-    // ── HELPER: clear Excel row for a given Sr ────────────────────
+    // ── HELPER: clear Excel row ───────────────────────────────────
     const clearExcelRow=async(sr,rows,dataStart)=>{
       const srStr=String(sr).trim();
       for(let i=dataStart;i<rows.length;i++){
@@ -2366,27 +2375,44 @@ async function deleteOrder(){
     };
 
     const{rows,dataStart}=await findSheetLayout(C.masterSheet);
+    const srsToDel=new Set([String(o.sr)]);
 
-    // Delete parent files + Excel row
+    // Delete parent files + row
     await deleteAllFilesForSr(o.sr);
     await clearExcelRow(o.sr,rows,dataStart);
 
-    // Delete all children files + Excel rows
-    for(const child of children){
-      await deleteAllFilesForSr(child.sr);
-      await clearExcelRow(child.sr,rows,dataStart);
+    // Delete or orphan children
+    if(deleteChildren){
+      for(const child of children){
+        await deleteAllFilesForSr(child.sr);
+        await clearExcelRow(child.sr,rows,dataStart);
+        srsToDel.add(String(child.sr));
+      }
+    }else if(children.length>0){
+      // Keep children but remove their parentSr link so they become standalone
+      for(const child of children){
+        for(let i=dataStart;i<rows.length;i++){
+          if(String(rows[i][0]||'').trim()===String(child.sr)){
+            // Clear col X (parentSr = col 24) and col Y (isParent = col 25)
+            await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\'X'+(i+1)+':Y'+(i+1)+'\')/clear',
+              {method:'POST',body:JSON.stringify({applyTo:'Contents'})});
+            child.parentSr='';child.isParent='';
+            break;
+          }
+        }
+      }
     }
 
-    // Update in-memory orders — remove parent and all children
-    const srsToDel=new Set([String(o.sr),...children.map(c=>String(c.sr))]);
     A.allOrders=A.allOrders.filter(x=>!srsToDel.has(String(x.sr)));
     A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
     A.selOrder=null;A.editOrder=null;
     closeSP();render();
-    const msg2=children.length>0
-      ?'✅ Deleted parent #'+o.sr+' + '+children.length+' child parts + all files'
-      :'✅ Order #'+o.sr+' and all files deleted';
-    toast(msg2,5000);
+    const resultMsg=deleteChildren
+      ?'✅ Deleted #'+o.sr+' + '+children.length+' child parts + all files'
+      :children.length>0
+        ?'✅ Deleted #'+o.sr+' — '+children.length+' child parts kept as standalone'
+        :'✅ Order #'+o.sr+' and all files deleted';
+    toast(resultMsg,5000);
   }catch(e){toast('Delete failed: '+e.message,5000);console.error(e);}
 }
 
@@ -2545,27 +2571,34 @@ async function doPDFList(list,withImages){
     const fontSize=prefs.fontSize||9;
     const jmcSrColIdx=finalHeaders.findIndex(x=>String(x).toLowerCase()==='jmc sr');
     const imageColIdx=includeImage?finalHeaders.length-1:-1;
+
+    // ── EQUAL ROW HEIGHT CALCULATION ─────────────────────────────
+    // A4 landscape usable height = 210mm - top margin - bottom margin - header
+    const PAGE_H=210; // A4 portrait height (landscape width)
+    const headerH=MT+23+11+2; // logo+title area + table header row
+    const footerH=14;
+    const usableFirstPage=PAGE_H-headerH-footerH; // ~145mm
+    const usableOtherPages=PAGE_H-MT-23-footerH;  // ~161mm
+    const ROWS_FIRST=4;
+    const ROWS_OTHER=5;
+    const rowHFirst=Math.floor(usableFirstPage/ROWS_FIRST);   // ~36mm
+    const rowHOther=Math.floor(usableOtherPages/ROWS_OTHER);  // ~32mm
+    // Each row gets uniform fixed height — image will scale to fit inside
+
     doc.autoTable({
       head:[finalHeaders],body:finalBody,startY:MT+23,theme:'grid',
-      styles:{fontSize,cellPadding:{top:3,right:3,bottom:3,left:3},lineColor:[226,232,242],lineWidth:.15,textColor:[26,35,51],valign:'middle',overflow:'linebreak',minCellHeight:9},
+      styles:{fontSize,cellPadding:{top:2,right:3,bottom:2,left:3},lineColor:[226,232,242],lineWidth:.15,textColor:[26,35,51],valign:'middle',overflow:'linebreak'},
       headStyles:{fillColor:[15,33,68],textColor:255,fontStyle:'bold',fontSize:fontSize-0.5,halign:'center',cellPadding:{top:5,right:3,bottom:5,left:3},minCellHeight:11,lineWidth:0,valign:'middle'},
       alternateRowStyles:{fillColor:[248,250,253]},columnStyles:colStyles,
-      margin:{left:ML,right:ML,top:MT+23,bottom:14},
+      margin:{left:ML,right:ML,top:MT+23,bottom:footerH},
       didParseCell:(data)=>{
         if(data.section!=='body')return;
         const o=ordered[data.row.index];if(!o)return;
-        // Set image cell height to drive row — autofit per row based on image
-        if(includeImage&&data.column.index===imageColIdx){
-          const imgEntry=imgDataMap[o.sr];
-          if(imgEntry&&imgEntry.w&&imgEntry.h){
-            const colW=40; // matches cellWidth above
-            const ratio=imgEntry.h/imgEntry.w;
-            const imgH=Math.min(colW*ratio,30); // max 30mm tall
-            data.cell.styles.minCellHeight=imgH+4; // +4mm padding
-          }else{
-            data.cell.styles.minCellHeight=22;
-          }
-        }
+        // Equal row height — page 1 gets 4 rows, rest get 5 rows
+        const rowIdx=data.row.index;
+        const isPage1Row=rowIdx<ROWS_FIRST;
+        const fixedH=isPage1Row?rowHFirst:rowHOther;
+        data.cell.styles.minCellHeight=fixedH;
         // Row colour coding
         if(isParentOrder(o)){
           if(data.column.index===jmcSrColIdx){data.cell.styles.fillColor=[185,210,250];data.cell.styles.fontStyle='bold';data.cell.styles.textColor=[15,33,68];}
@@ -2582,17 +2615,18 @@ async function doPDFList(list,withImages){
           const o=ordered[data.row.index];if(!o)return;
           const imgEntry=imgDataMap[o.sr];
           if(imgEntry&&imgEntry.dataUrl){
-            const pad=1;
+            const pad=2;
             const availW=data.cell.width-pad*2;
             const availH=data.cell.height-pad*2;
             const origW=imgEntry.w||1;
             const origH=imgEntry.h||1;
             const ratio=origW/origH;
-            // Fill 95% of available space maintaining ratio
-            let imgW=availW*0.95;
-            let imgH=imgW/ratio;
-            if(imgH>availH*0.95){imgH=availH*0.95;imgW=imgH*ratio;}
-            if(imgW>availW){imgW=availW;imgH=imgW/ratio;}
+            // Scale to fill available height first (row height is fixed)
+            let imgH=availH*0.90;
+            let imgW=imgH*ratio;
+            // If too wide, constrain by width
+            if(imgW>availW*0.95){imgW=availW*0.95;imgH=imgW/ratio;}
+            // Center in cell
             const x=data.cell.x+pad+(availW-imgW)/2;
             const y=data.cell.y+pad+(availH-imgH)/2;
             try{doc.addImage(imgEntry.dataUrl,'PNG',x,y,imgW,imgH,undefined,'FAST');}
