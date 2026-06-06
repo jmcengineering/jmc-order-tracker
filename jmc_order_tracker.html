@@ -2509,24 +2509,36 @@ async function doPDFList(list,withImages){
     const imgDataMap={};  // { sr: {dataUrl, w, h} }
     if(includeImage){
       for(const o of ordered){
+        // Skip parent orders — their image is just the first child's, causes client confusion
+        if(isParentOrder(o))continue;
         const url=await getImgUrl(o.sr);
         if(url){
           try{
             const resp=await fetch(url);
             const blob=await resp.blob();
             const bmp=await createImageBitmap(blob);
-            // Target 300px — good balance: sharp at print, reasonable file size
-            // Use JPEG not PNG — engineering thumbnails are photos/renders, JPEG is fine
-            const TARGET=300;
-            const scale=Math.min(TARGET/bmp.width,TARGET/bmp.height,2); // allow up to 2× upscale for tiny images
+            const TARGET=400; // higher res for sharper print
+            const scale=Math.min(TARGET/bmp.width,TARGET/bmp.height,2.5);
             const cw=Math.round(bmp.width*scale);
             const ch=Math.round(bmp.height*scale);
             const c=document.createElement('canvas');c.width=cw;c.height=ch;
             const ctx=c.getContext('2d');
             ctx.fillStyle='#ffffff';ctx.fillRect(0,0,cw,ch);
             ctx.drawImage(bmp,0,0,cw,ch);
-            // PNG for engineering drawings — CAD lines/text stay sharp
-            // 300px is enough for PDF thumbnail at A4 print
+            // ── CONTRAST BOOST — make light CAD lines dark & sharp for print ──
+            try{
+              const imgData=ctx.getImageData(0,0,cw,ch);
+              const d=imgData.data;
+              const contrast=1.4;            // 1.0 = none, higher = punchier
+              const intercept=128*(1-contrast);
+              for(let i=0;i<d.length;i+=4){
+                // apply contrast to RGB
+                d[i]  =d[i]*contrast+intercept;
+                d[i+1]=d[i+1]*contrast+intercept;
+                d[i+2]=d[i+2]*contrast+intercept;
+              }
+              ctx.putImageData(imgData,0,0);
+            }catch(ce){/* getImageData can fail on tainted canvas — skip boost */}
             imgDataMap[o.sr]={
               dataUrl:c.toDataURL('image/png'),
               w:bmp.width,
@@ -2628,6 +2640,17 @@ async function doPDFList(list,withImages){
         didDrawCell:includeImage?(data)=>{
           if(data.section==='body'&&data.column.index===imageColIdx){
             const o=chunkOrders[data.row.index];if(!o)return;
+            // Parent rows — no image, show assembly label instead (avoids client confusion)
+            if(isParentOrder(o)){
+              const cx=data.cell.x+data.cell.width/2;
+              const cy=data.cell.y+data.cell.height/2;
+              doc.setFontSize(7);doc.setTextColor(24,95,165);doc.setFont(undefined,'bold');
+              doc.text('ASSEMBLY',cx,cy-1,{align:'center'});
+              doc.setFontSize(6);doc.setTextColor(120,140,165);doc.setFont(undefined,'normal');
+              const childCount=getChildrenOf(o.sr).length;
+              doc.text('('+childCount+' parts below)',cx,cy+3,{align:'center'});
+              return;
+            }
             const imgEntry=imgDataMap[o.sr];
             if(imgEntry&&imgEntry.dataUrl){
               const pad=2;
@@ -2638,6 +2661,9 @@ async function doPDFList(list,withImages){
               if(imgW>availW*0.95){imgW=availW*0.95;imgH=imgW/ratio;}
               const x=data.cell.x+pad+(availW-imgW)/2;
               const y=data.cell.y+pad+(availH-imgH)/2;
+              // White background box behind image — makes it pop on print
+              doc.setFillColor(255,255,255);
+              doc.rect(x-0.5,y-0.5,imgW+1,imgH+1,'F');
               try{doc.addImage(imgEntry.dataUrl,'PNG',x,y,imgW,imgH,undefined,'FAST');}
               catch(e){try{doc.addImage(imgEntry.dataUrl,'JPEG',x,y,imgW,imgH);}catch(e2){}}
             }
