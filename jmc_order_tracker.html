@@ -381,7 +381,7 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
   <div class="topbar">
     <div class="tb-left">
       <div class="tb-logo" id="tb-logo-wrap">JMC</div>
-      <div><div class="tb-brand">JMC Engineering</div><div class="tb-sub" id="tb-sub">Order Management · <span style="color:var(--accent);font-weight:700">v2.6</span></div></div>
+      <div><div class="tb-brand">JMC Engineering</div><div class="tb-sub" id="tb-sub">Order Management · <span style="color:var(--accent);font-weight:700">v2.7</span></div></div>
     </div>
     <div class="tb-right">
       <div class="tb-chip">
@@ -1276,7 +1276,7 @@ async function startApp(){
     document.getElementById('tb-role').textContent=A.isAdmin?'Admin':'Client';
     document.getElementById('tb-av').textContent=ini;
     const tbSubEl=document.getElementById('tb-sub');
-    if(tbSubEl)tbSubEl.innerHTML=(A.isAdmin?'Admin · all clients':ur.clientName+' orders')+' · <span style="color:var(--accent);font-weight:700">v2.6</span>';
+    if(tbSubEl)tbSubEl.innerHTML=(A.isAdmin?'Admin · all clients':ur.clientName+' orders')+' · <span style="color:var(--accent);font-weight:700">v2.7</span>';
     if(A.isAdmin){document.getElementById('admin-btn').style.display='inline-flex';document.getElementById('btn-add').style.display='inline-flex';}
     go('s-loading','Fetching orders...');
     const rows=await readSheet(C.masterSheet);
@@ -1454,23 +1454,17 @@ async function startPDFImport(){
       const page=await pdf.getPage(p);
       const{canvas}=await renderFullPage(page,1.5);
 
-      // ── TITLE BLOCK CROP FOR CLAUDE ───────────────────────────────
-      // Send only the bottom-right corner (title block area) to Claude
-      // This eliminates drawing view noise and improves text extraction accuracy
-      // UE Press Tools / JMC title block is always bottom-right ~40% width × 32% height
+      // ── TITLE BLOCK CROP FOR CLAUDE (low-res 1.5 is fine for text) ──
       const isPortraitPage=canvas.height>canvas.width;
       const tbCanvas=isPortraitPage
-        ? cropCanvasByFraction(canvas,0.0,0.68,1.0,0.32)   // portrait: full width, bottom 32%
-        : cropCanvasByFraction(canvas,0.45,0.68,0.55,0.32); // landscape: right 55%, bottom 32%
-
-      // Upscale title block for better text readability before sending to Claude
+        ? cropCanvasByFraction(canvas,0.0,0.68,1.0,0.32)
+        : cropCanvasByFraction(canvas,0.45,0.68,0.55,0.32);
       const tbScaled=document.createElement('canvas');
       tbScaled.width=Math.min(tbCanvas.width*1.5,900);
       tbScaled.height=Math.round(tbCanvas.height*(tbScaled.width/tbCanvas.width));
       const tbCtx=tbScaled.getContext('2d');
       tbCtx.fillStyle='#fff';tbCtx.fillRect(0,0,tbScaled.width,tbScaled.height);
       tbCtx.drawImage(tbCanvas,0,0,tbScaled.width,tbScaled.height);
-
       const titleBlockDataUrl=tbScaled.toDataURL('image/jpeg',0.92);
       const approxKB=Math.round(titleBlockDataUrl.length*0.75/1024);
       console.log('Page '+p+': title block '+tbScaled.width+'×'+tbScaled.height+'px ~'+approxKB+'KB → Claude');
@@ -1480,12 +1474,16 @@ async function startPDFImport(){
         try{aiResult=await claudeAnalyzeDrawingPage(titleBlockDataUrl);usedAI=true;}
         catch(e){console.warn('Claude failed page '+p+':',e.message);aiResult=null;usedFallback=true;}
       }else{usedFallback=true;}
-      // ── FIXED SMART CROP ──────────────────────────────────────────
-      // Push start further inside to fully eliminate border frame lines
-      const isPortrait=canvas.height>canvas.width;
-      const thumbCanvas=isPortrait
-        ? cropCanvasByFraction(canvas,0.06,0.04,0.88,0.78)   // portrait: inside border, top 78%
-        : cropCanvasByFraction(canvas,0.06,0.04,0.55,0.80);  // landscape: inside border, left 55%, top 80%
+
+      // ── HI-RES THUMBNAIL — render the page AGAIN at scale 3.0 ─────
+      // Thin CAD lines need high scale to stay crisp & dark on print
+      const{canvas:hiCanvas}=await renderFullPage(page,3.0);
+      // ── FIXED SMART CROP (on hi-res canvas) ───────────────────────
+      // Push start inside to eliminate border frame lines
+      const hiPortrait=hiCanvas.height>hiCanvas.width;
+      const thumbCanvas=hiPortrait
+        ? cropCanvasByFraction(hiCanvas,0.06,0.04,0.88,0.78)   // portrait: inside border, top 78%
+        : cropCanvasByFraction(hiCanvas,0.06,0.04,0.55,0.80);  // landscape: inside border, left 55%, top 80%
       const{dataURL:imageUrl,blob:imageBlob}=await canvasToOutputs(thumbCanvas);
       parts.push({
         page:p,
@@ -2517,10 +2515,9 @@ async function doPDFList(list,withImages){
             const resp=await fetch(url);
             const blob=await resp.blob();
             const bmp=await createImageBitmap(blob);
-            const TARGET=400; // higher res for sharper print
-            const scale=Math.min(TARGET/bmp.width,TARGET/bmp.height,2.5);
-            const cw=Math.round(bmp.width*scale);
-            const ch=Math.round(bmp.height*scale);
+            // KEEP FULL ORIGINAL RESOLUTION — no downscale (user wants max sharpness)
+            const cw=bmp.width;
+            const ch=bmp.height;
             const c=document.createElement('canvas');c.width=cw;c.height=ch;
             const ctx=c.getContext('2d');
             ctx.fillStyle='#ffffff';ctx.fillRect(0,0,cw,ch);
@@ -2529,16 +2526,15 @@ async function doPDFList(list,withImages){
             try{
               const imgData=ctx.getImageData(0,0,cw,ch);
               const d=imgData.data;
-              const contrast=1.4;            // 1.0 = none, higher = punchier
+              const contrast=1.45;
               const intercept=128*(1-contrast);
               for(let i=0;i<d.length;i+=4){
-                // apply contrast to RGB
                 d[i]  =d[i]*contrast+intercept;
                 d[i+1]=d[i+1]*contrast+intercept;
                 d[i+2]=d[i+2]*contrast+intercept;
               }
               ctx.putImageData(imgData,0,0);
-            }catch(ce){/* getImageData can fail on tainted canvas — skip boost */}
+            }catch(ce){/* tainted canvas — skip boost */}
             imgDataMap[o.sr]={
               dataUrl:c.toDataURL('image/png'),
               w:bmp.width,
@@ -2677,7 +2673,7 @@ async function doPDFList(list,withImages){
       });
     }
     const pages=doc.internal.getNumberOfPages();
-    for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(150,160,180);doc.text('JMC Engineering · jmcengg.com · v2.6 · '+new Date().toLocaleDateString('en-IN'),ML,210-4);doc.text('Page '+i+' of '+pages,ML+PW-20,210-4);}
+    for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(150,160,180);doc.text('JMC Engineering · jmcengg.com · v2.7 · '+new Date().toLocaleDateString('en-IN'),ML,210-4);doc.text('Page '+i+' of '+pages,ML+PW-20,210-4);}
     doc.save('JMC_Orders_'+new Date().toISOString().slice(0,10)+'.pdf');
     document.querySelectorAll('.toast').forEach(t=>t.remove());
     toast('✅ PDF downloaded!');
