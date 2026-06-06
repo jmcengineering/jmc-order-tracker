@@ -2541,14 +2541,14 @@ async function doPDFList(list,withImages){
           }
         }
       }
-    }    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+    }
+    const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
     const ML=8,MT=10,PW=289;
-    if(A.logoUrl){try{const resp=await fetch(A.logoUrl);const blob=await resp.blob();const du=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(blob);});doc.addImage(du,'PNG',ML,MT,16,16);}catch(e){}}
-    doc.setFontSize(14);doc.setTextColor(15,33,68);doc.setFont(undefined,'bold');
-    doc.text('JMC Engineering',A.logoUrl?ML+20:ML,MT+8);
-    doc.setFontSize(10);doc.setFont(undefined,'normal');doc.setTextColor(90,100,120);
-    doc.text((A.isAdmin?'JMC Admin':A.perms.clientName)+' · '+ordered.length+' orders · '+new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}),A.logoUrl?ML+20:ML,MT+14);
-    doc.setDrawColor(15,33,68);doc.setLineWidth(.3);doc.line(ML,MT+19,ML+PW,MT+19);
+    const fontSize=prefs.fontSize||9;
+    const jmcSrColIdx=finalHeaders.findIndex(x=>String(x).toLowerCase()==='jmc sr');
+    const imageColIdx=includeImage?finalHeaders.length-1:-1;
+
+    // Column styles (shared across all page-tables)
     const colStyles={};
     finalHeaders.forEach((label,i)=>{
       const w=prefs.widths[label]||18;const style={cellWidth:w};const lc=String(label).toLowerCase();
@@ -2568,89 +2568,88 @@ async function doPDFList(list,withImages){
       else if(lc==='image'){style.halign='center';style.valign='middle';style.cellWidth=40;}
       colStyles[i]=style;
     });
-    const fontSize=prefs.fontSize||9;
-    const jmcSrColIdx=finalHeaders.findIndex(x=>String(x).toLowerCase()==='jmc sr');
-    const imageColIdx=includeImage?finalHeaders.length-1:-1;
 
-    // ── EQUAL ROW HEIGHT CALCULATION ─────────────────────────────
-    // A4 landscape: physical width=297mm, height=210mm
-    // We use portrait orientation internally — jsPDF landscape uses 297×210
-    // Available page height for rows:
+    // ── LAYOUT CONSTANTS ─────────────────────────────────────────
     const FOOTER_H=12;
-    const TABLE_HEADER_H=13; // height of the blue header row
-    // Page 1: logo(10mm) + title(10mm) + line(2mm) + table start(1mm) + table header
-    const PAGE1_USED=MT+19+2+TABLE_HEADER_H; // ~46mm used before rows
-    // Page 2+: top margin + table header only (no logo)
-    const PAGE2_USED=MT+TABLE_HEADER_H;       // ~23mm used before rows
-
+    const TABLE_HEADER_H=12;
+    const PAGE1_TOP=MT+19+2;   // table starts here on page 1 (below banner)
+    const PAGE2_TOP=MT;        // table starts here on page 2+
     const PAGE_H=210;
-    const usableP1=PAGE_H-PAGE1_USED-FOOTER_H;  // ~152mm
-    const usableP2=PAGE_H-PAGE2_USED-FOOTER_H;  // ~175mm
+    const ROWS_FIRST=4, ROWS_OTHER=5;
+    const usableP1=PAGE_H-PAGE1_TOP-TABLE_HEADER_H-FOOTER_H;
+    const usableP2=PAGE_H-PAGE2_TOP-TABLE_HEADER_H-FOOTER_H;
+    const rowHFirst=Math.floor(usableP1/ROWS_FIRST)-1;
+    const rowHOther=Math.floor(usableP2/ROWS_OTHER)-1;
 
-    const ROWS_FIRST=4;
-    const ROWS_OTHER=5;
-    const rowHFirst=Math.floor(usableP1/ROWS_FIRST);   // ~38mm
-    const rowHOther=Math.floor(usableP2/ROWS_OTHER);   // ~35mm
+    // ── SPLIT DATA INTO PAGES (4 first, 5 each after) ────────────
+    const pageChunks=[];
+    pageChunks.push({rows:finalBody.slice(0,ROWS_FIRST),orders:ordered.slice(0,ROWS_FIRST),top:PAGE1_TOP,rowH:rowHFirst});
+    let idx=ROWS_FIRST;
+    while(idx<finalBody.length){
+      pageChunks.push({rows:finalBody.slice(idx,idx+ROWS_OTHER),orders:ordered.slice(idx,idx+ROWS_OTHER),top:PAGE2_TOP,rowH:rowHOther});
+      idx+=ROWS_OTHER;
+    }
 
-    doc.autoTable({
-      head:[finalHeaders],body:finalBody,startY:MT+23,theme:'grid',
-      styles:{fontSize,cellPadding:{top:2,right:3,bottom:2,left:3},lineColor:[226,232,242],lineWidth:.15,textColor:[26,35,51],valign:'middle',overflow:'linebreak'},
-      headStyles:{fillColor:[15,33,68],textColor:255,fontStyle:'bold',fontSize:fontSize-0.5,halign:'center',cellPadding:{top:4,right:3,bottom:4,left:3},minCellHeight:TABLE_HEADER_H,lineWidth:0,valign:'middle'},
-      alternateRowStyles:{fillColor:[248,250,253]},columnStyles:colStyles,
-      margin:{left:ML,right:ML,top:MT,bottom:FOOTER_H},
-      didParseCell:(data)=>{
-        if(data.section!=='body')return;
-        const o=ordered[data.row.index];if(!o)return;
-        // Strictly enforce equal row height — both min AND max
-        const rowIdx=data.row.index;
-        const fixedH=rowIdx<ROWS_FIRST?rowHFirst:rowHOther;
-        data.cell.styles.minCellHeight=fixedH;
-        // For image cell — prevent portrait images from growing the row
-        // by capping the content to the fixed height
-        if(includeImage&&data.column.index===imageColIdx){
-          data.cell.styles.overflow='hidden';
-        }
-        // Row colour coding
-        if(isParentOrder(o)){
-          if(data.column.index===jmcSrColIdx){data.cell.styles.fillColor=[185,210,250];data.cell.styles.fontStyle='bold';data.cell.styles.textColor=[15,33,68];}
-          else{data.cell.styles.fillColor=[230,242,255];data.cell.styles.fontStyle='bold';}
-        }else if(isChildOrder(o)){
-          if(data.column.index===jmcSrColIdx){data.cell.styles.fillColor=[222,236,255];data.cell.styles.fontStyle='bold';data.cell.styles.textColor=[24,95,165];}
-          else{data.cell.styles.fillColor=[250,252,255];}
-        }else{
-          if(data.column.index===jmcSrColIdx){data.cell.styles.fillColor=[235,244,255];data.cell.styles.fontStyle='bold';data.cell.styles.textColor=[15,33,68];}
-        }
-      },
-      didDrawCell:includeImage?(data)=>{
-        if(data.section==='body'&&data.column.index===imageColIdx){
-          const o=ordered[data.row.index];if(!o)return;
-          const imgEntry=imgDataMap[o.sr];
-          if(imgEntry&&imgEntry.dataUrl){
-            const pad=2;
-            const availW=data.cell.width-pad*2;
-            const availH=data.cell.height-pad*2;
-            const origW=imgEntry.w||1;
-            const origH=imgEntry.h||1;
-            const ratio=origW/origH;
-            // Scale to fill available height first (row height is fixed)
-            let imgH=availH*0.90;
-            let imgW=imgH*ratio;
-            // If too wide, constrain by width
-            if(imgW>availW*0.95){imgW=availW*0.95;imgH=imgW/ratio;}
-            // Center in cell
-            const x=data.cell.x+pad+(availW-imgW)/2;
-            const y=data.cell.y+pad+(availH-imgH)/2;
-            try{doc.addImage(imgEntry.dataUrl,'PNG',x,y,imgW,imgH,undefined,'FAST');}
-            catch(e){try{doc.addImage(imgEntry.dataUrl,'JPEG',x,y,imgW,imgH);}catch(e2){}}
+    // ── BANNER (page 1 only) ─────────────────────────────────────
+    if(A.logoUrl){try{const resp=await fetch(A.logoUrl);const blob=await resp.blob();const du=await new Promise(r=>{const fr=new FileReader();fr.onload=e=>r(e.target.result);fr.readAsDataURL(blob);});doc.addImage(du,'PNG',ML,MT,16,16);}catch(e){}}
+    doc.setFontSize(14);doc.setTextColor(15,33,68);doc.setFont(undefined,'bold');
+    doc.text('JMC Engineering',A.logoUrl?ML+20:ML,MT+8);
+    doc.setFontSize(10);doc.setFont(undefined,'normal');doc.setTextColor(90,100,120);
+    doc.text((A.isAdmin?'JMC Admin':A.perms.clientName)+' · '+ordered.length+' orders · '+new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}),A.logoUrl?ML+20:ML,MT+14);
+    doc.setDrawColor(15,33,68);doc.setLineWidth(.3);doc.line(ML,MT+19,ML+PW,MT+19);
+
+    // ── RENDER EACH PAGE AS ITS OWN TABLE ────────────────────────
+    for(let pg=0;pg<pageChunks.length;pg++){
+      const chunk=pageChunks[pg];
+      if(pg>0)doc.addPage();
+      const chunkOrders=chunk.orders;
+      doc.autoTable({
+        head:[finalHeaders],body:chunk.rows,startY:chunk.top,theme:'grid',
+        pageBreak:'avoid',rowPageBreak:'avoid',
+        styles:{fontSize,cellPadding:{top:2,right:3,bottom:2,left:3},lineColor:[226,232,242],lineWidth:.15,textColor:[26,35,51],valign:'middle',overflow:'linebreak',minCellHeight:chunk.rowH},
+        headStyles:{fillColor:[15,33,68],textColor:255,fontStyle:'bold',fontSize:fontSize-0.5,halign:'center',cellPadding:{top:4,right:3,bottom:4,left:3},minCellHeight:TABLE_HEADER_H,lineWidth:0,valign:'middle'},
+        alternateRowStyles:{fillColor:[248,250,253]},columnStyles:colStyles,
+        margin:{left:ML,right:ML},
+        didParseCell:(data)=>{
+          if(data.section!=='body')return;
+          const o=chunkOrders[data.row.index];if(!o)return;
+          data.cell.styles.minCellHeight=chunk.rowH;
+          if(includeImage&&data.column.index===imageColIdx)data.cell.styles.overflow='hidden';
+          if(isParentOrder(o)){
+            if(data.column.index===jmcSrColIdx){data.cell.styles.fillColor=[185,210,250];data.cell.styles.fontStyle='bold';data.cell.styles.textColor=[15,33,68];}
+            else{data.cell.styles.fillColor=[230,242,255];data.cell.styles.fontStyle='bold';}
+          }else if(isChildOrder(o)){
+            if(data.column.index===jmcSrColIdx){data.cell.styles.fillColor=[222,236,255];data.cell.styles.fontStyle='bold';data.cell.styles.textColor=[24,95,165];}
+            else{data.cell.styles.fillColor=[250,252,255];}
+          }else{
+            if(data.column.index===jmcSrColIdx){data.cell.styles.fillColor=[235,244,255];data.cell.styles.fontStyle='bold';data.cell.styles.textColor=[15,33,68];}
           }
+        },
+        didDrawCell:includeImage?(data)=>{
+          if(data.section==='body'&&data.column.index===imageColIdx){
+            const o=chunkOrders[data.row.index];if(!o)return;
+            const imgEntry=imgDataMap[o.sr];
+            if(imgEntry&&imgEntry.dataUrl){
+              const pad=2;
+              const availW=data.cell.width-pad*2;
+              const availH=data.cell.height-pad*2;
+              const ratio=(imgEntry.w||1)/(imgEntry.h||1);
+              let imgH=availH*0.92;let imgW=imgH*ratio;
+              if(imgW>availW*0.95){imgW=availW*0.95;imgH=imgW/ratio;}
+              const x=data.cell.x+pad+(availW-imgW)/2;
+              const y=data.cell.y+pad+(availH-imgH)/2;
+              try{doc.addImage(imgEntry.dataUrl,'PNG',x,y,imgW,imgH,undefined,'FAST');}
+              catch(e){try{doc.addImage(imgEntry.dataUrl,'JPEG',x,y,imgW,imgH);}catch(e2){}}
+            }
+          }
+        }:undefined,
+        didDrawRow:(data)=>{
+          if(data.section!=='body')return;const o=chunkOrders[data.row.index];if(!o)return;
+          if(isParentOrder(o)){doc.setFillColor(24,95,165);doc.rect(data.cursor.x,data.row.y,1.2,data.row.height,'F');}
+          else if(isChildOrder(o)){doc.setFillColor(150,190,235);doc.rect(data.cursor.x,data.row.y,1.2,data.row.height,'F');}
         }
-      }:undefined,
-      didDrawRow:(data)=>{
-        if(data.section!=='body')return;const o=ordered[data.row.index];if(!o)return;
-        if(isParentOrder(o)){doc.setFillColor(24,95,165);doc.rect(data.cursor.x,data.row.y,1.2,data.row.height,'F');}
-        else if(isChildOrder(o)){doc.setFillColor(150,190,235);doc.rect(data.cursor.x,data.row.y,1.2,data.row.height,'F');}
-      }
-    });
+      });
+    }
     const pages=doc.internal.getNumberOfPages();
     for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(150,160,180);doc.text('JMC Engineering · jmcengg.com · v2.6 · '+new Date().toLocaleDateString('en-IN'),ML,210-4);doc.text('Page '+i+' of '+pages,ML+PW-20,210-4);}
     doc.save('JMC_Orders_'+new Date().toISOString().slice(0,10)+'.pdf');
