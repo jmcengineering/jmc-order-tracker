@@ -132,6 +132,7 @@ tbody tr.row.checked.sel{background:#EDE9FE}
 .thumb{width:40px;height:40px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden;transition:all .15s}
 .thumb:hover{border-color:var(--blue);box-shadow:0 0 0 3px rgba(24,95,165,.1)}
 .thumb img{width:100%;height:100%;object-fit:contain}
+.thumb-blank{width:40px;height:40px;border-radius:var(--r-sm);border:1.5px dashed var(--border);background:repeating-linear-gradient(45deg,#F8FAFD,#F8FAFD 4px,#EEF2F8 4px,#EEF2F8 8px);display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:9px;cursor:default}
 .file-chip{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid;transition:all .15s;font-size:8px;font-weight:700;letter-spacing:.3px}
 .fc-pdf{background:#FEE2E2;color:#DC2626;border-color:#FECACA}.fc-pdf:hover{background:#FEF2F2}
 .fc-stp{background:#E0E7FF;color:#4338CA;border-color:#C7D2FE}.fc-stp:hover{background:#EEF2FF}
@@ -381,7 +382,7 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
   <div class="topbar">
     <div class="tb-left">
       <div class="tb-logo" id="tb-logo-wrap">JMC</div>
-      <div><div class="tb-brand">JMC Engineering</div><div class="tb-sub" id="tb-sub">Order Management · <span style="color:var(--accent);font-weight:700">v2.8</span></div></div>
+      <div><div class="tb-brand">JMC Engineering</div><div class="tb-sub" id="tb-sub">Order Management · <span style="color:var(--accent);font-weight:700">v2.9</span></div></div>
     </div>
     <div class="tb-right">
       <div class="tb-chip">
@@ -1280,7 +1281,7 @@ async function startApp(){
     document.getElementById('tb-role').textContent=A.isAdmin?'Admin':'Client';
     document.getElementById('tb-av').textContent=ini;
     const tbSubEl=document.getElementById('tb-sub');
-    if(tbSubEl)tbSubEl.innerHTML=(A.isAdmin?'Admin · all clients':ur.clientName+' orders')+' · <span style="color:var(--accent);font-weight:700">v2.8</span>';
+    if(tbSubEl)tbSubEl.innerHTML=(A.isAdmin?'Admin · all clients':ur.clientName+' orders')+' · <span style="color:var(--accent);font-weight:700">v2.9</span>';
     if(A.isAdmin){document.getElementById('admin-btn').style.display='inline-flex';document.getElementById('btn-add').style.display='inline-flex';}
     go('s-loading','Fetching orders...');
     const rows=await readSheet(C.masterSheet);
@@ -1497,8 +1498,8 @@ async function startPDFImport(){
         catch(e){console.warn('Claude failed page '+p+':',e.message);aiResult=null;usedFallback=true;}
       }else{usedFallback=true;}
 
-      // ── HI-RES THUMBNAIL — render the page at scale 3.0 ──────────
-      const{canvas:hiCanvas}=await renderFullPage(page,3.0);
+      // ── HI-RES THUMBNAIL — render the page at scale 4.0 ──────────
+      const{canvas:hiCanvas}=await renderFullPage(page,4.0);
       const hiPortrait=hiCanvas.height>hiCanvas.width;
       const thumbCanvas=hiPortrait
         ? cropCanvasByFraction(hiCanvas,0.06,0.04,0.88,0.78)
@@ -1646,7 +1647,7 @@ function updatePDFImportSummary(){
   if(A.importTargetParent){
     document.getElementById('pdfimp-confirm').textContent='Add '+checked+' part'+(checked===1?'':'s')+' to #'+A.importTargetParent.sr;
   }else{
-    document.getElementById('pdfimp-confirm').textContent='Create 1 parent + '+checked+' part'+(checked===1?'':'s');
+    document.getElementById('pdfimp-confirm').textContent=checked===1?'Create 1 order':'Create 1 parent + '+checked+' parts';
   }
   document.getElementById('pdfimp-confirm').disabled=checked===0;
 }
@@ -1678,6 +1679,11 @@ async function confirmPDFImport(){
     return await confirmImportToExistingParent(checked);
   }
 
+  // ── BRANCH: single part → create one STANDALONE order ────────
+  if(checked.length===1){
+    return await confirmSingleStandaloneImport(checked[0]);
+  }
+
   const parentName=document.getElementById('pdfimp-parent-name').value.trim();
   if(!parentName){toast('Parent order name required');return;}
   const client=A.isAdmin?document.getElementById('f-client-name').value:A.perms.clientName;
@@ -1699,7 +1705,6 @@ async function confirmPDFImport(){
     try{const{fileName,res}=await uploadFileToFolder(A.pdfImportData.sourcePdfFile,A.pdfFolderId,parentSr,cleanParent,'pdf');A.pdfFolderCache=refreshCacheAfterUpload(A.pdfFolderCache,parentSr,fileName,res?.id);}catch(e){console.warn('PDF upload:',e);}
     A.allOrders.push({...parentOrder,dateISO:today,tgtISO:null});
     let rowNum=nextRow;let childIdx=0;
-    let firstChildBlob=null; // track first child image for parent
     for(const p of checked){
       rowNum++;childIdx++;
       const childSr=String(parentSr)+String.fromCharCode(64+childIdx);
@@ -1715,26 +1720,55 @@ async function confirmPDFImport(){
         const{fileName,res}=await uploadFileToFolder(imgFile,A.imgFolderId,childSr,cleanChild,'png');
         A.imgFolderCache=refreshCacheAfterUpload(A.imgFolderCache,childSr,fileName,res?.id);
         delete A.imgCache['sr-'+childSr];
-        // Save first child blob to use as parent image
-        if(childIdx===1)firstChildBlob=p.imageBlob;
       }catch(e){console.warn('Image upload:',e);}
       A.allOrders.push({...childOrder,dateISO:today,tgtISO:null});
-    }
-    // Upload first child image as parent image too
-    if(firstChildBlob&&A.imgFolderId){
-      try{
-        const cleanP=parentName.toUpperCase().replace(/[^A-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,40);
-        const parentImgFile=new File([firstChildBlob],parentSr+'-'+cleanP+'.png',{type:'image/png'});
-        const{fileName,res}=await uploadFileToFolder(parentImgFile,A.imgFolderId,parentSr,cleanP,'png');
-        A.imgFolderCache=refreshCacheAfterUpload(A.imgFolderCache,parentSr,fileName,res?.id);
-        delete A.imgCache['sr-'+parentSr];
-      }catch(e){console.warn('Parent image upload:',e);}
     }
     A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
     A.expandedParents.add(String(parentSr));
     closePDFImport();closeSP();render();
     const aiCount=checked.filter(p=>p.usedAI).length;
     toast(aiCount>0?'✅ Created #'+parentSr+' + '+checked.length+' parts · ✦ '+aiCount+' AI-extracted!':'✅ Created #'+parentSr+' + '+checked.length+' parts!',5000);
+    loadThumbImages(A.orders);
+  }catch(e){console.error(e);toast('Import failed: '+e.message,7000);document.getElementById('pdfimp-confirm').disabled=false;}
+}
+
+// Single selected part → create one normal standalone order (no parent/child)
+async function confirmSingleStandaloneImport(p){
+  const client=A.isAdmin?document.getElementById('f-client-name').value:A.perms.clientName;
+  if(A.isAdmin&&!client){toast('Please select a client first');return;}
+  document.getElementById('pdfimp-confirm').disabled=true;
+  toast('Creating order...',30000);
+  try{
+    if(!A.imgFolderId)A.imgFolderId=await ensureFolder(C.imgFolder);
+    if(!A.pdfFolderId)A.pdfFolderId=await ensureFolder(C.pdfFolder);
+    const today=new Date().toISOString().slice(0,10);
+    const sr=await getNextSrNo();
+    const orderName=(p.workOrder?p.workOrder+' – ':'')+(p.partNo?p.partNo+' – ':'')+p.partName;
+    let base=p.material?'Material: '+p.material:'';
+    if(p.usedAI)base=(base?base+' · ':'')+'✦ Extracted by Claude Vision';
+    const remarks=appendActivityLog(base,'Created via PDF import');
+    const order={sr:sr,date:today,client,po:'—',name:orderName,cat:'Standard Order',type:p.toolType||'',qty:String(p.qty||'1'),dims:p.dimensions||'',quoted:'No',price:'',poRec:'No',approval:'No',tgt:'',stRM:'—',stShape:'—',stGrind:'—',stWire:'—',stLathe:'—',stHT:'—',stInsp:'—',stDisp:'—',status:'In Progress',remarks:remarks,parentSr:'',isParent:''};
+    const{rows,dataStart}=await findSheetLayout(C.masterSheet);
+    let rowNum=dataStart+1;
+    for(let i=dataStart;i<rows.length;i++){if(rows[i].some(v=>v))rowNum=i+2;}
+    await writeOrderRow(order,rowNum);
+    const cleanName=orderName.toUpperCase().replace(/[^A-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,40);
+    // Attach cropped part image
+    try{
+      const imgFile=new File([p.imageBlob],sr+'-'+cleanName+'.png',{type:'image/png'});
+      const{fileName,res}=await uploadFileToFolder(imgFile,A.imgFolderId,sr,cleanName,'png');
+      A.imgFolderCache=refreshCacheAfterUpload(A.imgFolderCache,sr,fileName,res?.id);
+      delete A.imgCache['sr-'+sr];
+    }catch(e){console.warn('Image upload:',e);}
+    // Attach source PDF
+    try{
+      const{fileName,res}=await uploadFileToFolder(A.pdfImportData.sourcePdfFile,A.pdfFolderId,sr,cleanName,'pdf');
+      A.pdfFolderCache=refreshCacheAfterUpload(A.pdfFolderCache,sr,fileName,res?.id);
+    }catch(e){console.warn('PDF upload:',e);}
+    A.allOrders.push({...order,dateISO:today,tgtISO:null});
+    A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
+    closePDFImport();closeSP();render();
+    toast(p.usedAI?'✅ Created order #'+sr+' · ✦ AI-extracted!':'✅ Created order #'+sr+'!',5000);
     loadThumbImages(A.orders);
   }catch(e){console.error(e);toast('Import failed: '+e.message,7000);document.getElementById('pdfimp-confirm').disabled=false;}
 }
@@ -1826,6 +1860,7 @@ async function loadThumbImages(orders){
   const p=colsToShow();if(!p.images)return;
   try{A.imgFolderCache=(await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name')).value||[];Object.keys(A.imgCache).forEach(k=>{if(A.imgCache[k]===null)delete A.imgCache[k];});}catch(e){}
   for(const o of orders){
+    if(isParentOrder(o))continue;
     try{const url=await getImgUrl(o.sr);if(url){const el=document.getElementById('thumb-'+o.sr);if(el){el.src=url;el.style.opacity='1';}}}catch(e){}
   }
 }
@@ -1961,7 +1996,7 @@ function buildHead(){
   r.appendChild(thCb);
   const cols=[{key:'sr',label:'Sr',w:'80px'},{key:'date',label:'Date',w:'90px'}];
   if(p.client)cols.push({key:'client',label:'Client',w:'90px',filter:true});
-  if(p.po)cols.push({key:'po',label:'PO No.',w:'88px'});
+  if(p.po)cols.push({key:'po',label:'PO No.',w:'88px',filter:true});
   cols.push({key:'name',label:'Product / Tool name'},{key:'cat',label:'Category',w:'130px',filter:true});
   if(p.images)cols.push({key:'image',label:'Image',w:'48px'},{key:'files',label:'Files',w:'90px'});
   if(p.qty)cols.push({key:'qty',label:'Qty',w:'42px'});
@@ -1992,7 +2027,7 @@ function buildHead(){
 function openColFilter(colKey,colLabel,thEl){
   closeColFilterDD();
   const allValues=new Set();
-  A.orders.forEach(o=>{let v='';if(colKey==='cat')v=o.cat||'—';else if(colKey==='status')v=o.status||'—';else if(colKey==='client')v=o.client||'—';else if(colKey==='quoted')v=o.quoted||'No';if(v)allValues.add(v);});
+  A.orders.forEach(o=>{let v='';if(colKey==='cat')v=o.cat||'—';else if(colKey==='status')v=o.status||'—';else if(colKey==='client')v=o.client||'—';else if(colKey==='po')v=o.po||'—';else if(colKey==='quoted')v=o.quoted||'No';if(v)allValues.add(v);});
   const sorted=[...allValues].sort();
   const current=A.colFilters[colKey]||new Set(sorted);
   A.activeColFilter={col:colKey,label:colLabel,allValues:sorted,pendingValues:new Set(current)};
@@ -2192,7 +2227,7 @@ function getFiltered(){
     if(td&&o.dateISO&&o.dateISO>td)return false;
     for(const[col,vals]of Object.entries(A.colFilters)){
       let v='';
-      if(col==='cat')v=o.cat||'—';else if(col==='status')v=o.status||'—';else if(col==='client')v=o.client||'—';else if(col==='quoted')v=o.quoted||'No';
+      if(col==='cat')v=o.cat||'—';else if(col==='status')v=o.status||'—';else if(col==='client')v=o.client||'—';else if(col==='po')v=o.po||'—';else if(col==='quoted')v=o.quoted||'No';
       if(v&&!vals.has(v))return false;
     }
     const sl=(o.status||'').toLowerCase();
@@ -2300,7 +2335,11 @@ function render(){
       h+=`<td>${catB(o.cat)}</td>`;
     }
     if(p.images){
-      h+=`<td style="text-align:center"><div class="thumb" onclick="event.stopPropagation();openImgModal('${o.sr}','${ne}','${te}')"><img id="thumb-${o.sr}" src="${svgD}" alt="tool" style="opacity:.4;width:100%;height:100%;object-fit:contain"></div></td>`;
+      if(isParentOrder(o)){
+        h+=`<td style="text-align:center"><div class="thumb-blank" title="Parent assembly — no image">—</div></td>`;
+      }else{
+        h+=`<td style="text-align:center"><div class="thumb" onclick="event.stopPropagation();openImgModal('${o.sr}','${ne}','${te}')"><img id="thumb-${o.sr}" src="${svgD}" alt="tool" style="opacity:.4;width:100%;height:100%;object-fit:contain"></div></td>`;
+      }
       const hasPDF=!!findFileForSr(A.pdfFolderCache,o.sr);const hasSTP=!!findFileForSr(A.stpFolderCache,o.sr);const hasWC=!!findFileForSr(A.wcFolderCache,o.sr);
       h+=`<td><div style="display:flex;gap:3px;justify-content:center">`;
       h+=`<div class="file-chip ${hasPDF?'fc-pdf':'fc-empty'}" onclick="event.stopPropagation();${hasPDF?`quickViewFile('${o.sr}','pdf')`:''}" title="${hasPDF?'View PDF':'No PDF'}">PDF</div>`;
@@ -2540,12 +2579,8 @@ async function deleteOrder(){
   if(!A.editOrder)return;
   const o=A.editOrder;
   const children=isParentOrder(o)?getChildrenOf(o.sr):[];
-
-  // Step 1 — confirm delete of this order
   let msg='Delete Order #'+o.sr+' — '+o.name+'?\n\nThis will also delete all attached files from SharePoint.';
   if(!confirm(msg))return;
-
-  // Step 2 — if parent, ask about children separately
   let deleteChildren=false;
   if(isParentOrder(o)&&children.length>0){
     deleteChildren=confirm(
@@ -2554,10 +2589,8 @@ async function deleteOrder(){
       '\n\nClick OK to DELETE all child parts and their files too.\nClick Cancel to keep the child parts (they will become standalone orders).'
     );
   }
-
   toast('Deleting...',15000);
   try{
-    // ── HELPER: delete all files for a given Sr ───────────────────
     const deleteAllFilesForSr=async(sr)=>{
       const srStr=String(sr).trim();
       const tryDel=async(cache)=>{
@@ -2573,8 +2606,6 @@ async function deleteOrder(){
       A.stpFolderCache=await tryDel(A.stpFolderCache);
       A.wcFolderCache=await tryDel(A.wcFolderCache);
     };
-
-    // ── HELPER: clear Excel row ───────────────────────────────────
     const clearExcelRow=async(sr,rows,dataStart)=>{
       const srStr=String(sr).trim();
       for(let i=dataStart;i<rows.length;i++){
@@ -2585,15 +2616,10 @@ async function deleteOrder(){
         }
       }
     };
-
     const{rows,dataStart}=await findSheetLayout(C.masterSheet);
     const srsToDel=new Set([String(o.sr)]);
-
-    // Delete parent files + row
     await deleteAllFilesForSr(o.sr);
     await clearExcelRow(o.sr,rows,dataStart);
-
-    // Delete or orphan children
     if(deleteChildren){
       for(const child of children){
         await deleteAllFilesForSr(child.sr);
@@ -2601,11 +2627,9 @@ async function deleteOrder(){
         srsToDel.add(String(child.sr));
       }
     }else if(children.length>0){
-      // Keep children but remove their parentSr link so they become standalone
       for(const child of children){
         for(let i=dataStart;i<rows.length;i++){
           if(String(rows[i][0]||'').trim()===String(child.sr)){
-            // Clear col X (parentSr = col 24) and col Y (isParent = col 25)
             await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\'X'+(i+1)+':Y'+(i+1)+'\')/clear',
               {method:'POST',body:JSON.stringify({applyTo:'Contents'})});
             child.parentSr='';child.isParent='';
@@ -2614,7 +2638,6 @@ async function deleteOrder(){
         }
       }
     }
-
     A.allOrders=A.allOrders.filter(x=>!srsToDel.has(String(x.sr)));
     A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
     A.selOrder=null;A.editOrder=null;
@@ -2729,7 +2752,7 @@ async function doPDFList(list,withImages){
             const resp=await fetch(url);
             const blob=await resp.blob();
             const bmp=await createImageBitmap(blob);
-            // KEEP FULL ORIGINAL RESOLUTION — no downscale (user wants max sharpness)
+            // KEEP FULL ORIGINAL RESOLUTION — no downscale (max sharpness for line art)
             const cw=bmp.width;
             const ch=bmp.height;
             const c=document.createElement('canvas');c.width=cw;c.height=ch;
@@ -2737,6 +2760,7 @@ async function doPDFList(list,withImages){
             ctx.fillStyle='#ffffff';ctx.fillRect(0,0,cw,ch);
             ctx.drawImage(bmp,0,0,cw,ch);
             // ── CONTRAST BOOST — make light CAD lines dark & sharp for print ──
+            // If getImageData throws (tainted canvas) we warn and embed the clean full-res PNG anyway.
             try{
               const imgData=ctx.getImageData(0,0,cw,ch);
               const d=imgData.data;
@@ -2748,9 +2772,11 @@ async function doPDFList(list,withImages){
                 d[i+2]=d[i+2]*contrast+intercept;
               }
               ctx.putImageData(imgData,0,0);
-            }catch(ce){/* tainted canvas — skip boost */}
+            }catch(ce){
+              console.warn('Contrast boost skipped (tainted canvas) for #'+o.sr+' — embedding clean full-res PNG:',ce.message);
+            }
             imgDataMap[o.sr]={
-              dataUrl:c.toDataURL('image/png'),
+              dataUrl:c.toDataURL('image/png'),  // lossless PNG, full resolution
               w:bmp.width,
               h:bmp.height
             };
@@ -2874,8 +2900,9 @@ async function doPDFList(list,withImages){
               // White background box behind image — makes it pop on print
               doc.setFillColor(255,255,255);
               doc.rect(x-0.5,y-0.5,imgW+1,imgH+1,'F');
-              try{doc.addImage(imgEntry.dataUrl,'PNG',x,y,imgW,imgH,undefined,'FAST');}
-              catch(e){try{doc.addImage(imgEntry.dataUrl,'JPEG',x,y,imgW,imgH);}catch(e2){}}
+              // SLOW = proper resampling (sharper than FAST). PNG lossless, full-res source.
+              try{doc.addImage(imgEntry.dataUrl,'PNG',x,y,imgW,imgH,undefined,'SLOW');}
+              catch(e){try{doc.addImage(imgEntry.dataUrl,'PNG',x,y,imgW,imgH);}catch(e2){}}
             }
           }
         }:undefined,
@@ -2887,7 +2914,7 @@ async function doPDFList(list,withImages){
       });
     }
     const pages=doc.internal.getNumberOfPages();
-    for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(150,160,180);doc.text('JMC Engineering · jmcengg.com · v2.8 · '+new Date().toLocaleDateString('en-IN'),ML,210-4);doc.text('Page '+i+' of '+pages,ML+PW-20,210-4);}
+    for(let i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(8);doc.setTextColor(150,160,180);doc.text('JMC Engineering · jmcengg.com · v2.9 · '+new Date().toLocaleDateString('en-IN'),ML,210-4);doc.text('Page '+i+' of '+pages,ML+PW-20,210-4);}
     doc.save('JMC_Orders_'+new Date().toISOString().slice(0,10)+'.pdf');
     document.querySelectorAll('.toast').forEach(t=>t.remove());
     toast('✅ PDF downloaded!');
