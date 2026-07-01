@@ -2749,43 +2749,32 @@ async function doPDFList(list,withImages){
         const url=await getImgUrl(o.sr);
         if(url){
           try{
+            // ── PASS THE ORIGINAL PNG STRAIGHT THROUGH ───────────────────
+            // No canvas redraw, no contrast maths, no re-encode. The stored
+            // OneDrive PNG already prints great (identical to Excel); any
+            // canvas round-trip was CRUSHING thin CAD lines and softening
+            // the image. We embed the exact original bytes as base64 and
+            // let jsPDF place them at full resolution.
             const resp=await fetch(url);
             const blob=await resp.blob();
-            const bmp=await createImageBitmap(blob);
-            // KEEP FULL ORIGINAL RESOLUTION — no downscale (max sharpness for line art)
-            const cw=bmp.width;
-            const ch=bmp.height;
-            const c=document.createElement('canvas');c.width=cw;c.height=ch;
-            const ctx=c.getContext('2d');
-            ctx.fillStyle='#ffffff';ctx.fillRect(0,0,cw,ch);
-            ctx.drawImage(bmp,0,0,cw,ch);
-            // ── CONTRAST BOOST — make light CAD lines dark & sharp for print ──
-            // If getImageData throws (tainted canvas) we warn and embed the clean full-res PNG anyway.
-            try{
-              const imgData=ctx.getImageData(0,0,cw,ch);
-              const d=imgData.data;
-              const contrast=1.45;
-              const intercept=128*(1-contrast);
-              for(let i=0;i<d.length;i+=4){
-                d[i]  =d[i]*contrast+intercept;
-                d[i+1]=d[i+1]*contrast+intercept;
-                d[i+2]=d[i+2]*contrast+intercept;
-              }
-              ctx.putImageData(imgData,0,0);
-            }catch(ce){
-              console.warn('Contrast boost skipped (tainted canvas) for #'+o.sr+' — embedding clean full-res PNG:',ce.message);
-            }
-            imgDataMap[o.sr]={
-              dataUrl:c.toDataURL('image/png'),  // lossless PNG, full resolution
-              w:bmp.width,
-              h:bmp.height
-            };
+            const dataUrl=await new Promise((res,rej)=>{
+              const fr=new FileReader();
+              fr.onload=ev=>res(ev.target.result);
+              fr.onerror=rej;
+              fr.readAsDataURL(blob);   // → data:image/png;base64,....  (untouched pixels)
+            });
+            // Read natural dimensions for the aspect ratio ONLY (does not alter pixels)
+            const dims=await new Promise((res)=>{
+              const im=new Image();
+              im.onload=()=>res({w:im.naturalWidth||1,h:im.naturalHeight||1});
+              im.onerror=()=>res({w:1,h:1});
+              im.src=dataUrl;
+            });
+            // Detect format from the data-url header so addImage gets the right type
+            const fmt=/^data:image\/jpe?g/i.test(dataUrl)?'JPEG':'PNG';
+            imgDataMap[o.sr]={dataUrl,w:dims.w,h:dims.h,fmt};
           }catch(e){
-            try{
-              const blob2=await (await fetch(url)).blob();
-              const du=await new Promise(r=>{const fr=new FileReader();fr.onload=ev=>r(ev.target.result);fr.readAsDataURL(blob2);});
-              imgDataMap[o.sr]={dataUrl:du,w:1,h:1};
-            }catch(e2){}
+            console.warn('Image fetch failed for #'+o.sr+':',e.message);
           }
         }
       }
@@ -2893,16 +2882,17 @@ async function doPDFList(list,withImages){
               const availW=data.cell.width-pad*2;
               const availH=data.cell.height-pad*2;
               const ratio=(imgEntry.w||1)/(imgEntry.h||1);
-              let imgH=availH*0.92;let imgW=imgH*ratio;
-              if(imgW>availW*0.95){imgW=availW*0.95;imgH=imgW/ratio;}
+              let imgH=availH*0.98;let imgW=imgH*ratio;
+              if(imgW>availW*0.99){imgW=availW*0.99;imgH=imgW/ratio;}
               const x=data.cell.x+pad+(availW-imgW)/2;
               const y=data.cell.y+pad+(availH-imgH)/2;
               // White background box behind image — makes it pop on print
               doc.setFillColor(255,255,255);
               doc.rect(x-0.5,y-0.5,imgW+1,imgH+1,'F');
-              // SLOW = proper resampling (sharper than FAST). PNG lossless, full-res source.
-              try{doc.addImage(imgEntry.dataUrl,'PNG',x,y,imgW,imgH,undefined,'SLOW');}
-              catch(e){try{doc.addImage(imgEntry.dataUrl,'PNG',x,y,imgW,imgH);}catch(e2){}}
+              // SLOW = proper resampling (sharper than FAST). Original bytes, correct format.
+              const IF=imgEntry.fmt||'PNG';
+              try{doc.addImage(imgEntry.dataUrl,IF,x,y,imgW,imgH,undefined,'SLOW');}
+              catch(e){try{doc.addImage(imgEntry.dataUrl,IF,x,y,imgW,imgH);}catch(e2){}}
             }
           }
         }:undefined,
