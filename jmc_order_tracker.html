@@ -2730,6 +2730,60 @@ function doPDF(withImages){
   const list=useSelected?getFiltered().filter(o=>A.selectedRows.has(String(o.sr))):getFiltered();
   doPDFList(list,withImages);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// LINE THICKENER — dilate dark pixels so CAD hairlines print BOLD
+// ═══════════════════════════════════════════════════════════════
+// Grows every dark region outward by RADIUS px (separable min-filter on
+// luminance, MaxFilter-5 equivalent at radius 2). White stays white; only
+// existing lines get fatter. Pixels below THRESH become solid black so they
+// survive downsampling to any print size. Returns a PNG data-url.
+function thickenLines(imgData,w,h,canvas,ctx){
+  const RADIUS=2;      // 2 → ~5px stroke growth (bold but clean on this artwork)
+  const THRESH=190;    // pixels darker than this are treated as "line"
+  const src=imgData.data;
+  // 1) luminance → binary line mask (1 = line/dark)
+  const N=w*h;
+  const lum=new Uint8Array(N);
+  for(let i=0,p=0;i<N;i++,p+=4){
+    const l=(src[p]*0.299+src[p+1]*0.587+src[p+2]*0.114);
+    lum[i]=l<THRESH?1:0;
+  }
+  // 2) separable dilation (horizontal then vertical) — fast O(N*radius)
+  const tmp=new Uint8Array(N);
+  // horizontal
+  for(let y=0;y<h;y++){
+    const row=y*w;
+    for(let x=0;x<w;x++){
+      let on=0;
+      for(let dx=-RADIUS;dx<=RADIUS&&!on;dx++){
+        const xx=x+dx;if(xx<0||xx>=w)continue;if(lum[row+xx])on=1;
+      }
+      tmp[row+x]=on;
+    }
+  }
+  const dil=new Uint8Array(N);
+  // vertical
+  for(let x=0;x<w;x++){
+    for(let y=0;y<h;y++){
+      let on=0;
+      for(let dy=-RADIUS;dy<=RADIUS&&!on;dy++){
+        const yy=y+dy;if(yy<0||yy>=h)continue;if(tmp[yy*w+x])on=1;
+      }
+      dil[y*w+x]=on;
+    }
+  }
+  // 3) paint: dilated line pixels → solid black, everything else → white
+  const out=ctx.createImageData(w,h);
+  const od=out.data;
+  for(let i=0,p=0;i<N;i++,p+=4){
+    const v=dil[i]?0:255;
+    od[p]=v;od[p+1]=v;od[p+2]=v;od[p+3]=255;
+  }
+  ctx.putImageData(out,0,0);
+  return canvas.toDataURL('image/png');
+}
+
 async function doPDFList(list,withImages){
   const{jsPDF}=window.jspdf;
   const{h:fullH,rows:fullRows,list:ordered}=getExportData(list);
@@ -2749,30 +2803,35 @@ async function doPDFList(list,withImages){
         const url=await getImgUrl(o.sr);
         if(url){
           try{
-            // ── PASS THE ORIGINAL PNG STRAIGHT THROUGH ───────────────────
-            // No canvas redraw, no contrast maths, no re-encode. The stored
-            // OneDrive PNG already prints great (identical to Excel); any
-            // canvas round-trip was CRUSHING thin CAD lines and softening
-            // the image. We embed the exact original bytes as base64 and
-            // let jsPDF place them at full resolution.
+            // ── FETCH ORIGINAL, THEN THICKEN THE LINES FOR PRINT ─────────
+            // The stored PNG is sharp & full-res, but its CAD hairlines are
+            // THIN. When printed small they fade because the printer can't
+            // resolve 1px grey lines. Fix: DILATE the dark pixels (grow each
+            // line outward by a few px) so lines survive the shrink to paper
+            // and show up BOLD both on screen and in print. This only fattens
+            // existing dark pixels — white stays white, no contrast crush.
             const resp=await fetch(url);
             const blob=await resp.blob();
-            const dataUrl=await new Promise((res,rej)=>{
-              const fr=new FileReader();
-              fr.onload=ev=>res(ev.target.result);
-              fr.onerror=rej;
-              fr.readAsDataURL(blob);   // → data:image/png;base64,....  (untouched pixels)
+            const origDataUrl=await new Promise((res,rej)=>{
+              const fr=new FileReader();fr.onload=ev=>res(ev.target.result);fr.onerror=rej;fr.readAsDataURL(blob);
             });
-            // Read natural dimensions for the aspect ratio ONLY (does not alter pixels)
-            const dims=await new Promise((res)=>{
-              const im=new Image();
-              im.onload=()=>res({w:im.naturalWidth||1,h:im.naturalHeight||1});
-              im.onerror=()=>res({w:1,h:1});
-              im.src=dataUrl;
-            });
-            // Detect format from the data-url header so addImage gets the right type
-            const fmt=/^data:image\/jpe?g/i.test(dataUrl)?'JPEG':'PNG';
-            imgDataMap[o.sr]={dataUrl,w:dims.w,h:dims.h,fmt};
+            const bmp=await createImageBitmap(blob);
+            const w=bmp.width,h=bmp.height;
+            let outDataUrl=origDataUrl, outFmt=/^data:image\/jpe?g/i.test(origDataUrl)?'JPEG':'PNG';
+            try{
+              const c=document.createElement('canvas');c.width=w;c.height=h;
+              const ctx=c.getContext('2d',{willReadFrequently:true});
+              ctx.fillStyle='#ffffff';ctx.fillRect(0,0,w,h);
+              ctx.drawImage(bmp,0,0,w,h);
+              const src=ctx.getImageData(0,0,w,h);
+              outDataUrl=thickenLines(src,w,h,c,ctx);   // returns a PNG data-url
+              outFmt='PNG';
+            }catch(ce){
+              // tainted canvas or read error → fall back to untouched original
+              console.warn('Line-thicken skipped for #'+o.sr+' (embedding original):',ce.message);
+              outDataUrl=origDataUrl;
+            }
+            imgDataMap[o.sr]={dataUrl:outDataUrl,w:w||1,h:h||1,fmt:outFmt};
           }catch(e){
             console.warn('Image fetch failed for #'+o.sr+':',e.message);
           }
