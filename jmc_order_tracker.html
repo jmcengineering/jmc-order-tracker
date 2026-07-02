@@ -906,7 +906,7 @@ async function testClaudeKey(){
         'anthropic-version':'2023-06-01',
         'anthropic-dangerous-direct-browser-access':'true'
       },
-      body:JSON.stringify({model:'claude-sonnet-4-5',max_tokens:16,messages:[{role:'user',content:'Reply with only: OK'}]})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:16,messages:[{role:'user',content:'Reply with only: OK'}]})
     });
     const data=await resp.json();
     if(data.content&&data.content[0]){toast('✅ Claude key valid · '+data.content[0].text.trim());}
@@ -965,7 +965,7 @@ RESPOND ONLY WITH THIS JSON — NO OTHER TEXT, NO MARKDOWN:
       'anthropic-dangerous-direct-browser-access':'true'
     },
     body:JSON.stringify({
-      model:'claude-sonnet-4-5',
+      model:'claude-sonnet-4-6',
       max_tokens:400,
       system:systemPrompt,
       messages:[{role:'user',content:[
@@ -1300,7 +1300,7 @@ async function startApp(){
 async function doRefresh(){
   go('s-loading','Refreshing...');
   try{
-    A.imgCache={};
+    A.imgCache={};A._thumbFolderTs=0;   // force thumbnail folder re-list on next load
     if(A.imgFolderId)try{A.imgFolderCache=(await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name')).value||[];}catch(e){}
     A.pdfFolderCache=await loadFolderRecursive(A.pdfFolderId);
     A.stpFolderCache=await loadFolderRecursive(A.stpFolderId);
@@ -1588,7 +1588,7 @@ async function startPDFImport(){
     else if(firstTool)parentName=firstTool.toUpperCase();
     else if(firstWO)parentName=firstWO;
     else parentName=A.pendingPDFFile.name.replace(/\.pdf$/i,'').slice(0,50);
-    A.pdfImportData={parts,parentName,sourcePdfFile:A.pendingPDFFile};
+    A.pdfImportData={parts,parentName,sourcePdfFile:A.pendingPDFFile,numPages};
     setImportProgress(100,'Done!','');
     renderPDFImportTable();
     document.getElementById('pdfimp-loading').style.display='none';
@@ -1647,7 +1647,8 @@ function updatePDFImportSummary(){
   if(A.importTargetParent){
     document.getElementById('pdfimp-confirm').textContent='Add '+checked+' part'+(checked===1?'':'s')+' to #'+A.importTargetParent.sr;
   }else{
-    document.getElementById('pdfimp-confirm').textContent=checked===1?'Create 1 order':'Create 1 parent + '+checked+' parts';
+    const onePagePdf=A.pdfImportData.numPages===1;
+    document.getElementById('pdfimp-confirm').textContent=(onePagePdf||checked===1)?'Create 1 order':'Create 1 parent + '+checked+' parts';
   }
   document.getElementById('pdfimp-confirm').disabled=checked===0;
 }
@@ -1679,8 +1680,12 @@ async function confirmPDFImport(){
     return await confirmImportToExistingParent(checked);
   }
 
-  // ── BRANCH: single part → create one STANDALONE order ────────
-  if(checked.length===1){
+  // ── BRANCH: single-page PDF OR single selected part → STANDALONE ──
+  // A one-page drawing is a single part — it must never create a parent,
+  // even if the page somehow yielded more than one row. Also standalone
+  // when only one part is selected out of many.
+  const onePagePdf=A.pdfImportData.numPages===1;
+  if(onePagePdf||checked.length===1){
     return await confirmSingleStandaloneImport(checked[0]);
   }
 
@@ -1858,10 +1863,28 @@ async function getImgUrl(sr){
 async function loadThumbImages(orders){
   if(!A.imgFolderId)return;
   const p=colsToShow();if(!p.images)return;
-  try{A.imgFolderCache=(await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name')).value||[];Object.keys(A.imgCache).forEach(k=>{if(A.imgCache[k]===null)delete A.imgCache[k];});}catch(e){}
+  // ── PERF: only re-list the image folder if the cache is stale (>60s old).
+  // Previously this ran a Graph folder-list on EVERY render (every filter,
+  // checkbox, tab switch) — very chatty. The per-image URL cache (A.imgCache)
+  // already avoids re-fetching individual URLs, so a periodic refresh is enough.
+  const now=Date.now();
+  if(!A._thumbFolderTs||(now-A._thumbFolderTs)>60000){
+    try{
+      A.imgFolderCache=(await gapi('/drives/'+A.driveId+'/items/'+A.imgFolderId+'/children?$select=id,name')).value||[];
+      Object.keys(A.imgCache).forEach(k=>{if(A.imgCache[k]===null)delete A.imgCache[k];});
+      A._thumbFolderTs=now;
+    }catch(e){}
+  }
   for(const o of orders){
     if(isParentOrder(o))continue;
-    try{const url=await getImgUrl(o.sr);if(url){const el=document.getElementById('thumb-'+o.sr);if(el){el.src=url;el.style.opacity='1';}}}catch(e){}
+    const el=document.getElementById('thumb-'+o.sr);
+    if(!el)continue;
+    // ── PERF: skip thumbs already loaded (opacity=1 means it has a real image)
+    if(el.dataset.loaded==='1')continue;
+    try{
+      const url=await getImgUrl(o.sr);
+      if(url){el.src=url;el.style.opacity='1';el.dataset.loaded='1';}
+    }catch(e){}
   }
 }
 async function openImgModal(sr,name,type){
@@ -1994,19 +2017,19 @@ function buildHead(){
   const thCb=document.createElement('th');thCb.style.width='40px';thCb.style.textAlign='center';
   thCb.innerHTML='<div class="th-cb-wrap"><input type="checkbox" class="row-cb" id="cb-all" onchange="toggleAllRows(this)" title="Select all"></div>';
   r.appendChild(thCb);
-  const cols=[{key:'sr',label:'Sr',w:'80px'},{key:'date',label:'Date',w:'90px'}];
+  const cols=[{key:'sr',label:'Sr',w:'80px',filter:true},{key:'date',label:'Date',w:'90px',filter:true}];
   if(p.client)cols.push({key:'client',label:'Client',w:'90px',filter:true});
   if(p.po)cols.push({key:'po',label:'PO No.',w:'88px',filter:true});
-  cols.push({key:'name',label:'Product / Tool name'},{key:'cat',label:'Category',w:'130px',filter:true});
+  cols.push({key:'name',label:'Product / Tool name',filter:true},{key:'cat',label:'Category',w:'130px',filter:true});
   if(p.images)cols.push({key:'image',label:'Image',w:'48px'},{key:'files',label:'Files',w:'90px'});
-  if(p.qty)cols.push({key:'qty',label:'Qty',w:'42px'});
-  if(p.target)cols.push({key:'target',label:'Target',w:'90px'});
+  if(p.qty)cols.push({key:'qty',label:'Qty',w:'42px',filter:true});
+  if(p.target)cols.push({key:'target',label:'Target',w:'90px',filter:true});
   if(p.days)cols.push({key:'days',label:'Days',w:'68px'});
   if(p.quoted)cols.push({key:'quoted',label:'Booked in System',w:'90px',filter:true});
-  if(p.price)cols.push({key:'price',label:'Price',w:'90px'});
+  if(p.price)cols.push({key:'price',label:'Price',w:'90px',filter:true});
   if(p.stages!=='NO')cols.push({key:'stages',label:'Stages',w:'80px'});
   cols.push({key:'status',label:'Status',w:'110px',filter:true});
-  if(p.remarks)cols.push({key:'remarks',label:'Remarks'});
+  if(p.remarks)cols.push({key:'remarks',label:'Remarks',filter:true});
   const seen=new Set();const dedupCols=cols.filter(c=>{if(seen.has(c.key))return false;seen.add(c.key);return true;});
   dedupCols.forEach(c=>{
     const th=document.createElement('th');if(c.w)th.style.width=c.w;
@@ -2024,11 +2047,35 @@ function buildHead(){
 // ═══════════════════════════════════════════════════════════════
 // COLUMN FILTER DROPDOWN
 // ═══════════════════════════════════════════════════════════════
+// Central column-value resolver — single source of truth for what text a
+// given column shows for an order. Used by the filter dropdown (value list)
+// AND by getFiltered (matching), so every column filters consistently.
+function getColValue(o,colKey){
+  switch(colKey){
+    case'sr':return String(o.sr||'—');
+    case'date':return o.date||'—';
+    case'client':return o.client||'—';
+    case'po':return o.po||'—';
+    case'name':return o.name||'—';
+    case'cat':return o.cat||'—';
+    case'qty':return(o.qty===''||o.qty==null)?'—':String(o.qty);
+    case'target':return o.tgt||'—';
+    case'quoted':return o.quoted||'No';
+    case'price':return(o.price===''||o.price==null)?'—':fmtPrice(o.price);
+    case'status':return o.status||'—';
+    case'remarks':return o.remarks||'—';
+    default:return'';
+  }
+}
 function openColFilter(colKey,colLabel,thEl){
   closeColFilterDD();
   const allValues=new Set();
-  A.orders.forEach(o=>{let v='';if(colKey==='cat')v=o.cat||'—';else if(colKey==='status')v=o.status||'—';else if(colKey==='client')v=o.client||'—';else if(colKey==='po')v=o.po||'—';else if(colKey==='quoted')v=o.quoted||'No';if(v)allValues.add(v);});
-  const sorted=[...allValues].sort();
+  A.orders.forEach(o=>{const v=getColValue(o,colKey);if(v)allValues.add(v);});
+  const sorted=[...allValues].sort((a,b)=>{
+    const na=parseFloat(a),nb=parseFloat(b);
+    if(!isNaN(na)&&!isNaN(nb)&&/^[\d.,₹\-\s]+$/.test(a)&&/^[\d.,₹\-\s]+$/.test(b))return na-nb;
+    return String(a).localeCompare(String(b));
+  });
   const current=A.colFilters[colKey]||new Set(sorted);
   A.activeColFilter={col:colKey,label:colLabel,allValues:sorted,pendingValues:new Set(current)};
   const cf=document.getElementById('cf-list');cf.innerHTML='';
@@ -2226,8 +2273,7 @@ function getFiltered(){
     if(fd&&o.dateISO&&o.dateISO<fd)return false;
     if(td&&o.dateISO&&o.dateISO>td)return false;
     for(const[col,vals]of Object.entries(A.colFilters)){
-      let v='';
-      if(col==='cat')v=o.cat||'—';else if(col==='status')v=o.status||'—';else if(col==='client')v=o.client||'—';else if(col==='po')v=o.po||'—';else if(col==='quoted')v=o.quoted||'No';
+      const v=getColValue(o,col);
       if(v&&!vals.has(v))return false;
     }
     const sl=(o.status||'').toLowerCase();
