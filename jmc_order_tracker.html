@@ -117,6 +117,16 @@ tbody tr.row.checked.sel{background:#EDE9FE}
 .sel-bar-select{padding:5px 10px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;border:1px solid rgba(0,198,190,.5);background:rgba(0,198,190,.15);color:#fff;outline:none}
 .sel-bar-select:hover{background:rgba(0,198,190,.25)}
 .sel-bar-select option{background:var(--surface);color:var(--text)}
+.inline-price{width:78px;padding:4px 6px;border:1.5px solid var(--border);border-radius:5px;font-size:11px;font-family:'DM Mono',monospace;font-weight:600;color:var(--navy);text-align:right;background:#fff;transition:all .15s}
+.inline-price:hover{border-color:var(--blue)}
+.inline-price:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px rgba(24,95,165,.15)}
+.inline-price.inline-saving{border-color:var(--warning);background:#FEF9E7}
+.inline-price.inline-saved{border-color:var(--success);background:#E9F9EF}
+.booked-toggle{display:inline-block;padding:3px 12px;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;user-select:none;transition:all .15s;border:1.5px solid transparent}
+.booked-toggle.bt-yes{background:#E9F9EF;color:#127A3E;border-color:#A7E8C4}
+.booked-toggle.bt-yes:hover{background:#d3f2e0}
+.booked-toggle.bt-no{background:#F1F3F7;color:#8A94A6;border-color:#E2E7F0}
+.booked-toggle.bt-no:hover{background:#e5e9f0}
 .badge{font-size:10px;padding:3px 8px;border-radius:20px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;gap:3px}
 .b-std{background:#EBF4FF;color:#1D5FA8}.b-pri{background:#F3F0FF;color:#5B21B6}
 .b-rwk{background:#FFF7ED;color:#C2410C}.b-fix{background:#ECFDF5;color:#065F46}
@@ -408,6 +418,11 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
           <option value="">⚙ Set status to...</option>
           <option>In Progress</option><option>Not Started</option><option>Ready to Dispatch</option><option>Delivered</option><option>On Hold</option>
         </select>
+        <select class="sel-bar-select" id="sel-bar-booked" onchange="bulkSetBooked(this.value);this.value=''">
+          <option value="">📒 Booked in System...</option>
+          <option value="Yes">✓ Mark as Booked (Yes)</option>
+          <option value="No">✕ Mark as Not Booked (No)</option>
+        </select>
         <button class="sel-bar-btn btn-xl" onclick="exportSelected('excel')">📊 Excel</button>
         <button class="sel-bar-btn btn-pdf" onclick="exportSelected('pdf-fast')">📄 PDF</button>
         <button class="sel-bar-btn" onclick="exportSelected('pdf-img')">🖼 PDF+Img</button>
@@ -519,7 +534,8 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
           <div class="sp-sec-label">Order Status</div>
           <div class="sp-grid">
             <div class="field"><label>Quoted in System Books</label><select id="f-quoted"><option>No</option><option>Yes</option></select></div>
-            <div class="field"><label>Quoted Price (₹)</label><input id="f-price" type="number" placeholder="0.00" step="0.01" min="0"></div>
+            <div class="field"><label>Price / Pc (₹)</label><input id="f-price-pc" type="number" placeholder="0.00" step="0.01" min="0" oninput="recalcFormPrice()"></div>
+            <div class="field"><label>Quoted Price (₹) <span style="font-size:9px;color:var(--text3)">= Price/Pc × Qty</span></label><input id="f-price" type="number" placeholder="0.00" step="0.01" min="0"></div>
             <div class="field"><label>Client PO Received</label><select id="f-po-rec"><option>No</option><option>Yes</option></select></div>
             <div class="field"><label>Approval to Start</label><select id="f-approval"><option>No</option><option>Yes</option></select></div>
             <div class="field"><label>Target Delivery</label><input id="f-tgt" type="date"></div>
@@ -781,8 +797,8 @@ const C = {
 // ═══════════════════════════════════════════════════════════════
 function defaultPdfPrefs(){
   return{
-    columns:{'S.No':true,'JMC Sr':true,'Type':true,'Date':true,'Client':true,'PO No.':true,'Product / Tool Name':true,'Category':true,'Qty':true,'Dimensions':true,'Target':true,'Quoted in System Books':false,'Quoted Price (₹)':true,'Status':true,'Remarks':true,'Image':true},
-    widths:{'S.No':9,'JMC Sr':14,'Type':12,'Date':18,'Client':20,'PO No.':18,'Product / Tool Name':52,'Category':18,'Qty':10,'Dimensions':22,'Target':18,'Quoted in System Books':16,'Quoted Price (₹)':18,'Status':20,'Remarks':20,'Image':40},
+    columns:{'S.No':true,'JMC Sr':true,'Type':true,'Date':true,'Client':true,'PO No.':true,'Product / Tool Name':true,'Category':true,'Qty':true,'Dimensions':true,'Target':true,'Quoted in System Books':false,'Price / Pc (₹)':true,'Quoted Price (₹)':true,'Status':true,'Remarks':true,'Image':true},
+    widths:{'S.No':9,'JMC Sr':14,'Type':12,'Date':18,'Client':20,'PO No.':18,'Product / Tool Name':52,'Category':18,'Qty':10,'Dimensions':22,'Target':18,'Quoted in System Books':16,'Price / Pc (₹)':18,'Quoted Price (₹)':18,'Status':20,'Remarks':20,'Image':40},
     fontSize:9
   };
 }
@@ -1230,9 +1246,9 @@ async function writeOrderRow(order,rowNum){
     order.stRM||'—',order.stShape||'—',order.stGrind||'—',order.stWire||'—',
     order.stLathe||'—',order.stHT||'—',order.stInsp||'—',order.stDisp||'—',
     order.status||'In Progress',order.price||'',order.remarks||'',
-    order.parentSr||'',order.isParent||'',order.dims||''
+    order.parentSr||'',order.isParent||'',order.dims||'',order.pricePerPc||''
   ];
-  await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\'A'+rowNum+':Z'+rowNum+'\')',
+  await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\'A'+rowNum+':AA'+rowNum+'\')',
     {method:'PATCH',body:JSON.stringify({values:[row]})});
 }
 
@@ -1336,11 +1352,12 @@ function parseOrders(rows){
     inspect:col('inspection','inspect'),dispatch:col('dispatch'),
     status:col('overall status','status'),remarks:col('remarks'),
     parentSr:col('parent sr','parent'),isParent:col('is parent','isparent'),
-    dims:col('dimension','dims','size')
+    dims:col('dimension','dims','size'),pricePerPc:col('price/pc','price per pc','price per piece','pricePerPc')
   };
   if(cc.parentSr<0)cc.parentSr=23;
   if(cc.isParent<0)cc.isParent=24;
   if(cc.dims<0)cc.dims=25;
+  if(cc.pricePerPc<0)cc.pricePerPc=26;
   if(cc.client>=0&&cc.po>=0&&cc.client===cc.po)cc.client=h.findIndex(x=>/^client(\s|$)|^client name/.test(x));
   const fmtD=v=>{
     if(!v||v==='—')return'—';
@@ -1375,6 +1392,7 @@ function parseOrders(rows){
       stInsp:cc.inspect>=0?r[cc.inspect]:'—',stDisp:cc.dispatch>=0?r[cc.dispatch]:'—',
       status:r[cc.status]||'In Progress',remarks:r[cc.remarks]||'',
       dims:cc.dims>=0&&cc.dims<r.length?(r[cc.dims]||''):'',
+      pricePerPc:cc.pricePerPc>=0&&cc.pricePerPc<r.length?(r[cc.pricePerPc]||''):'',
       parentSr:parentSrRaw?String(parentSrRaw).trim():'',
       isParent:isParentRaw?String(isParentRaw).trim().toUpperCase():''
     });
@@ -2006,7 +2024,7 @@ function fmtPrice(v){if(!v&&v!==0)return'—';const n=parseFloat(v);if(isNaN(n))
 // ═══════════════════════════════════════════════════════════════
 function colsToShow(){
   const p=A.perms;const ad=A.adminCols;
-  return{cb:true,po:A.isAdmin?ad.po:(p&&p.po),images:A.isAdmin?ad.images:(p&&p.images),qty:A.isAdmin?ad.qty:(p&&p.qty),target:A.isAdmin?ad.target:(p&&p.target),days:A.isAdmin?ad.days:(p&&p.target),remarks:A.isAdmin?ad.remarks:(p&&p.remarks),client:A.isAdmin&&ad.client,stages:A.isAdmin?(ad.stages?'FULL':'NO'):(p?p.stages:'NO'),quoted:A.isAdmin?ad.quoted:false,price:A.isAdmin?ad.price:(p&&p.price)};
+  return{cb:true,po:A.isAdmin?ad.po:(p&&p.po),images:A.isAdmin?ad.images:(p&&p.images),qty:A.isAdmin?ad.qty:(p&&p.qty),target:A.isAdmin?ad.target:(p&&p.target),days:A.isAdmin?ad.days:(p&&p.target),remarks:A.isAdmin?ad.remarks:(p&&p.remarks),client:A.isAdmin&&ad.client,stages:A.isAdmin?(ad.stages?'FULL':'NO'):(p?p.stages:'NO'),quoted:A.isAdmin?ad.quoted:false,price:A.isAdmin?ad.price:(p&&p.price),pricepc:A.isAdmin?ad.price:(p&&p.price)};
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2026,7 +2044,8 @@ function buildHead(){
   if(p.target)cols.push({key:'target',label:'Target',w:'90px',filter:true});
   if(p.days)cols.push({key:'days',label:'Days',w:'68px'});
   if(p.quoted)cols.push({key:'quoted',label:'Booked in System',w:'90px',filter:true});
-  if(p.price)cols.push({key:'price',label:'Price',w:'90px',filter:true});
+  if(p.pricepc)cols.push({key:'pricepc',label:'Price / Pc',w:'92px',filter:true});
+  if(p.price)cols.push({key:'price',label:'Price',w:'92px',filter:true});
   if(p.stages!=='NO')cols.push({key:'stages',label:'Stages',w:'80px'});
   cols.push({key:'status',label:'Status',w:'110px',filter:true});
   if(p.remarks)cols.push({key:'remarks',label:'Remarks',filter:true});
@@ -2062,6 +2081,7 @@ function getColValue(o,colKey){
     case'target':return o.tgt||'—';
     case'quoted':return o.quoted||'No';
     case'price':return(o.price===''||o.price==null)?'—':fmtPrice(o.price);
+    case'pricepc':return(o.pricePerPc===''||o.pricePerPc==null)?'—':fmtPrice(o.pricePerPc);
     case'status':return o.status||'—';
     case'remarks':return o.remarks||'—';
     default:return'';
@@ -2234,6 +2254,95 @@ async function quickUpdateStatus(sr,newStatus){
 }
 
 // ═══════════════════════════════════════════════════════════════
+// INLINE TABLE EDITING — price, price/pc, booked-in-system
+// ═══════════════════════════════════════════════════════════════
+// Helper: locate the Excel 1-based row for an Sr
+async function findRowForSr(sr){
+  const{rows,dataStart}=await findSheetLayout(C.masterSheet);
+  for(let i=dataStart;i<rows.length;i++){if(String(rows[i][0]||'').trim()===String(sr)){return i+1;}}
+  return -1;
+}
+// Write a single cell (address like 'V12')
+async function writeCell(addr,value){
+  await gapi('/drives/'+A.driveId+'/items/'+A.fileId+'/workbook/worksheets/'+encodeURIComponent(C.masterSheet)+'/range(address=\''+addr+'\')',
+    {method:'PATCH',body:JSON.stringify({values:[[value]]})});
+}
+
+// Inline edit of PRICE/PC → auto-fills total PRICE = price/pc × qty. Saves both.
+async function inlineSavePricePc(sr,rawVal,inputEl){
+  const o=A.allOrders.find(x=>String(x.sr)===String(sr));if(!o)return;
+  const ppc=rawVal===''?'':String(rawVal).trim();
+  if(ppc!==''&&isNaN(parseFloat(ppc))){toast('Enter a valid number');if(inputEl)inputEl.value=o.pricePerPc||'';return;}
+  const qty=parseFloat(o.qty)||0;
+  const total=(ppc!==''&&qty>0)?+(parseFloat(ppc)*qty).toFixed(2):(ppc===''?'':(o.price||''));
+  if(inputEl){inputEl.classList.add('inline-saving');}
+  try{
+    const rowIdx=await findRowForSr(sr);
+    if(rowIdx<0){toast('Row not found');return;}
+    // AA = price/pc, V = total price
+    await writeCell('AA'+rowIdx,ppc);
+    await writeCell('V'+rowIdx,total===''?'':total);
+    o.pricePerPc=ppc;o.price=total===''?'':String(total);
+    // update the total-price box in the same row live
+    const totalBox=document.getElementById('price-box-'+sr);
+    if(totalBox)totalBox.value=o.price;
+    if(inputEl){inputEl.classList.remove('inline-saving');inputEl.classList.add('inline-saved');setTimeout(()=>inputEl.classList.remove('inline-saved'),1200);}
+    toast('✅ Price/Pc saved · total ₹'+(o.price||'0'),2500);
+  }catch(e){if(inputEl)inputEl.classList.remove('inline-saving');toast('Save failed: '+e.message,5000);}
+}
+
+// Inline edit of total PRICE directly (independent of price/pc)
+async function inlineSavePrice(sr,rawVal,inputEl){
+  const o=A.allOrders.find(x=>String(x.sr)===String(sr));if(!o)return;
+  const val=rawVal===''?'':String(rawVal).trim();
+  if(val!==''&&isNaN(parseFloat(val))){toast('Enter a valid number');if(inputEl)inputEl.value=o.price||'';return;}
+  if(inputEl){inputEl.classList.add('inline-saving');}
+  try{
+    const rowIdx=await findRowForSr(sr);
+    if(rowIdx<0){toast('Row not found');return;}
+    await writeCell('V'+rowIdx,val);
+    o.price=val;
+    if(inputEl){inputEl.classList.remove('inline-saving');inputEl.classList.add('inline-saved');setTimeout(()=>inputEl.classList.remove('inline-saved'),1200);}
+    toast('✅ Price saved',2000);
+  }catch(e){if(inputEl)inputEl.classList.remove('inline-saving');toast('Save failed: '+e.message,5000);}
+}
+
+// Inline toggle of BOOKED IN SYSTEM (quoted) for one row
+async function inlineToggleBooked(sr,newVal){
+  const o=A.allOrders.find(x=>String(x.sr)===String(sr));if(!o)return;
+  if((o.quoted||'No')===newVal)return;
+  try{
+    const rowIdx=await findRowForSr(sr);
+    if(rowIdx<0){toast('Row not found');return;}
+    await writeCell('I'+rowIdx,newVal);   // I = quoted / booked-in-system
+    o.quoted=newVal;render();
+    toast('✅ Booked in System: '+newVal,2000);
+  }catch(e){toast('Save failed: '+e.message,5000);}
+}
+
+// Bulk set BOOKED IN SYSTEM for selected rows (Yes / No)
+async function bulkSetBooked(newVal){
+  if(!newVal||A.selectedRows.size===0)return;
+  if(!A.isAdmin){toast('Only admin can bulk-update');return;}
+  const srs=[...A.selectedRows];
+  if(!confirm('Set "Booked in System" = '+newVal+' for '+srs.length+' selected order(s)?'))return;
+  toast('Updating '+srs.length+' orders...',30000);
+  try{
+    const{rows,dataStart}=await findSheetLayout(C.masterSheet);let updated=0;
+    for(const sr of srs){
+      let rowIdx=-1;
+      for(let i=dataStart;i<rows.length;i++){if(String(rows[i][0]||'').trim()===String(sr)){rowIdx=i+1;break;}}
+      if(rowIdx<0)continue;
+      const o=A.allOrders.find(x=>String(x.sr)===String(sr));if(!o)continue;
+      if((o.quoted||'No')===newVal)continue;
+      await writeCell('I'+rowIdx,newVal);
+      o.quoted=newVal;updated++;
+    }
+    render();toast('✅ Updated '+updated+' order'+(updated===1?'':'s')+' → Booked: '+newVal,4000);
+  }catch(e){console.error(e);toast('Bulk update failed: '+e.message,5000);}
+}
+
+// ═══════════════════════════════════════════════════════════════
 // EXPAND / COLLAPSE ALL PARENTS
 // ═══════════════════════════════════════════════════════════════
 function toggleAllParents(){
@@ -2396,8 +2505,28 @@ function render(){
     if(p.qty)h+=`<td style="text-align:center;font-size:12px">${o.qty||'—'}</td>`;
     if(p.target)h+=`<td style="font-size:11px;color:var(--text2)">${o.tgt}</td>`;
     if(p.days)h+=`<td>${daysB(o)}</td>`;
-    if(p.quoted)h+=`<td><span class="badge ${o.quoted==='Yes'?'s-del':'s-unk'}">${o.quoted||'No'}</span></td>`;
-    if(p.price)h+=`<td style="font-size:11px;font-weight:600;color:var(--navy)">${fmtPrice(o.price)}</td>`;
+    if(p.quoted){
+      if(A.isAdmin&&!isParentOrder(o)){
+        const isYes=(o.quoted||'No')==='Yes';
+        h+=`<td style="text-align:center"><span class="booked-toggle ${isYes?'bt-yes':'bt-no'}" onclick="event.stopPropagation();inlineToggleBooked('${o.sr}','${isYes?'No':'Yes'}')" title="Click to toggle">${isYes?'✓ Yes':'No'}</span></td>`;
+      }else{
+        h+=`<td style="text-align:center"><span class="badge ${o.quoted==='Yes'?'s-del':'s-unk'}">${o.quoted||'No'}</span></td>`;
+      }
+    }
+    if(p.pricepc){
+      if(A.isAdmin&&!isParentOrder(o)){
+        h+=`<td><input class="inline-price" id="ppc-box-${o.sr}" type="number" step="0.01" min="0" value="${o.pricePerPc||''}" placeholder="—" onclick="event.stopPropagation()" onchange="inlineSavePricePc('${o.sr}',this.value,this)"></td>`;
+      }else{
+        h+=`<td style="font-size:11px;color:var(--text2)">${o.pricePerPc?fmtPrice(o.pricePerPc):'—'}</td>`;
+      }
+    }
+    if(p.price){
+      if(A.isAdmin&&!isParentOrder(o)){
+        h+=`<td><input class="inline-price" id="price-box-${o.sr}" type="number" step="0.01" min="0" value="${o.price||''}" placeholder="—" onclick="event.stopPropagation()" onchange="inlineSavePrice('${o.sr}',this.value,this)"></td>`;
+      }else{
+        h+=`<td style="font-size:11px;font-weight:600;color:var(--navy)">${fmtPrice(o.price)}</td>`;
+      }
+    }
     if(p.stages!=='NO')h+=`<td>${stagesDots(o)}</td>`;
     if(A.isAdmin){h+=`<td onclick="showQuickStatusDD('${o.sr}',event)" style="cursor:pointer" title="Click to change status">${stB(o.status)}</td>`;}
     else{h+=`<td>${stB(o.status)}</td>`;}
@@ -2438,7 +2567,7 @@ function showDet(o){
   if(o.dims)dc('Dimensions',o.dims);
   if(p.target)dc('Target delivery',o.tgt+' '+daysB(o));
   if(p.po)dc('PO No.',o.po);
-  if(A.isAdmin){dc('Quoted in System Books',o.quoted);if(p.price)dc('Quoted Price',fmtPrice(o.price));dc('PO Received',o.poRec);dc('Approval',o.approval);}
+  if(A.isAdmin){dc('Quoted in System Books',o.quoted);if(o.pricePerPc)dc('Price / Pc',fmtPrice(o.pricePerPc));if(p.price)dc('Quoted Price',fmtPrice(o.price));dc('PO Received',o.poRec);dc('Approval',o.approval);}
   dc('Status',stB(o.status));
   if(o.client)dc('Client',`<span class="b-client">${o.client}</span>`);
   if(p.remarks&&o.remarks)dc('Activity Log / Remarks',o.remarks);
@@ -2522,7 +2651,7 @@ function switchToEdit(){
   populateClientSelector();fillForm(o);openSP('edit');
 }
 function clearForm(){
-  ['f-sr','f-date','f-po','f-qty','f-name','f-type','f-dims','f-tgt','f-remarks','f-client-name','f-price','f-parent-sr'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-sr','f-date','f-po','f-qty','f-name','f-type','f-dims','f-tgt','f-remarks','f-client-name','f-price','f-price-pc','f-parent-sr'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['f-cat2','f-quoted','f-po-rec','f-approval','f-status'].forEach(id=>{const el=document.getElementById(id);if(el)el.selectedIndex=0;});
   ['st-rm','st-shape','st-grind','st-wire','st-lathe','st-ht','st-insp','st-disp'].forEach(id=>{const el=document.getElementById(id);if(el)el.selectedIndex=0;});
   ['img-name','pdf-name','stp-name','wc-name'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='';});
@@ -2536,6 +2665,7 @@ function fillForm(o){
   document.getElementById('f-dims').value=o.dims||'';
   document.getElementById('f-tgt').value=o.tgtISO||'';document.getElementById('f-remarks').value=o.remarks||'';
   document.getElementById('f-price').value=o.price||'';
+  document.getElementById('f-price-pc').value=o.pricePerPc||'';
   setSelect('f-cat2',o.cat);setSelect('f-quoted',o.quoted);setSelect('f-po-rec',o.poRec);setSelect('f-approval',o.approval);setSelect('f-status',o.status);
   setSelect('st-rm',o.stRM);setSelect('st-shape',o.stShape);setSelect('st-grind',o.stGrind);setSelect('st-wire',o.stWire);
   setSelect('st-lathe',o.stLathe);setSelect('st-ht',o.stHT);setSelect('st-insp',o.stInsp);setSelect('st-disp',o.stDisp);
@@ -2546,9 +2676,24 @@ function fillForm(o){
 }
 function setSelect(id,val){const el=document.getElementById(id);if(!el)return;for(let i=0;i<el.options.length;i++){if(el.options[i].value===String(val)||el.options[i].text===String(val)){el.selectedIndex=i;return;}}}
 function getVal(id){return(document.getElementById(id)||{}).value||'';}
+function recalcFormPrice(){
+  const ppc=parseFloat(getVal('f-price-pc'));
+  const q=parseFloat(getVal('f-qty'));
+  if(!isNaN(ppc)&&!isNaN(q)&&q>0){
+    document.getElementById('f-price').value=+(ppc*q).toFixed(2);
+  }
+}
 function getFormOrder(){
   const isChild=document.getElementById('f-is-child').checked;
-  return{sr:getVal('f-sr'),date:getVal('f-date'),client:A.isAdmin?getVal('f-client-name'):A.perms.clientName,po:getVal('f-po')||'—',name:getVal('f-name'),cat:getVal('f-cat2'),type:getVal('f-type'),qty:getVal('f-qty'),dims:getVal('f-dims'),quoted:getVal('f-quoted'),price:getVal('f-price'),poRec:getVal('f-po-rec'),approval:getVal('f-approval'),tgt:getVal('f-tgt'),remarks:getVal('f-remarks'),status:getVal('f-status'),stRM:getVal('st-rm'),stShape:getVal('st-shape'),stGrind:getVal('st-grind'),stWire:getVal('st-wire'),stLathe:getVal('st-lathe'),stHT:getVal('st-ht'),stInsp:getVal('st-insp'),stDisp:getVal('st-disp'),parentSr:isChild?getVal('f-parent-sr'):'',isParent:(A.editOrder&&isParentOrder(A.editOrder))?'YES':''};
+  const ppc=getVal('f-price-pc');
+  const qty=getVal('f-qty');
+  // Auto-calc total price = price/pc × qty when price/pc is given
+  let price=getVal('f-price');
+  if(ppc!==''&&!isNaN(parseFloat(ppc))){
+    const q=parseFloat(qty)||0;
+    price=q>0?String(+(parseFloat(ppc)*q).toFixed(2)):getVal('f-price');
+  }
+  return{sr:getVal('f-sr'),date:getVal('f-date'),client:A.isAdmin?getVal('f-client-name'):A.perms.clientName,po:getVal('f-po')||'—',name:getVal('f-name'),cat:getVal('f-cat2'),type:getVal('f-type'),qty:qty,dims:getVal('f-dims'),quoted:getVal('f-quoted'),price:price,pricePerPc:ppc,poRec:getVal('f-po-rec'),approval:getVal('f-approval'),tgt:getVal('f-tgt'),remarks:getVal('f-remarks'),status:getVal('f-status'),stRM:getVal('st-rm'),stShape:getVal('st-shape'),stGrind:getVal('st-grind'),stWire:getVal('st-wire'),stLathe:getVal('st-lathe'),stHT:getVal('st-ht'),stInsp:getVal('st-insp'),stDisp:getVal('st-disp'),parentSr:isChild?getVal('f-parent-sr'):'',isParent:(A.editOrder&&isParentOrder(A.editOrder))?'YES':''};
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -2740,14 +2885,14 @@ function getExportData(list){
   if(p.client)h.push('Client');if(p.po)h.push('PO No.');
   h.push('Product / Tool Name','Category');
   if(p.qty)h.push('Qty');
-  h.push('Dimensions');if(p.target)h.push('Target');if(p.quoted)h.push('Quoted in System Books');if(p.price)h.push('Quoted Price (₹)');
+  h.push('Dimensions');if(p.target)h.push('Target');if(p.quoted)h.push('Quoted in System Books');if(p.pricepc)h.push('Price / Pc (₹)');if(p.price)h.push('Quoted Price (₹)');
   h.push('Status');if(p.remarks)h.push('Remarks');
   const rows=ordered.map((o,idx)=>{
     const r=[idx+1,o.sr,orderTypeTag(o),o.date];
     if(p.client)r.push(o.client||'');if(p.po)r.push(o.po);
     r.push((isChildOrder(o)?'   > ':'')+o.name,o.cat);
     if(p.qty)r.push(o.qty||'');
-    r.push(o.dims||'');if(p.target)r.push(o.tgt);if(p.quoted)r.push(o.quoted||'No');if(p.price)r.push(o.price||'');
+    r.push(o.dims||'');if(p.target)r.push(o.tgt);if(p.quoted)r.push(o.quoted||'No');if(p.pricepc)r.push(o.pricePerPc||'');if(p.price)r.push(o.price||'');
     r.push(o.status);if(p.remarks)r.push(o.remarks||'');
     return r;
   });
@@ -3045,7 +3190,7 @@ function closeAdmin(){document.getElementById('admin-overlay').style.display='no
 
 function renderAdmPDFSettings(){
   const ct=document.getElementById('adm-pdf-cols');if(!ct)return;ct.innerHTML='';
-  ['S.No','JMC Sr','Type','Date','Client','PO No.','Product / Tool Name','Category','Qty','Dimensions','Target','Quoted in System Books','Quoted Price (₹)','Status','Remarks','Image'].forEach(label=>{
+  ['S.No','JMC Sr','Type','Date','Client','PO No.','Product / Tool Name','Category','Qty','Dimensions','Target','Quoted in System Books','Price / Pc (₹)','Quoted Price (₹)','Status','Remarks','Image'].forEach(label=>{
     const enabled=A.pdfPrefs.columns[label]!==false;const width=A.pdfPrefs.widths[label]||18;
     const row=document.createElement('div');row.className='pdf-col-row';
     row.innerHTML=`<label><input type="checkbox" ${enabled?'checked':''} data-col="${label}"><span>${label}</span></label><div style="display:flex;align-items:center;gap:5px"><input type="number" class="pdf-col-width" value="${width}" min="6" max="120" step="1" data-col="${label}"><span style="color:var(--text3);font-size:10px">mm</span></div>`;
