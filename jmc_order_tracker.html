@@ -54,6 +54,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);-we
 .btn-topbar{height:28px;padding:0 12px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.7);font-size:11px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
 .btn-topbar:hover{background:rgba(255,255,255,.1);color:#fff}
 .btn-admin{background:rgba(0,198,190,.15);border-color:rgba(0,198,190,.4);color:var(--accent)}
+.btn-dash{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3);color:#fff}
 .main-layout{display:flex;flex:1;overflow:hidden;height:calc(100vh - 56px);position:relative}
 .table-area{flex:1;overflow-y:auto;padding:20px 24px}
 .side-panel{width:480px;background:var(--surface);border-left:1px solid var(--border);overflow:hidden;flex-shrink:0;position:fixed;right:0;top:56px;bottom:0;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);z-index:150;box-shadow:var(--shadow-xl);display:flex;flex-direction:column}
@@ -367,6 +368,47 @@ tbody tr.row.child-row .child-name-cell::before{content:'';position:absolute;lef
 tbody tr.row.context-parent{opacity:.62;background:#FAFBFD!important;box-shadow:inset 3px 0 0 #C7D2E0!important}
 tbody tr.row.context-parent:hover{opacity:.85;background:#F5F7FA!important}
 .ctx-badge{font-size:8px;padding:2px 6px;border-radius:10px;background:#EEF2F8;color:#8A94A6;font-weight:700;margin-left:5px;letter-spacing:.3px;text-transform:uppercase}
+tbody tr.row.orphan-row{background:#FFF9F5!important;box-shadow:inset 3px 0 0 var(--warning)!important}
+tbody tr.row.orphan-row:hover{background:#FFF3EA!important}
+.orphan-badge{font-size:8px;padding:2px 7px;border-radius:10px;background:#FEF3C7;color:#92400E;font-weight:700;margin-left:6px;letter-spacing:.2px;white-space:nowrap;cursor:help}
+/* ── DASHBOARD ─────────────────────────────────────────────── */
+#s-dash{display:none;flex-direction:column;height:100vh;width:100%;background:var(--bg);overflow:hidden}
+.dash-scroll{flex:1;overflow-y:auto;padding:22px 26px 40px}
+.dash-sec{margin-bottom:26px}
+.dash-sec-h{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.9px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.dash-sec-h::after{content:'';flex:1;height:1px;background:var(--border)}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;box-shadow:var(--shadow-sm);position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--blue)}
+.kpi.k-green::before{background:var(--success)}.kpi.k-amber::before{background:var(--warning)}
+.kpi.k-red::before{background:var(--danger)}.kpi.k-navy::before{background:var(--navy)}
+.kpi-v{font-size:24px;font-weight:700;color:var(--navy);line-height:1.1;letter-spacing:-.4px}
+.kpi-l{font-size:11px;color:var(--text2);margin-top:5px;font-weight:500}
+.kpi-s{font-size:10px;color:var(--text3);margin-top:3px}
+.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;box-shadow:var(--shadow-sm)}
+.dash-2col{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dash-table{width:100%;border-collapse:collapse;font-size:12px}
+.dash-table thead th{background:#F8FAFD;color:var(--text3);font-size:10px;font-weight:700;padding:8px 10px;text-align:left;text-transform:uppercase;letter-spacing:.4px;border-bottom:1.5px solid var(--border)}
+.dash-table tbody td{padding:8px 10px;border-bottom:1px solid #F0F4FA;color:var(--text)}
+.dash-table tbody tr:last-child td{border-bottom:none}
+.dash-table tbody tr.clickable{cursor:pointer}
+.dash-table tbody tr.clickable:hover{background:#F0F7FF}
+.dash-num{text-align:right;font-family:'DM Mono',monospace;font-weight:600}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.bar-lbl{font-size:10px;color:var(--text2);width:62px;flex-shrink:0;font-weight:600}
+.bar-track{flex:1;height:20px;background:#F1F5FA;border-radius:4px;overflow:hidden;position:relative}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--blue-light));border-radius:4px;transition:width .4s ease}
+.bar-fill.bf-amber{background:linear-gradient(90deg,#F59E0B,#FBBF24)}
+.bar-fill.bf-red{background:linear-gradient(90deg,#DC2626,#EF4444)}
+.bar-val{font-size:10px;font-family:'DM Mono',monospace;font-weight:700;color:var(--navy);width:96px;text-align:right;flex-shrink:0}
+.bar-est{font-size:8px;color:var(--warning);font-weight:700;margin-left:3px}
+.dq-item{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:var(--r-sm);background:#FFFBEB;border:1px solid #FDE68A;margin-bottom:7px;font-size:11px;line-height:1.5}
+.dq-item.dq-ok{background:#F0FDF4;border-color:#BBF7D0}
+.dq-ico{flex-shrink:0;font-size:13px}
+.dq-fix{color:var(--blue);font-weight:600;cursor:pointer;text-decoration:none;white-space:nowrap}
+.dq-fix:hover{text-decoration:underline}
+.dash-empty{padding:26px;text-align:center;color:var(--text3);font-size:12px}
+@media(max-width:900px){.dash-2col{grid-template-columns:1fr}}
 @media(max-width:768px){.metrics{grid-template-columns:repeat(2,1fr)}.side-panel{width:100%;position:fixed;inset:56px 0 0 0}.tb-sub,.tb-role{display:none}.table-area{padding:12px}.pdfimp-box{max-height:96vh}.pdfimp-table .pi-thumb{width:40px;height:40px}.admin-drawer{width:100%}}
 </style>
 </head>
@@ -405,13 +447,14 @@ tbody tr.row.context-parent:hover{opacity:.85;background:#F5F7FA!important}
   <div class="topbar">
     <div class="tb-left">
       <div class="tb-logo" id="tb-logo-wrap">JMC</div>
-      <div><div class="tb-brand">JMC Engineering</div><div class="tb-sub" id="tb-sub">Order Management · <span style="color:var(--accent);font-weight:700">v3.0</span></div></div>
+      <div><div class="tb-brand">JMC Engineering</div><div class="tb-sub" id="tb-sub">Order Management · <span style="color:var(--accent);font-weight:700">v3.1</span></div></div>
     </div>
     <div class="tb-right">
       <div class="tb-chip">
         <div class="tb-av" id="tb-av">?</div>
         <div><div class="tb-uname" id="tb-uname"></div><div class="tb-role" id="tb-role"></div></div>
       </div>
+      <button id="dash-btn" class="btn-topbar btn-dash" onclick="openDashboard()" style="display:none">📊 Dashboard</button>
       <button id="admin-btn" class="btn-topbar btn-admin" onclick="openAdmin()" style="display:none">⚙ Admin</button>
       <button class="btn-topbar" onclick="doLogout()">Sign out</button>
     </div>
@@ -632,6 +675,20 @@ tbody tr.row.context-parent:hover{opacity:.85;background:#F5F7FA!important}
     </div>
   </div>
 </div>
+<!-- DASHBOARD -->
+<div id="s-dash">
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-logo" id="dash-logo-wrap">JMC</div>
+      <div><div class="tb-brand">Business Dashboard</div><div class="tb-sub" id="dash-sub">Live from the Order Tracker</div></div>
+    </div>
+    <div class="tb-right">
+      <button class="btn-topbar" onclick="exportDashboardExcel()">📊 Export to Excel</button>
+      <button class="btn-topbar btn-admin" onclick="closeDashboard()">← Back to orders</button>
+    </div>
+  </div>
+  <div class="dash-scroll" id="dash-scroll"></div>
+</div>
 <!-- MODALS -->
 <div id="img-modal" style="display:none" class="modal-bg" onclick="if(event.target===this)closeImgModal()">
   <div class="modal-box">
@@ -835,7 +892,7 @@ const C = {
   adminEmail:'info@jmcengg.com',
   redirectUri:'https://jmcengineering.github.io/jmc-order-tracker/jmc_order_tracker.html'
 };
-const APP_VERSION='v3.0';
+const APP_VERSION='v3.1';
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // Excel column map — the single source of truth for every write.
@@ -909,7 +966,7 @@ let A = {
 // ═══════════════════════════════════════════════════════════════
 // SCREEN MANAGEMENT
 // ═══════════════════════════════════════════════════════════════
-const SCREENS=['s-login','s-loading','s-error','s-denied','s-main'];
+const SCREENS=['s-login','s-loading','s-error','s-denied','s-main','s-dash'];
 function go(id,msg){
   SCREENS.forEach(s=>{
     const el=document.getElementById(s);if(!el)return;
@@ -1436,6 +1493,7 @@ async function startApp(){
       document.getElementById('admin-btn').style.display='inline-flex';
       document.getElementById('btn-add').style.display='inline-flex';
       document.getElementById('btn-reconcile').style.display='flex';
+      document.getElementById('dash-btn').style.display='inline-flex';
     }
     go('s-loading','Fetching orders...');
     const rows=await readSheet(C.masterSheet);
@@ -2744,10 +2802,17 @@ function getDisplay(){
       if(mset.has(key))out.push({type:'standalone',order:o});
     }
   }
-  // Safety net for a child whose parent row no longer exists
+  // Safety net — ONLY for a child whose parent row genuinely does not exist.
+  // A child hidden because its parent is COLLAPSED must stay hidden: sweeping
+  // those up detached them from their assembly and dumped them at the bottom
+  // of the table as loose rows.
   const emitted=new Set(out.map(x=>String(x.order.sr)));
   matched.forEach(o=>{
-    if(isChildOrder(o)&&!emitted.has(String(o.sr)))out.push({type:'standalone',order:o,orphan:true});
+    if(!isChildOrder(o))return;
+    if(emitted.has(String(o.sr)))return;
+    const par=A.orders.find(x=>isParentOrder(x)&&String(x.sr)===String(o.parentSr));
+    if(par)return;                       // parent exists, just collapsed — correctly hidden
+    out.push({type:'orphan',order:o});   // parent truly missing — flag it loudly
   });
   return out;
 }
@@ -2802,6 +2867,7 @@ function render(){
     if(isSel)cls+=' sel';
     if(isChecked)cls+=' checked';
     if(item.type==='parent')cls+=' parent-row';else if(item.type==='child')cls+=' child-row';
+    else if(item.type==='orphan')cls+=' orphan-row';
     if(isCtx)cls+=' context-parent';
     tr.className=cls;
     const svgD=svgUrl(toolSVG(o.type||o.name));
@@ -2821,6 +2887,8 @@ function render(){
       h+='<td><span class="parent-toggle '+(item.expanded?'expanded':'')+'" onclick="toggleParentExpand(\''+srE+'\',event)"><span class="parent-toggle-arrow">'+(item.expanded?'▼':'▶')+'</span>#'+srE+' · '+label+'</span></td>';
     }else if(item.type==='child'){
       h+='<td style="color:var(--text3);font-size:10px;font-family:DM Mono,monospace;padding-left:24px">'+srE+'</td>';
+    }else if(item.type==='orphan'){
+      h+='<td style="font-size:11px;font-family:DM Mono,monospace"><span style="color:var(--danger);font-weight:700">'+srE+'</span></td>';
     }else{
       h+='<td style="color:var(--text3);font-size:11px;font-family:DM Mono,monospace">'+srE+'</td>';
     }
@@ -2843,6 +2911,8 @@ function render(){
       h+='<td style="font-weight:'+(isSel?700:600)+';max-width:240px"><span class="parent-name-wrap">'+esc(o.name)+'<span class="parent-badge">📦 '+item.childCount+' part'+(item.childCount===1?'':'s')+'</span>'+(isCtx?'<span class="ctx-badge">context</span>':'')+'</span></td>';
     }else if(item.type==='child'){
       h+='<td class="child-name-cell" style="max-width:240px"><span class="child-prefix">└</span>'+esc(o.name)+'</td>';
+    }else if(item.type==='orphan'){
+      h+='<td style="max-width:240px">'+esc(o.name)+'<span class="orphan-badge" title="This part points to assembly #'+esc(o.parentSr)+', but no row with that Sr is marked as an assembly (column Y = YES). Fix the parent row, or clear column X on this part to make it a standalone order.">⚠ parent #'+esc(o.parentSr)+' missing</span></td>';
     }else{
       h+='<td style="font-weight:'+(isSel?600:400)+';max-width:240px">'+esc(o.name)+'</td>';
     }
@@ -3256,6 +3326,395 @@ function openSP(mode){
   document.getElementById('sp-footer-view').style.display=isEdit?'none':'flex';
 }
 function closeSP(){document.getElementById('side-panel').classList.remove('open');A.selOrder=null;A.editOrder=null;A.pendingImgFile=null;A.pendingPDFFile=null;A.pendingSTPFile=null;A.pendingWCFile=null;render();}
+</script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// DASHBOARD — live business metrics, computed in the browser
+// ═══════════════════════════════════════════════════════════════
+// Admin only. Nothing here writes to Excel.
+
+function dnum(v){const n=parseFloat(v);return isNaN(n)?0:n;}
+function inr(n){
+  if(!n)return'₹0';
+  if(n>=10000000)return'₹'+(n/10000000).toFixed(2)+' Cr';
+  if(n>=100000)return'₹'+(n/100000).toFixed(2)+' L';
+  return'₹'+Math.round(n).toLocaleString('en-IN');
+}
+function inrFull(n){return'₹'+Math.round(n||0).toLocaleString('en-IN');}
+function monthKey(iso){return iso?iso.slice(0,7):null;}
+function monthLabel(k){const[y,m]=k.split('-');return MONTHS[parseInt(m,10)-1]+' '+y.slice(2);}
+// Indian financial year: 1 Apr — 31 Mar
+function fyOf(iso){if(!iso)return null;const d=new Date(iso);const y=d.getFullYear();return d.getMonth()>=3?y:y-1;}
+function currentFY(){const d=new Date();return d.getMonth()>=3?d.getFullYear():d.getFullYear()-1;}
+function fyLabel(y){return'FY '+y+'-'+String(y+1).slice(2);}
+function isDeliveredStatus(o){return String(o.status||'').toLowerCase().includes('deliver');}
+
+// ── MONEY RULE ────────────────────────────────────────────────
+// An assembly is the tool; its parts are the components. Both can carry a
+// price, so counting both would double the revenue. Rule:
+//   any part priced  -> the PARTS are the revenue units, assembly ignored
+//   no part priced   -> the ASSEMBLY is the revenue unit
+//   standalone       -> itself
+// Families where BOTH carry prices are ambiguous and are listed in Data
+// Quality rather than silently resolved.
+function revenueUnits(){
+  const units=[];
+  const parentIndex={};
+  A.allOrders.forEach(o=>{if(isParentOrder(o))parentIndex[String(o.sr)]=o;});
+  A.allOrders.forEach(o=>{
+    if(isChildOrder(o)){
+      const par=parentIndex[String(o.parentSr)];
+      if(!par){units.push({o,value:dnum(o.price),src:'orphan'});return;}
+      const kids=childrenOfAll(par.sr);
+      if(kids.some(k=>dnum(k.price)>0))units.push({o,value:dnum(o.price),src:'part'});
+      return;                       // otherwise the assembly carries the value
+    }
+    if(isParentOrder(o)){
+      const kids=childrenOfAll(o.sr);
+      if(kids.length&&kids.some(k=>dnum(k.price)>0))return;   // parts carry it
+      units.push({o,value:dnum(o.price),src:'assembly'});
+      return;
+    }
+    units.push({o,value:dnum(o.price),src:'standalone'});
+  });
+  return units;
+}
+// Delivered date, falling back to target for rows predating the AB column
+function deliveredDateOf(o){
+  if(o.deliveredISO)return{iso:o.deliveredISO,est:false};
+  if(isDeliveredStatus(o)&&o.tgtISO)return{iso:o.tgtISO,est:true};
+  return{iso:null,est:false};
+}
+
+function computeDashboard(){
+  const units=revenueUnits();
+  const today=new Date();today.setHours(0,0,0,0);
+  const thisMonth=todayISO().slice(0,7);
+  const fy=currentFY();
+  const d={
+    totalUnits:units.length,
+    delMonth:0,delFY:0,delAll:0,delCount:0,
+    openValue:0,openCount:0,
+    noPoValue:0,noPoCount:0,
+    notBookedValue:0,notBookedCount:0,
+    overdueValue:0,overdueCount:0,
+    unpriced:0,
+    estimatedRows:0,
+    byMonth:{},byMonthEst:{},recvByMonth:{},
+    ageing:{'0-30':{n:0,v:0},'31-60':{n:0,v:0},'60+':{n:0,v:0}},
+    stages:{},
+    clients:{},
+    leadTimes:[],
+    overdueList:[],
+    priceConflicts:[],orphans:[],missingPrice:[]
+  };
+  const STAGE_DEFS=[['stRM','Raw Material'],['stShape','Shaping/Milling'],['stGrind','Grinding'],
+    ['stWire','Wirecut/VMC'],['stLathe','Jig Boring/Lathe'],['stHT','Heat Treatment'],
+    ['stInsp','Final Inspection'],['stDisp','Dispatch']];
+
+  units.forEach(u=>{
+    const o=u.o,v=u.value;
+    if(v<=0)d.unpriced++;
+    const cl=o.client||'(none)';
+    if(!d.clients[cl])d.clients[cl]={name:cl,orders:0,delivered:0,openV:0,noPoV:0};
+    d.clients[cl].orders++;
+
+    if(o.dateISO){
+      const rk=monthKey(o.dateISO);
+      d.recvByMonth[rk]=(d.recvByMonth[rk]||0)+1;
+    }
+
+    if(isDeliveredStatus(o)){
+      const dd=deliveredDateOf(o);
+      d.delAll+=v;d.delCount++;d.clients[cl].delivered+=v;
+      if(dd.iso){
+        const k=monthKey(dd.iso);
+        d.byMonth[k]=(d.byMonth[k]||0)+v;
+        if(dd.est){d.byMonthEst[k]=true;d.estimatedRows++;}
+        if(k===thisMonth)d.delMonth+=v;
+        if(fyOf(dd.iso)===fy)d.delFY+=v;
+        if(o.dateISO){
+          const lt=Math.round((new Date(dd.iso)-new Date(o.dateISO))/86400000);
+          if(lt>=0&&lt<720)d.leadTimes.push(lt);
+        }
+      }
+    }else{
+      d.openValue+=v;d.openCount++;d.clients[cl].openV+=v;
+      const dl=daysToTarget(o);
+      if(dl!==null&&dl<0){
+        d.overdueValue+=v;d.overdueCount++;
+        d.overdueList.push({o,late:Math.abs(dl),v});
+      }
+      STAGE_DEFS.forEach(([k,label])=>{
+        const s=String(o[k]||'').toLowerCase();
+        if(s==='pending'||s==='hold'){
+          if(!d.stages[label])d.stages[label]={label,pending:0,hold:0};
+          if(s==='hold')d.stages[label].hold++;else d.stages[label].pending++;
+        }
+      });
+    }
+
+    // Yet to PO / not booked — open orders only; delivered work is water under
+    // the bridge for these two questions.
+    if(!isDeliveredStatus(o)){
+      if(derivedPoRec(o)!=='Yes'){
+        d.noPoValue+=v;d.noPoCount++;d.clients[cl].noPoV+=v;
+        const age=o.dateISO?Math.round((today-new Date(o.dateISO))/86400000):0;
+        const b=age<=30?'0-30':age<=60?'31-60':'60+';
+        d.ageing[b].n++;d.ageing[b].v+=v;
+      }
+      if(derivedBooked(o)!=='Yes'){d.notBookedValue+=v;d.notBookedCount++;}
+    }
+    if(v<=0&&!isDeliveredStatus(o))d.missingPrice.push(o);
+  });
+
+  // Data quality — families where BOTH the assembly and its parts carry prices
+  A.allOrders.filter(o=>isParentOrder(o)).forEach(par=>{
+    const kids=childrenOfAll(par.sr);
+    if(!kids.length)return;
+    const pv=dnum(par.price);
+    const kv=kids.reduce((s,k)=>s+dnum(k.price),0);
+    if(pv>0&&kv>0)d.priceConflicts.push({par,pv,kv,n:kids.length});
+  });
+  A.allOrders.filter(o=>isChildOrder(o)).forEach(c=>{
+    if(!A.allOrders.some(x=>isParentOrder(x)&&String(x.sr)===String(c.parentSr)))d.orphans.push(c);
+  });
+
+  d.avgLead=d.leadTimes.length?Math.round(d.leadTimes.reduce((a,b)=>a+b,0)/d.leadTimes.length):null;
+  d.overdueList.sort((a,b)=>b.late-a.late);
+  d.fy=fy;
+  return d;
+}
+
+function last12Months(){
+  const out=[];const d=new Date();d.setDate(1);
+  for(let i=11;i>=0;i--){
+    const x=new Date(d.getFullYear(),d.getMonth()-i,1);
+    out.push(x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0'));
+  }
+  return out;
+}
+
+function openDashboard(){
+  if(!A.isAdmin){toast('Dashboard is admin-only');return;}
+  const lw=document.getElementById('dash-logo-wrap');
+  if(A.logoUrl&&lw)lw.innerHTML='<img src="'+A.logoUrl+'" alt="JMC" style="width:100%;height:100%;object-fit:contain">';
+  document.getElementById('s-main').style.display='none';
+  const s=document.getElementById('s-dash');s.style.display='flex';s.style.visibility='visible';
+  renderDashboard();
+}
+function closeDashboard(){
+  document.getElementById('s-dash').style.display='none';
+  const m=document.getElementById('s-main');m.style.display='flex';m.style.visibility='visible';
+}
+
+function renderDashboard(){
+  const d=computeDashboard();A._dash=d;
+  const el=document.getElementById('dash-scroll');
+  const sub=document.getElementById('dash-sub');
+  if(sub)sub.textContent=d.totalUnits+' revenue items · '+fyLabel(d.fy)+' · updated '+new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+  let h='';
+
+  // ── MONEY ──
+  h+='<div class="dash-sec"><div class="dash-sec-h">Money</div><div class="kpi-grid">';
+  h+=kpi(inr(d.delMonth),'Delivered this month',MONTHS[new Date().getMonth()]+' '+new Date().getFullYear(),'k-green');
+  h+=kpi(inr(d.delFY),'Delivered '+fyLabel(d.fy),'1 Apr — 31 Mar','k-green');
+  h+=kpi(inr(d.delAll),'Delivered all time',d.delCount+' items','k-navy');
+  h+=kpi(inr(d.openValue),'Open order book',d.openCount+' items not yet delivered','k-navy');
+  h+=kpi(inr(d.noPoValue),'Yet to receive PO',d.noPoCount+' open items','k-amber');
+  h+=kpi(inr(d.notBookedValue),'Not booked in system',d.notBookedCount+' open items','k-amber');
+  h+=kpi(inr(d.overdueValue),'Overdue value',d.overdueCount+' items past target','k-red');
+  h+=kpi(d.avgLead===null?'—':d.avgLead+' days','Average lead time','order date → delivered','k-navy');
+  h+='</div></div>';
+
+  // ── MONTHLY ──
+  const months=last12Months();
+  const maxV=Math.max(1,...months.map(m=>d.byMonth[m]||0));
+  const maxR=Math.max(1,...months.map(m=>d.recvByMonth[m]||0));
+  h+='<div class="dash-sec"><div class="dash-sec-h">Last 12 months</div><div class="dash-2col">';
+  h+='<div class="dash-card"><div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:12px">Delivered value by month</div>';
+  if(months.every(m=>!d.byMonth[m])){h+='<div class="dash-empty">No delivered orders with a date yet.</div>';}
+  else months.forEach(m=>{
+    const v=d.byMonth[m]||0;
+    h+='<div class="bar-row"><span class="bar-lbl">'+monthLabel(m)+'</span>'+
+      '<span class="bar-track"><span class="bar-fill" style="width:'+(v/maxV*100)+'%"></span></span>'+
+      '<span class="bar-val">'+(v?inr(v):'—')+(d.byMonthEst[m]?'<span class="bar-est" title="Some rows have no Delivered Date; target date used">est</span>':'')+'</span></div>';
+  });
+  h+='</div>';
+  h+='<div class="dash-card"><div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:12px">Orders received by month</div>';
+  months.forEach(m=>{
+    const n=d.recvByMonth[m]||0;
+    h+='<div class="bar-row"><span class="bar-lbl">'+monthLabel(m)+'</span>'+
+      '<span class="bar-track"><span class="bar-fill" style="width:'+(n/maxR*100)+'%"></span></span>'+
+      '<span class="bar-val">'+(n||'—')+'</span></div>';
+  });
+  h+='</div></div></div>';
+
+  // ── AGEING + BOTTLENECK ──
+  h+='<div class="dash-sec"><div class="dash-sec-h">Where things are stuck</div><div class="dash-2col">';
+  h+='<div class="dash-card"><div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:4px">Un-PO\'d orders by age</div>'+
+     '<div style="font-size:10px;color:var(--text3);margin-bottom:12px">Open items with PO Received = No, aged from order date</div>';
+  const maxA=Math.max(1,...Object.values(d.ageing).map(x=>x.v));
+  [['0-30','0–30 days',''],['31-60','31–60 days','bf-amber'],['60+','60+ days','bf-red']].forEach(([k,label,cls])=>{
+    const a=d.ageing[k];
+    h+='<div class="bar-row"><span class="bar-lbl">'+label+'</span>'+
+      '<span class="bar-track"><span class="bar-fill '+cls+'" style="width:'+(a.v/maxA*100)+'%"></span></span>'+
+      '<span class="bar-val">'+(a.v?inr(a.v):'—')+' · '+a.n+'</span></div>';
+  });
+  h+='</div>';
+  h+='<div class="dash-card"><div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:4px">Shop-floor bottleneck</div>'+
+     '<div style="font-size:10px;color:var(--text3);margin-bottom:12px">Open parts sitting at each stage</div>';
+  const stages=Object.values(d.stages).sort((a,b)=>(b.pending+b.hold)-(a.pending+a.hold));
+  if(!stages.length){h+='<div class="dash-empty">No stages marked Pending or Hold.</div>';}
+  else{
+    const maxS=Math.max(1,...stages.map(s=>s.pending+s.hold));
+    stages.forEach(s=>{
+      h+='<div class="bar-row"><span class="bar-lbl" style="width:96px">'+esc(s.label)+'</span>'+
+        '<span class="bar-track"><span class="bar-fill '+(s.hold?'bf-amber':'')+'" style="width:'+((s.pending+s.hold)/maxS*100)+'%"></span></span>'+
+        '<span class="bar-val" style="width:80px">'+s.pending+(s.hold?' +'+s.hold+' hold':'')+'</span></div>';
+    });
+  }
+  h+='</div></div></div>';
+
+  // ── OVERDUE ──
+  h+='<div class="dash-sec"><div class="dash-sec-h">Past target — worst first</div><div class="dash-card" style="padding:0">';
+  if(!d.overdueList.length){h+='<div class="dash-empty">✅ Nothing past its target date.</div>';}
+  else{
+    h+='<table class="dash-table"><thead><tr><th style="width:70px">Sr</th><th>Product</th><th style="width:110px">Client</th><th style="width:90px">Target</th><th class="dash-num" style="width:80px">Late by</th><th class="dash-num" style="width:110px">Value</th></tr></thead><tbody>';
+    d.overdueList.slice(0,15).forEach(x=>{
+      h+='<tr class="clickable" onclick="dashOpenOrder(\''+esc(x.o.sr)+'\')">'+
+        '<td style="font-family:DM Mono,monospace;font-size:11px">#'+esc(x.o.sr)+'</td>'+
+        '<td>'+esc(String(x.o.name).slice(0,50))+'</td>'+
+        '<td>'+esc(x.o.client||'—')+'</td>'+
+        '<td style="font-size:11px;color:var(--text2)">'+esc(x.o.tgt)+'</td>'+
+        '<td class="dash-num" style="color:var(--danger)">'+x.late+'d</td>'+
+        '<td class="dash-num">'+(x.v?inrFull(x.v):'—')+'</td></tr>';
+    });
+    h+='</tbody></table>';
+    if(d.overdueList.length>15)h+='<div style="padding:8px 12px;font-size:10px;color:var(--text3);text-align:center">+ '+(d.overdueList.length-15)+' more</div>';
+  }
+  h+='</div></div>';
+
+  // ── CLIENTS ──
+  const clients=Object.values(d.clients).sort((a,b)=>(b.delivered+b.openV)-(a.delivered+a.openV));
+  h+='<div class="dash-sec"><div class="dash-sec-h">By client</div><div class="dash-card" style="padding:0">'+
+     '<table class="dash-table"><thead><tr><th>Client</th><th class="dash-num" style="width:70px">Items</th><th class="dash-num" style="width:120px">Delivered</th><th class="dash-num" style="width:120px">Open</th><th class="dash-num" style="width:120px">Yet to PO</th></tr></thead><tbody>';
+  clients.forEach(c=>{
+    h+='<tr><td style="font-weight:600">'+esc(c.name)+'</td>'+
+      '<td class="dash-num">'+c.orders+'</td>'+
+      '<td class="dash-num" style="color:var(--success)">'+(c.delivered?inrFull(c.delivered):'—')+'</td>'+
+      '<td class="dash-num">'+(c.openV?inrFull(c.openV):'—')+'</td>'+
+      '<td class="dash-num" style="color:'+(c.noPoV?'var(--warning)':'var(--text3)')+'">'+(c.noPoV?inrFull(c.noPoV):'—')+'</td></tr>';
+  });
+  h+='</tbody></table></div></div>';
+
+  // ── DATA QUALITY ──
+  // Without this panel the money above would be a confident guess.
+  h+='<div class="dash-sec"><div class="dash-sec-h">Data quality</div><div class="dash-card">';
+  let issues=0;
+  if(d.priceConflicts.length){
+    issues++;
+    h+='<div class="dq-item"><span class="dq-ico">⚠</span><div><strong>'+d.priceConflicts.length+
+      ' assembly(ies) priced on BOTH the assembly row and its parts.</strong> The parts are being counted and the assembly row ignored — if that is backwards for any of these, the totals above are wrong. Clear whichever price is not the real one.<div style="margin-top:6px">';
+    d.priceConflicts.slice(0,6).forEach(x=>{
+      h+='<div style="font-family:DM Mono,monospace;font-size:10px;margin-top:3px">#'+esc(x.par.sr)+' — assembly '+inrFull(x.pv)+' vs '+x.n+' parts '+inrFull(x.kv)+
+        ' <a class="dq-fix" onclick="dashOpenOrder(\''+esc(x.par.sr)+'\')">open</a></div>';
+    });
+    if(d.priceConflicts.length>6)h+='<div style="font-size:10px;color:var(--text3);margin-top:4px">+ '+(d.priceConflicts.length-6)+' more</div>';
+    h+='</div></div></div>';
+  }
+  if(d.orphans.length){
+    issues++;
+    h+='<div class="dq-item"><span class="dq-ico">⚠</span><div><strong>'+d.orphans.length+
+      ' part(s) point to an assembly that does not exist.</strong> Column X names a parent Sr, but no row with that Sr is marked as an assembly (column Y = YES). They are counted as standalone orders here.<div style="margin-top:6px;font-family:DM Mono,monospace;font-size:10px">'+
+      d.orphans.slice(0,8).map(c=>'#'+esc(c.sr)+' → #'+esc(c.parentSr)).join(' · ')+
+      (d.orphans.length>8?' + '+(d.orphans.length-8)+' more':'')+'</div></div></div>';
+  }
+  if(d.estimatedRows){
+    issues++;
+    h+='<div class="dq-item"><span class="dq-ico">📅</span><div><strong>'+d.estimatedRows+
+      ' delivered item(s) have no Delivered Date.</strong> Their target date is used instead, so those months are marked <span class="bar-est">est</span>. This clears itself as new orders are delivered through the portal.</div></div>';
+  }
+  if(d.missingPrice.length){
+    issues++;
+    h+='<div class="dq-item"><span class="dq-ico">💰</span><div><strong>'+d.missingPrice.length+
+      ' open item(s) have no price.</strong> They are excluded from the open order book and yet-to-PO values, so those figures are understated.<div style="margin-top:6px;font-family:DM Mono,monospace;font-size:10px">'+
+      d.missingPrice.slice(0,10).map(o=>'#'+esc(o.sr)).join(' · ')+
+      (d.missingPrice.length>10?' + '+(d.missingPrice.length-10)+' more':'')+'</div></div></div>';
+  }
+  if(!issues)h+='<div class="dq-item dq-ok"><span class="dq-ico">✅</span><div>No data issues found. Every figure above is derived from complete records.</div></div>';
+  h+='</div></div>';
+
+  el.innerHTML=h;
+  el.scrollTop=0;
+}
+function kpi(v,l,s,cls){
+  return'<div class="kpi '+(cls||'')+'"><div class="kpi-v">'+v+'</div><div class="kpi-l">'+esc(l)+'</div>'+
+    (s?'<div class="kpi-s">'+esc(s)+'</div>':'')+'</div>';
+}
+function dashOpenOrder(sr){
+  const o=A.orders.find(x=>String(x.sr)===String(sr));
+  if(!o){toast('Order not found');return;}
+  closeDashboard();showDet(o);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DASHBOARD → EXCEL
+// ═══════════════════════════════════════════════════════════════
+function exportDashboardExcel(){
+  const d=A._dash||computeDashboard();
+  try{
+    const wb=XLSX.utils.book_new();
+    const S=[];
+    S.push(['JMC ENGINEERING — BUSINESS DASHBOARD']);
+    S.push(['Generated',new Date().toLocaleString('en-IN')]);
+    S.push(['Financial year',fyLabel(d.fy)]);
+    S.push([]);
+    S.push(['MONEY','Value (₹)','Count']);
+    S.push(['Delivered this month',Math.round(d.delMonth),'']);
+    S.push(['Delivered '+fyLabel(d.fy),Math.round(d.delFY),'']);
+    S.push(['Delivered all time',Math.round(d.delAll),d.delCount]);
+    S.push(['Open order book',Math.round(d.openValue),d.openCount]);
+    S.push(['Yet to receive PO',Math.round(d.noPoValue),d.noPoCount]);
+    S.push(['Not booked in system',Math.round(d.notBookedValue),d.notBookedCount]);
+    S.push(['Overdue value',Math.round(d.overdueValue),d.overdueCount]);
+    S.push(['Average lead time (days)',d.avgLead===null?'':d.avgLead,'']);
+    S.push([]);
+    S.push(['DELIVERED BY MONTH','Value (₹)','Estimated?']);
+    last12Months().forEach(m=>S.push([monthLabel(m),Math.round(d.byMonth[m]||0),d.byMonthEst[m]?'EST (no delivered date)':'']));
+    S.push([]);
+    S.push(['UN-PO\'D AGEING','Value (₹)','Count']);
+    Object.entries(d.ageing).forEach(([k,a])=>S.push([k+' days',Math.round(a.v),a.n]));
+    S.push([]);
+    S.push(['STAGE BOTTLENECK','Pending','On hold']);
+    Object.values(d.stages).sort((a,b)=>(b.pending+b.hold)-(a.pending+a.hold)).forEach(s=>S.push([s.label,s.pending,s.hold]));
+    const ws1=XLSX.utils.aoa_to_sheet(S);
+    ws1['!cols']=[{wch:34},{wch:18},{wch:26}];
+    XLSX.utils.book_append_sheet(wb,ws1,'Summary');
+
+    const C2=[['Client','Items','Delivered (₹)','Open (₹)','Yet to PO (₹)']];
+    Object.values(d.clients).sort((a,b)=>(b.delivered+b.openV)-(a.delivered+a.openV))
+      .forEach(c=>C2.push([c.name,c.orders,Math.round(c.delivered),Math.round(c.openV),Math.round(c.noPoV)]));
+    const ws2=XLSX.utils.aoa_to_sheet(C2);ws2['!cols']=[{wch:24},{wch:10},{wch:16},{wch:16},{wch:16}];
+    XLSX.utils.book_append_sheet(wb,ws2,'By Client');
+
+    const O=[['Sr','Product','Client','Target','Days late','Value (₹)']];
+    d.overdueList.forEach(x=>O.push([x.o.sr,x.o.name,x.o.client||'',x.o.tgt,x.late,Math.round(x.v)]));
+    const ws3=XLSX.utils.aoa_to_sheet(O);ws3['!cols']=[{wch:10},{wch:46},{wch:16},{wch:14},{wch:11},{wch:14}];
+    XLSX.utils.book_append_sheet(wb,ws3,'Past Target');
+
+    const Q=[['Issue','Sr','Detail']];
+    d.priceConflicts.forEach(x=>Q.push(['Price on both assembly and parts',x.par.sr,'assembly ₹'+Math.round(x.pv)+' vs '+x.n+' parts ₹'+Math.round(x.kv)]));
+    d.orphans.forEach(c=>Q.push(['Parent assembly missing',c.sr,'points to #'+c.parentSr]));
+    d.missingPrice.forEach(o=>Q.push(['Open item with no price',o.sr,o.name]));
+    if(Q.length===1)Q.push(['No issues found','','']);
+    const ws4=XLSX.utils.aoa_to_sheet(Q);ws4['!cols']=[{wch:36},{wch:12},{wch:60}];
+    XLSX.utils.book_append_sheet(wb,ws4,'Data Quality');
+
+    XLSX.writeFile(wb,'JMC_Dashboard_'+todayISO()+'.xlsx');
+    toast('✅ Dashboard exported to Excel');
+  }catch(e){console.error(e);toast('Export failed: '+e.message,6000);}
+}
 </script>
 <script>
 // ═══════════════════════════════════════════════════════════════
