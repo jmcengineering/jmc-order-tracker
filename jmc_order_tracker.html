@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>JMC Engineering — Order Management</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0F2144">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<script src="share-queue.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
@@ -410,9 +416,315 @@ tbody tr.row.orphan-row:hover{background:#FFF3EA!important}
 .dash-empty{padding:26px;text-align:center;color:var(--text3);font-size:12px}
 @media(max-width:900px){.dash-2col{grid-template-columns:1fr}}
 @media(max-width:768px){.metrics{grid-template-columns:repeat(2,1fr)}.side-panel{width:100%;position:fixed;inset:56px 0 0 0}.tb-sub,.tb-role{display:none}.table-area{padding:12px}.pdfimp-box{max-height:96vh}.pdfimp-table .pi-thumb{width:40px;height:40px}.admin-drawer{width:100%}}
+/* ── v3.2 PWA: share target, install hint, offline ─────────── */
+.btn-shared{background:rgba(245,158,11,.18);border-color:rgba(245,158,11,.5);color:#FCD34D;font-weight:700}
+.btn-install{background:rgba(0,198,190,.12);border-color:rgba(0,198,190,.35);color:var(--accent)}
+.login-share-note{margin-top:18px;font-size:12px;line-height:1.5;color:#FDE68A;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.35);border-radius:10px;padding:10px 12px;text-align:left}
+.login-install{margin-top:14px;background:none;border:none;color:rgba(255,255,255,.55);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline}
+.pwa-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1050;padding:16px;backdrop-filter:blur(3px)}
+.pwa-box{background:var(--surface);border-radius:var(--r-xl);width:100%;max-width:560px;max-height:92vh;display:flex;flex-direction:column;box-shadow:var(--shadow-xl);overflow:hidden}
+.pwa-head{padding:16px 20px;background:var(--navy);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pwa-head h3{font-size:15px;font-weight:700;color:#fff}
+.pwa-head p{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px}
+.pwa-body{padding:16px 20px;overflow-y:auto;flex:1}
+.pwa-foot{padding:12px 20px;border-top:1px solid var(--border);background:var(--bg);display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.pwa-field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.pwa-field label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px}
+.pwa-field select{padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-family:'DM Sans',sans-serif;background:#fff;color:var(--text)}
+.pwa-hint{font-size:12px;color:var(--text2);background:#F0F7FF;border:1px solid #BDDEFF;border-radius:var(--r-sm);padding:9px 12px;margin-bottom:12px;line-height:1.5}
+.pwa-hint.warn{background:#FFFBEB;border-color:#FDE68A;color:#92400E}
+.pwa-hint.err{background:#FEF2F2;border-color:#FECACA;color:#B91C1C}
+.sq-item{border:1px solid var(--border);border-radius:var(--r-md);padding:10px 12px;margin-bottom:8px;background:#fff}
+.sq-top{display:flex;align-items:center;gap:8px}
+.sq-name{flex:1;font-size:13px;font-weight:600;color:var(--navy);word-break:break-all}
+.sq-size{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;white-space:nowrap}
+.sq-chip{font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap;text-transform:uppercase;letter-spacing:.3px}
+.sq-chip.c-pending{background:#EEF2F8;color:#5A6478}.sq-chip.c-running{background:#EDE9FE;color:#5B21B6}
+.sq-chip.c-failed,.sq-chip.c-rejected{background:#FEE2E2;color:#B91C1C}
+.sq-chip.c-duplicate{background:#FEF3C7;color:#92400E}.sq-chip.c-cancelled{background:#F1F5F9;color:#64748B}
+.sq-msg{font-size:11px;color:var(--text2);margin-top:6px;line-height:1.5}
+.sq-msg.err{color:#B91C1C}.sq-msg.warn{color:#92400E}
+.sq-acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.sq-btn{padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;border:1.5px solid var(--border);background:#fff;color:var(--text2)}
+.sq-btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.sq-btn.danger{color:#DC2626;border-color:#FECACA}
+.inst-steps{font-size:13px;line-height:1.7;color:var(--text);padding-left:20px}
+.inst-steps li{margin-bottom:6px}
+#pwa-offline{position:fixed;inset:0;z-index:2000;display:none;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;background:linear-gradient(135deg,var(--navy) 0%,#1a3a6e 100%);color:#fff}
+#pwa-offline .off-ico{font-size:40px}
+#pwa-offline .off-h{font-size:20px;font-weight:700}
+#pwa-offline .off-p{font-size:13px;color:rgba(255,255,255,.7);max-width:360px;line-height:1.6}
+@media(max-width:768px){.btn-install .bi-txt{display:none}.pwa-box{max-height:96vh}
+  /* review table: scroll sideways on phones so Qty, Dimensions and thumbnails stay reachable */
+  .pdfimp-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}.pdfimp-table{min-width:680px}}
 </style>
 </head>
 <body>
+<!-- v3.2 PWA: offline screen, shared-PDF screen, install hint -->
+<div id="pwa-offline">
+  <div class="off-ico">📶</div>
+  <div class="off-h">You're offline</div>
+  <div class="off-p" id="pwa-offline-msg">JMC Order Tracker needs the internet to sign in and read orders.</div>
+  <div class="off-p" style="font-size:11px;color:rgba(255,255,255,.45)">The app continues automatically when the connection is back.</div>
+</div>
+<div id="share-modal" class="pwa-bg">
+  <div class="pwa-box">
+    <div class="pwa-head">
+      <div><h3>New Order from Shared PDF <span class="claude-ai-badge">✦ Claude AI</span></h3><p id="share-sub">Shared files are imported one by one — you review each before anything is saved</p></div>
+      <button class="sp-close" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.08)" onclick="JMCPwa.close()" title="Close — files stay queued">✕</button>
+    </div>
+    <div class="pwa-body">
+      <div id="share-hint"></div>
+      <div class="pwa-field" id="share-client-wrap">
+        <label for="share-client">These drawings belong to client</label>
+        <select id="share-client" onchange="JMCPwa.onClientChange(this.value)"><option value="">— Select client —</option></select>
+      </div>
+      <div id="share-list"></div>
+    </div>
+    <div class="pwa-foot">
+      <button class="ghost-btn" onclick="JMCPwa.close()">Close (keep queued)</button>
+    </div>
+  </div>
+</div>
+<div id="install-modal" class="pwa-bg" onclick="if(event.target===this)JMCPwa.hideInstall()">
+  <div class="pwa-box" style="max-width:460px">
+    <div class="pwa-head">
+      <div><h3>📲 Install JMC Orders</h3><p>Install once, then share PDFs straight from WhatsApp</p></div>
+      <button class="sp-close" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.08)" onclick="JMCPwa.hideInstall()">✕</button>
+    </div>
+    <div class="pwa-body">
+      <div id="install-now-wrap" style="display:none;margin-bottom:14px"><button class="btn-save" style="width:100%" onclick="JMCPwa.installNow()">Install now</button></div>
+      <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Android (Chrome)</div>
+      <ol class="inst-steps">
+        <li>Open this page in <strong>Chrome</strong>: <span style="font-family:'DM Mono',monospace;font-size:11px;word-break:break-all">jmcengineering.github.io/jmc-order-tracker/jmc_order_tracker.html</span></li>
+        <li>Tap the <strong>⋮</strong> menu (top right) → <strong>Install app</strong> (or <strong>Add to Home screen</strong> → Install).</li>
+        <li>Open <strong>JMC Orders</strong> from the home screen once and sign in.</li>
+        <li>In <strong>WhatsApp</strong>: open the PDF → <strong>Share</strong> → pick <strong>JMC Orders</strong>.</li>
+      </ol>
+      <div class="pwa-hint" style="margin-top:10px">Sharing PDFs into the app works on Android only. iPhone/iPad Safari can add the app to the home screen but does not support sharing files into web apps.</div>
+    </div>
+  </div>
+</div>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// v3.2 — PWA + "Share to Order Tracker"
+// The service worker (sw.js) stores shared PDFs in IndexedDB (share-queue.js)
+// and redirects here with ?share=1. This module feeds each file, one at a time,
+// into the EXISTING import pipeline: A.pendingPDFFile → startPDFImport() →
+// review modal → confirmPDFImport(). There is no second import path.
+// ═══════════════════════════════════════════════════════════════
+const JMCPwa=(function(){
+  const LAST_CLIENT_KEY='jmc_share_last_client';
+  const st={items:[],running:false,currentId:null,resolve:null,loggedIn:false,bootMsg:'',deferredInstall:null,waitingOnline:false};
+  const Q=()=>window.JMCShareQueue;
+  const $=id=>document.getElementById(id);
+  const fmtSize=b=>b>=1048576?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB';
+  const isStandalone=()=>(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+  function lsGet(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+  function lsSet(k,v){try{localStorage.setItem(k,v);}catch(e){}}
+  async function safeList(){try{return Q()?await Q().list():[];}catch(e){console.warn('share queue unavailable',e);return[];}}
+  // Files that will actually be imported (refused ones are shown on the shared-PDF screen).
+  async function openCount(){return(await safeList()).filter(i=>i.status!=='rejected').length;}
+
+  // ── Boot (before Microsoft login) ──
+  async function boot(runInit){
+    registerSW();
+    setupInstall();
+    const sp=new URLSearchParams(location.search).get('share');
+    if(sp){
+      // MSAL's redirect URI has no query string — drop ?share so it never leaks into login.
+      try{history.replaceState(null,'',location.pathname+location.hash);}catch(e){}
+      if(sp==='error')st.bootMsg='The shared file could not be received — please share it again.';
+      if(sp==='nofile')st.bootMsg='Nothing was received — share the PDF as a document, not as a link or text.';
+    }
+    await updateLoginNote();
+    if(!navigator.onLine){
+      showOffline(true);
+      window.addEventListener('online',()=>{showOffline(false);runInit();},{once:true});
+      return;
+    }
+    runInit();
+  }
+  function registerSW(){
+    if(!('serviceWorker' in navigator))return;
+    navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(e=>console.warn('Service worker registration failed',e));
+    navigator.serviceWorker.addEventListener('message',ev=>{
+      if(!ev.data||ev.data.type!=='jmc-share-queued')return;
+      if(st.loggedIn)open();else updateLoginNote();
+    });
+  }
+  async function showOffline(on){
+    const el=$('pwa-offline');if(!el)return;
+    if(on){
+      const n=await openCount();
+      $('pwa-offline-msg').textContent=n
+        ?'📎 '+n+' shared PDF'+(n===1?' is':'s are')+' saved on this phone and will be imported as soon as you are back online.'
+        :'JMC Order Tracker needs the internet to sign in and read orders.';
+    }
+    el.style.display=on?'flex':'none';
+  }
+  async function updateLoginNote(){
+    const el=$('login-share-note');if(!el)return;
+    const n=await openCount();
+    if(n||st.bootMsg){
+      el.textContent=(st.bootMsg?st.bootMsg+' ':'')+(n?'📎 '+n+' shared PDF'+(n===1?'':'s')+' saved — sign in and the import continues automatically.':'');
+      el.style.display='block';
+    }else el.style.display='none';
+  }
+
+  // ── After a successful login (called at the end of startApp) ──
+  async function afterLogin(){
+    st.loggedIn=true;
+    $('btn-install').style.display=isStandalone()?'none':'inline-flex';
+    const items=await safeList();
+    if(st.bootMsg){toast(st.bootMsg,7000);st.bootMsg='';}
+    await refreshChip(items);
+    if(items.length)open();
+  }
+  async function refreshChip(items){
+    items=items||await safeList();
+    const b=$('btn-shared');if(!b)return;
+    $('btn-shared-n').textContent=items.length;
+    b.style.display=items.length&&st.loggedIn?'inline-flex':'none';
+  }
+
+  // ── Shared-PDF screen ──
+  async function open(){
+    if(!st.loggedIn)return;
+    $('share-modal').style.display='flex';
+    fillClients();
+    await render();
+    processNext();
+  }
+  function close(){$('share-modal').style.display='none';refreshChip();}
+  function fillClients(){
+    const sel=$('share-client');const cur=sel.value||lsGet(LAST_CLIENT_KEY)||'';
+    const names=[...new Set((A.accessList||[]).filter(ac=>ac.email!==C.adminEmail.toLowerCase()).map(ac=>ac.clientName))].sort();
+    sel.innerHTML='<option value="">— Select client —</option>'+names.map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join('');
+    if(names.includes(cur))sel.value=cur;
+    $('share-client-wrap').style.display=A.isAdmin?'flex':'none';
+  }
+  function onClientChange(v){if(v)lsSet(LAST_CLIENT_KEY,v);processNext();}
+  function setHint(html,cls){$('share-hint').innerHTML=html?'<div class="pwa-hint '+(cls||'')+'">'+html+'</div>':'';}
+
+  async function render(){
+    st.items=await safeList();
+    const n=st.items.length;
+    $('share-sub').textContent=n?n+' shared file'+(n===1?'':'s')+' · each one is reviewed before anything is saved':'No shared files waiting';
+    const L=$('share-list');
+    if(!n){L.innerHTML='<div class="dash-empty">All shared PDFs are done. ✅</div>';}
+    else L.innerHTML=st.items.map(it=>{
+      const running=st.running&&st.currentId===it.id;
+      const s=running?'running':it.status;
+      const label={pending:'Waiting',running:'Importing…',failed:'Import failed',rejected:'Not accepted',duplicate:'Already imported?',cancelled:'Cancelled'}[s]||s;
+      let msg='',acts='';
+      if(s==='rejected'){msg='<div class="sq-msg err">'+esc(it.error)+'</div>';acts='<button class="sq-btn danger" onclick="JMCPwa.discard(\''+it.id+'\')">Remove</button>';}
+      else if(s==='failed'){msg='<div class="sq-msg err">'+esc(it.error||'Import failed')+'</div>';acts='<button class="sq-btn primary" onclick="JMCPwa.retry(\''+it.id+'\')">↻ Retry</button><button class="sq-btn danger" onclick="JMCPwa.discard(\''+it.id+'\')">Remove</button>';}
+      else if(s==='duplicate'){msg='<div class="sq-msg warn">⚠ '+esc(it.error)+'</div>';acts='<button class="sq-btn" onclick="JMCPwa.discard(\''+it.id+'\')">Skip (don\'t import)</button><button class="sq-btn primary" onclick="JMCPwa.importAnyway(\''+it.id+'\')">Import anyway</button>';}
+      else if(s==='cancelled'){msg='<div class="sq-msg">Review was cancelled — nothing was saved.</div>';acts='<button class="sq-btn primary" onclick="JMCPwa.retry(\''+it.id+'\')">Import again</button><button class="sq-btn danger" onclick="JMCPwa.discard(\''+it.id+'\')">Remove</button>';}
+      else if(s==='pending'&&!st.running){acts='<button class="sq-btn danger" onclick="JMCPwa.discard(\''+it.id+'\')">Remove</button>';}
+      return '<div class="sq-item"><div class="sq-top"><span>📄</span><span class="sq-name">'+esc(it.name)+'</span><span class="sq-size">'+fmtSize(it.size||0)+'</span><span class="sq-chip c-'+s+'">'+label+'</span></div>'+msg+(acts?'<div class="sq-acts">'+acts+'</div>':'')+'</div>';
+    }).join('');
+    refreshChip(st.items);
+  }
+
+  // Duplicate = an existing order whose Remarks carry "Source PDF: <same file name>"
+  function findDuplicate(name){
+    const needle=('source pdf: '+String(name||'')).toLowerCase();
+    return(A.allOrders||[]).find(o=>{
+      const r=String(o.remarks||'').toLowerCase();const i=r.indexOf(needle);
+      if(i<0)return false;const nx=r.charAt(i+needle.length);
+      return nx===''||nx===' '||nx==='|'||nx==='·';
+    })||null;
+  }
+
+  async function processNext(){
+    if(st.running||!st.loggedIn)return;
+    await render();
+    if(!A.isAdmin){
+      setHint('Only the admin account (info@jmcengg.com) can import shared PDFs. Your files stay saved on this phone — sign in as admin to import them, or remove them.','warn');
+      return;
+    }
+    const next=st.items.find(i=>i.status==='pending');
+    if(!next){setHint(st.items.length?'Nothing left to import automatically — use the buttons on each file.':'');return;}
+    const client=$('share-client').value;
+    if(!client){setHint('Choose the client for these drawings — the import starts automatically.');return;}
+    if(!navigator.onLine){
+      setHint('📶 Offline — '+next.name+' is queued and will import automatically when the connection is back.','warn');
+      if(!st.waitingOnline){st.waitingOnline=true;window.addEventListener('online',()=>{st.waitingOnline=false;processNext();},{once:true});}
+      return;
+    }
+    if(!next.allowDuplicate){
+      const dup=findDuplicate(next.name);
+      if(dup){
+        await Q().update(next.id,{status:'duplicate',error:'A PDF named "'+next.name+'" was already imported as order #'+dup.sr+' ('+(dup.name||'')+'). Nothing was created.'});
+        return processNext();
+      }
+    }
+    setHint('');
+    await runImport(next,client);
+    processNext();
+  }
+
+  // Feeds one file into the existing pipeline and waits for the modal outcome.
+  async function runImport(item,client){
+    st.running=true;st.currentId=item.id;await render();
+    const sub=$('pdfimp-subtitle');const origSub=sub.textContent;
+    const outcome=new Promise(res=>{st.resolve=res;});
+    try{
+      if(!item.blob)throw new Error('The shared file is missing — please share it again.');
+      // Same inputs the in-app "Import Parts from PDF" button uses.
+      populateClientSelector();setSelect('f-client-name',client);
+      A.importTargetParent=null;
+      A.pendingPDFFile=new File([item.blob],item.name,{type:'application/pdf'});
+      sub.textContent='📎 Shared: '+item.name+' · Client: '+client+' — review and edit, nothing is saved until you confirm.';
+      await startPDFImport();
+      // startPDFImport returns once the review table is shown (or it closed itself on error).
+      if(st.resolve&&$('pdfimp-modal').style.display==='none')st.resolve({reason:'failed',err:new Error('Import could not start.')});
+    }catch(e){if(st.resolve)st.resolve({reason:'failed',err:e});}
+    const{reason,err}=await outcome;
+    sub.textContent=origSub;A.pendingPDFFile=null;
+    st.running=false;st.currentId=null;
+    if(reason==='saved'){await Q().remove(item.id);}
+    else if(reason==='failed'){
+      const msg=(err&&err.message)||String(err||'Import failed');
+      // Lost the network mid-import → keep it queued instead of marking it failed.
+      if(!navigator.onLine)await Q().update(item.id,{status:'pending',error:''});
+      else await Q().update(item.id,{status:'failed',error:msg});
+    }else{await Q().update(item.id,{status:'cancelled',error:''});}
+    await render();
+  }
+  function onImportClosed(reason,err){
+    if(!st.resolve)return;           // a normal in-app import — nothing to do
+    const r=st.resolve;st.resolve=null;r({reason,err});
+  }
+
+  async function retry(id){await Q().update(id,{status:'pending',error:''});processNext();}
+  async function importAnyway(id){await Q().update(id,{status:'pending',error:'',allowDuplicate:true});processNext();}
+  async function discard(id){
+    const it=st.items.find(x=>x.id===id);
+    if(!confirm('Remove "'+((it&&it.name)||'this file')+'" from the shared queue?'))return;
+    await Q().remove(id);await render();processNext();
+  }
+
+  // ── Install hint ──
+  function setupInstall(){
+    window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();st.deferredInstall=e;});
+    window.addEventListener('appinstalled',()=>{st.deferredInstall=null;const b=$('btn-install');if(b)b.style.display='none';toast('✅ JMC Orders installed — you can now share PDFs to it');});
+    const li=$('login-install');if(li&&!isStandalone())li.style.display='inline-block';
+  }
+  function showInstall(){$('install-now-wrap').style.display=st.deferredInstall?'block':'none';$('install-modal').style.display='flex';}
+  function hideInstall(){$('install-modal').style.display='none';}
+  async function installNow(){
+    if(!st.deferredInstall)return;
+    st.deferredInstall.prompt();
+    try{await st.deferredInstall.userChoice;}catch(e){}
+    st.deferredInstall=null;hideInstall();
+  }
+
+  return{boot,afterLogin,open,close,onClientChange,onImportClosed,retry,importAnyway,discard,showInstall,hideInstall,installNow,_findDuplicate:findDuplicate};
+})();
+</script>
 <div id="s-login">
   <div class="login-card">
     <div class="login-logo" id="login-logo-wrap">JMC</div>
@@ -423,6 +735,8 @@ tbody tr.row.orphan-row:hover{background:#FFF3EA!important}
       Continue with Microsoft
     </button>
     <div class="login-note">Authorized users only · info@jmcengg.com</div>
+    <div id="login-share-note" class="login-share-note" style="display:none"></div>
+    <button id="login-install" class="login-install" onclick="JMCPwa.showInstall()" style="display:none">📲 Install app on this phone</button>
   </div>
 </div>
 <div id="s-loading"><div class="loader"></div><div id="load-msg" style="font-size:14px;color:var(--text2);font-weight:500">Loading...</div></div>
@@ -447,7 +761,7 @@ tbody tr.row.orphan-row:hover{background:#FFF3EA!important}
   <div class="topbar">
     <div class="tb-left">
       <div class="tb-logo" id="tb-logo-wrap">JMC</div>
-      <div><div class="tb-brand">JMC Engineering</div><div class="tb-sub" id="tb-sub">Order Management · <span style="color:var(--accent);font-weight:700">v3.1</span></div></div>
+      <div><div class="tb-brand">JMC Engineering</div><div class="tb-sub" id="tb-sub">Order Management · <span style="color:var(--accent);font-weight:700">v3.2</span></div></div>
     </div>
     <div class="tb-right">
       <div class="tb-chip">
@@ -456,6 +770,8 @@ tbody tr.row.orphan-row:hover{background:#FFF3EA!important}
       </div>
       <button id="dash-btn" class="btn-topbar btn-dash" onclick="openDashboard()" style="display:none">📊 Dashboard</button>
       <button id="admin-btn" class="btn-topbar btn-admin" onclick="openAdmin()" style="display:none">⚙ Admin</button>
+      <button id="btn-shared" class="btn-topbar btn-shared" onclick="JMCPwa.open()" style="display:none" title="PDFs shared to this app">📎 <span id="btn-shared-n">0</span> shared</button>
+      <button id="btn-install" class="btn-topbar btn-install" onclick="JMCPwa.showInstall()" style="display:none" title="Install the app on this phone">📲<span class="bi-txt"> Install app</span></button>
       <button class="btn-topbar" onclick="doLogout()">Sign out</button>
     </div>
   </div>
@@ -863,6 +1179,13 @@ tbody tr.row.orphan-row:hover{background:#FFF3EA!important}
 </div>
 <script>
 // ═══════════════════════════════════════════════════════════════
+// v3.2 — Share to Order Tracker (PWA)
+//   • Installable PWA (manifest.webmanifest, sw.js, icons/)
+//   • Android Web Share Target: share PDFs from WhatsApp → same
+//     Claude Vision import (startPDFImport) → review → confirm
+//   • Shared files queued in IndexedDB: survive login + offline
+//   • Duplicate warning by original PDF file name ("Source PDF:" in Remarks)
+// ═══════════════════════════════════════════════════════════════
 // JMC ORDER TRACKER v3.0  — CONSOLIDATED
 // v3.0 changes vs v2.9:
 //   • Assembly Booked / PO-Received DERIVED from child parts
@@ -892,7 +1215,7 @@ const C = {
   adminEmail:'info@jmcengg.com',
   redirectUri:'https://jmcengineering.github.io/jmc-order-tracker/jmc_order_tracker.html'
 };
-const APP_VERSION='v3.1';
+const APP_VERSION='v3.2';
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // Excel column map — the single source of truth for every write.
@@ -1506,6 +1829,7 @@ async function startApp(){
     }else{A.orders=A.allOrders.filter(o=>(o.client||'').toLowerCase()===ur.clientName.toLowerCase());}
     buildHead();render();go('s-main');
     setTimeout(()=>loadThumbImages(A.orders),300);
+    if(typeof JMCPwa!=='undefined')JMCPwa.afterLogin();
   }catch(e){console.error(e);showErr('Failed to load',e.message||String(e));}
 }
 
@@ -1859,7 +2183,7 @@ async function startPDFImport(){
     }else{
       toast('PDF rendered — set Claude API key in Admin for AI extraction',6000);
     }
-  }catch(e){console.error(e);closePDFImport();toast('PDF import failed: '+e.message,7000);}
+  }catch(e){console.error(e);closePDFImport('failed',e);toast('PDF import failed: '+e.message,7000);}
 }
 
 function renderPDFImportTable(){
@@ -1917,7 +2241,9 @@ function updatePDFImportSummary(){
   }
   document.getElementById('pdfimp-confirm').disabled=checked===0;
 }
-function closePDFImport(){document.getElementById('pdfimp-modal').style.display='none';A.pdfImportData=null;A.importTargetParent=null;}
+function closePDFImport(reason,err){document.getElementById('pdfimp-modal').style.display='none';A.pdfImportData=null;A.importTargetParent=null;
+  // v3.2: lets the shared-PDF queue know the outcome. Buttons call this with no args = cancelled.
+  if(typeof JMCPwa!=='undefined')JMCPwa.onImportClosed(reason||'cancelled',err);}
 
 // ═══════════════════════════════════════════════════════════════
 // IMPORT PARTS INTO EXISTING PARENT
@@ -1933,6 +2259,14 @@ function handleImportToParentFile(input){
   A.importTargetParent={sr:A.selOrder.sr,name:A.selOrder.name,client:A.selOrder.client};
   A.pendingPDFFile=file;
   startPDFImport();
+}
+// v3.2: the drawing is renamed "<sr>-<NAME>.pdf" on upload, so the original file
+// name is kept in Remarks. The shared-PDF flow uses it to warn about duplicates.
+function withSourcePdfNote(base){
+  const f=A.pdfImportData&&A.pdfImportData.sourcePdfFile;
+  const n=f&&f.name?'Source PDF: '+f.name:'';
+  if(!n)return base||'';
+  return base?n+' · '+base:n;
 }
 function buildPartName(p){
   const bits=[];
@@ -1964,7 +2298,7 @@ async function confirmPDFImport(){
     const today=todayISO();
     const totalQty=checked.reduce((s,p)=>s+(parseInt(p.qty)||0),0);
     const parentSr=await getNextSrNo();
-    const parentOrder={sr:parentSr,date:today,client,po:'—',name:parentName,cat:'Whole Fixture',type:'',qty:String(totalQty),quoted:'No',price:'',poRec:'No',approval:'No',tgt:'',stRM:'—',stShape:'—',stGrind:'—',stWire:'—',stLathe:'—',stHT:'—',stInsp:'—',stDisp:'—',status:'In Progress',remarks:appendActivityLog('','Created via PDF import (Claude Vision)'),parentSr:'',isParent:'YES'};
+    const parentOrder={sr:parentSr,date:today,client,po:'—',name:parentName,cat:'Whole Fixture',type:'',qty:String(totalQty),quoted:'No',price:'',poRec:'No',approval:'No',tgt:'',stRM:'—',stShape:'—',stGrind:'—',stWire:'—',stLathe:'—',stHT:'—',stInsp:'—',stDisp:'—',status:'In Progress',remarks:appendActivityLog(withSourcePdfNote(''),'Created via PDF import (Claude Vision)'),parentSr:'',isParent:'YES'};
     // Read the sheet layout ONCE. v2.9 re-read it inside the loop.
     const{rows:r0,dataStart:ds0}=await findSheetLayout(C.masterSheet);
     let nextRow=ds0+1;
@@ -1995,7 +2329,7 @@ async function confirmPDFImport(){
     A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
     A.expandedParents.add(String(parentSr));
     invalidateSrRowMap();
-    closePDFImport();closeSP();render();
+    closePDFImport('saved');closeSP();render();
     const aiCount=checked.filter(p=>p.usedAI).length;
     toast(aiCount>0?'✅ Created #'+parentSr+' + '+checked.length+' parts · ✦ '+aiCount+' AI-extracted!':'✅ Created #'+parentSr+' + '+checked.length+' parts!',5000);
     loadThumbImages(A.orders);
@@ -2015,7 +2349,7 @@ async function confirmSingleStandaloneImport(p){
     const orderName=buildPartName(p);
     let base=p.material?'Material: '+p.material:'';
     if(p.usedAI)base=(base?base+' · ':'')+'✦ Extracted by Claude Vision';
-    const remarks=appendActivityLog(base,'Created via PDF import');
+    const remarks=appendActivityLog(withSourcePdfNote(base),'Created via PDF import');
     const order={sr:sr,date:today,client,po:'—',name:orderName,cat:'Standard Order',type:p.toolType||'',qty:String(p.qty||'1'),dims:p.dimensions||'',quoted:'No',price:'',poRec:'No',approval:'No',tgt:'',stRM:'—',stShape:'—',stGrind:'—',stWire:'—',stLathe:'—',stHT:'—',stInsp:'—',stDisp:'—',status:'In Progress',remarks:remarks,parentSr:'',isParent:''};
     const{rows,dataStart}=await findSheetLayout(C.masterSheet);
     let rowNum=dataStart+1;
@@ -2035,7 +2369,7 @@ async function confirmSingleStandaloneImport(p){
     A.allOrders.push({...order,dateISO:today,tgtISO:null,deliveredISO:null});
     A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
     invalidateSrRowMap();
-    closePDFImport();closeSP();render();
+    closePDFImport('saved');closeSP();render();
     toast(p.usedAI?'✅ Created order #'+sr+' · ✦ AI-extracted!':'✅ Created order #'+sr+'!',5000);
     loadThumbImages(A.orders);
   }catch(e){console.error(e);toast('Import failed: '+e.message,7000);document.getElementById('pdfimp-confirm').disabled=false;}
@@ -2072,7 +2406,7 @@ async function confirmImportToExistingParent(checked){
       const childName=buildPartName(p);
       let base=p.material?'Material: '+p.material:'';
       if(p.usedAI)base=(base?base+' · ':'')+'✦ Extracted by Claude Vision';
-      const childRemarks=appendActivityLog(base,'Added to existing parent #'+parentSr+' via PDF import');
+      const childRemarks=appendActivityLog(withSourcePdfNote(base),'Added to existing parent #'+parentSr+' via PDF import');
       const childOrder={sr:childSr,date:today,client,po:'—',name:childName,cat:'Standard Order',type:p.toolType||'',qty:String(p.qty||'1'),dims:p.dimensions||'',quoted:'No',price:'',poRec:'No',approval:'No',tgt:'',stRM:'—',stShape:'—',stGrind:'—',stWire:'—',stLathe:'—',stHT:'—',stInsp:'—',stDisp:'—',status:'In Progress',remarks:childRemarks,parentSr:String(parentSr),isParent:''};
       await writeOrderRow(childOrder,writeRow);
       const cleanChild=childName.toUpperCase().replace(/[^A-Z0-9]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'').slice(0,40);
@@ -2098,7 +2432,7 @@ async function confirmImportToExistingParent(checked){
     A.orders=A.isAdmin?A.allOrders:A.allOrders.filter(x=>(x.client||'').toLowerCase()===A.perms.clientName.toLowerCase());
     A.expandedParents.add(String(parentSr));
     invalidateSrRowMap();
-    closePDFImport();render();
+    closePDFImport('saved');render();
     toast('✅ Added '+added+' part'+(added===1?'':'s')+' to #'+parentSr+'!',5000);
     loadThumbImages(A.orders);
   }catch(e){console.error(e);toast('Add failed: '+e.message,7000);document.getElementById('pdfimp-confirm').disabled=false;}
@@ -4212,9 +4546,12 @@ async function syncToExcel(){
 // BOOT
 // ═══════════════════════════════════════════════════════════════
 document.body.style.overflow='hidden';
-initMSAL()
-  .catch(e=>{console.error(e);showErr('Init failed',e.message||String(e));})
-  .finally(()=>{const b=document.getElementById('login-btn');if(b){b.disabled=false;b.style.opacity='1';b.style.cursor='pointer';}});
+function runInitMSAL(){
+  return initMSAL()
+    .catch(e=>{console.error(e);showErr('Init failed',e.message||String(e));})
+    .finally(()=>{const b=document.getElementById('login-btn');if(b){b.disabled=false;b.style.opacity='1';b.style.cursor='pointer';}});
+}
+if(typeof JMCPwa!=='undefined')JMCPwa.boot(runInitMSAL);else runInitMSAL();
 document.addEventListener('DOMContentLoaded',()=>{setupPasteListener();setupDragDrop();});
 setupPasteListener();setupDragDrop();
 console.log('%cJMC Order Tracker '+APP_VERSION+' ready','color:#00C6BE;font-weight:700');
