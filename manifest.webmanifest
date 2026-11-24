@@ -2,7 +2,7 @@
   "id": "./jmc_order_tracker.html",
   "name": "JMC Order Tracker",
   "short_name": "JMC Orders",
-  "description": "JMC Engineering order management. Share drawing PDFs from WhatsApp to create orders with Claude Vision.",
+  "description": "JMC Engineering order management. Share drawing PDFs and photos from WhatsApp to create orders with Claude Vision.",
   "start_url": "./jmc_order_tracker.html",
   "scope": "./",
   "display": "standalone",
@@ -22,7 +22,8 @@
       "title": "title",
       "text": "text",
       "files": [
-        { "name": "pdf", "accept": ["application/pdf", ".pdf"] }
+        { "name": "pdf", "accept": ["application/pdf", ".pdf"] },
+        { "name": "image", "accept": ["image/jpeg", "image/png", "image/webp", ".jpg", ".jpeg", ".png", ".webp"] }
       ]
     }
   }
