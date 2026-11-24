@@ -470,7 +470,7 @@ tbody tr.row.orphan-row:hover{background:#FFF3EA!important}
 <div id="share-modal" class="pwa-bg">
   <div class="pwa-box">
     <div class="pwa-head">
-      <div><h3>New Order from Shared PDF <span class="claude-ai-badge">✦ Claude AI</span></h3><p id="share-sub">Shared files are imported one by one — you review each before anything is saved</p></div>
+      <div><h3>New Order from Shared Drawing <span class="claude-ai-badge">✦ Claude AI</span></h3><p id="share-sub">Shared files are imported one by one — you review each before anything is saved</p></div>
       <button class="sp-close" style="color:#fff;border-color:rgba(255,255,255,.3);background:rgba(255,255,255,.08)" onclick="JMCPwa.close()" title="Close — files stay queued">✕</button>
     </div>
     <div class="pwa-body">
@@ -499,9 +499,9 @@ tbody tr.row.orphan-row:hover{background:#FFF3EA!important}
         <li>Open this page in <strong>Chrome</strong>: <span style="font-family:'DM Mono',monospace;font-size:11px;word-break:break-all">jmcengineering.github.io/jmc-order-tracker/jmc_order_tracker.html</span></li>
         <li>Tap the <strong>⋮</strong> menu (top right) → <strong>Install app</strong> (or <strong>Add to Home screen</strong> → Install).</li>
         <li>Open <strong>JMC Orders</strong> from the home screen once and sign in.</li>
-        <li>In <strong>WhatsApp</strong>: open the PDF → <strong>Share</strong> → pick <strong>JMC Orders</strong>.</li>
+        <li>In <strong>WhatsApp</strong>: open the drawing (PDF or photo) → <strong>Share</strong> → pick <strong>JMC Orders</strong>. Several photos shared together become one drawing set.</li>
       </ol>
-      <div class="pwa-hint" style="margin-top:10px">Sharing PDFs into the app works on Android only. iPhone/iPad Safari can add the app to the home screen but does not support sharing files into web apps.</div>
+      <div class="pwa-hint" style="margin-top:10px">Sharing PDFs and photos into the app works on Android only. Once installed, the app remembers your sign-in until you press Sign out. iPhone/iPad Safari can add the app to the home screen but does not support sharing files into web apps.</div>
     </div>
   </div>
 </div>
@@ -558,7 +558,7 @@ const JMCPwa=(function(){
     if(on){
       const n=await openCount();
       $('pwa-offline-msg').textContent=n
-        ?'📎 '+n+' shared PDF'+(n===1?' is':'s are')+' saved on this phone and will be imported as soon as you are back online.'
+        ?'📎 '+n+' shared drawing'+(n===1?' is':'s are')+' saved on this phone and will be imported as soon as you are back online.'
         :'JMC Order Tracker needs the internet to sign in and read orders.';
     }
     el.style.display=on?'flex':'none';
@@ -567,7 +567,7 @@ const JMCPwa=(function(){
     const el=$('login-share-note');if(!el)return;
     const n=await openCount();
     if(n||st.bootMsg){
-      el.textContent=(st.bootMsg?st.bootMsg+' ':'')+(n?'📎 '+n+' shared PDF'+(n===1?'':'s')+' saved — sign in and the import continues automatically.':'');
+      el.textContent=(st.bootMsg?st.bootMsg+' ':'')+(n?'📎 '+n+' shared drawing'+(n===1?'':'s')+' saved — sign in and the import continues automatically.':'');
       el.style.display='block';
     }else el.style.display='none';
   }
@@ -623,7 +623,10 @@ const JMCPwa=(function(){
       else if(s==='duplicate'){msg='<div class="sq-msg warn">⚠ '+esc(it.error)+'</div>';acts='<button class="sq-btn" onclick="JMCPwa.discard(\''+it.id+'\')">Skip (don\'t import)</button><button class="sq-btn primary" onclick="JMCPwa.importAnyway(\''+it.id+'\')">Import anyway</button>';}
       else if(s==='cancelled'){msg='<div class="sq-msg">Review was cancelled — nothing was saved.</div>';acts='<button class="sq-btn primary" onclick="JMCPwa.retry(\''+it.id+'\')">Import again</button><button class="sq-btn danger" onclick="JMCPwa.discard(\''+it.id+'\')">Remove</button>';}
       else if(s==='pending'&&!st.running){acts='<button class="sq-btn danger" onclick="JMCPwa.discard(\''+it.id+'\')">Remove</button>';}
-      return '<div class="sq-item"><div class="sq-top"><span>📄</span><span class="sq-name">'+esc(it.name)+'</span><span class="sq-size">'+fmtSize(it.size||0)+'</span><span class="sq-chip c-'+s+'">'+label+'</span></div>'+msg+(acts?'<div class="sq-acts">'+acts+'</div>':'')+'</div>';
+      const isSet=it.kind==='images';
+      const title=isSet?(it.images.length===1?it.images[0]:it.images.length+' images: '+it.images.join(', ')):it.name;
+      if(isSet&&(s==='pending'||s==='running'))msg+='<div class="sq-msg">📷 '+(it.images.length>1?'Imported together as one drawing set (1 parent + 1 part per image).':'Imported like a 1-page PDF.')+' Tip: WhatsApp shrinks photos — if the title block is unreadable, send the drawing as a Document or in HD.</div>';
+      return '<div class="sq-item"><div class="sq-top"><span>'+(isSet?'📷':'📄')+'</span><span class="sq-name">'+esc(title)+'</span><span class="sq-size">'+fmtSize(it.size||0)+'</span><span class="sq-chip c-'+s+'">'+label+'</span></div>'+msg+(acts?'<div class="sq-acts">'+acts+'</div>':'')+'</div>';
     }).join('');
     refreshChip(st.items);
   }
@@ -672,16 +675,23 @@ const JMCPwa=(function(){
     const sub=$('pdfimp-subtitle');const origSub=sub.textContent;
     const outcome=new Promise(res=>{st.resolve=res;});
     try{
-      if(!item.blob)throw new Error('The shared file is missing — please share it again.');
+      if(item.kind==='images'?!(item.blobs&&item.blobs.length):!item.blob)throw new Error('The shared file is missing — please share it again.');
       // Same inputs the in-app "Import Parts from PDF" button uses.
       populateClientSelector();setSelect('f-client-name',client);
       A.importTargetParent=null;
-      A.pendingPDFFile=new File([item.blob],item.name,{type:'application/pdf'});
-      sub.textContent='📎 Shared: '+item.name+' · Client: '+client+' — review and edit, nothing is saved until you confirm.';
+      if(item.kind==='images'){
+        $('pdfimp-modal').style.display='flex';$('pdfimp-loading').style.display='block';$('pdfimp-content').style.display='none';
+        $('pdfimp-load-msg').textContent='Preparing '+item.images.length+' image'+(item.images.length===1?'':'s')+'...';$('pdfimp-load-sub').textContent='';
+        A.pendingPDFFile=await imagesToPdf(item);
+      }else A.pendingPDFFile=new File([item.blob],item.name,{type:'application/pdf'});
+      sub.textContent='📎 Shared: '+(item.kind==='images'?item.images.length+' image'+(item.images.length===1?'':'s'):item.name)+' · Client: '+client+' — review and edit, nothing is saved until you confirm.';
       await startPDFImport();
       // startPDFImport returns once the review table is shown (or it closed itself on error).
       if(st.resolve&&$('pdfimp-modal').style.display==='none')st.resolve({reason:'failed',err:new Error('Import could not start.')});
-    }catch(e){if(st.resolve)st.resolve({reason:'failed',err:e});}
+    }catch(e){
+      if($('pdfimp-modal').style.display!=='none')closePDFImport('failed',e);  // resolves the outcome
+      else if(st.resolve)st.resolve({reason:'failed',err:e});
+    }
     const{reason,err}=await outcome;
     sub.textContent=origSub;A.pendingPDFFile=null;
     st.running=false;st.currentId=null;
@@ -693,6 +703,30 @@ const JMCPwa=(function(){
       else await Q().update(item.id,{status:'failed',error:msg});
     }else{await Q().update(item.id,{status:'cancelled',error:''});}
     await render();
+  }
+  // Builds ONE PDF from the shared images (one page per image) so the existing
+  // startPDFImport() handles it exactly like a drawing PDF. Pages are sized so the
+  // long side is A3 (1191 pt) — the same scale the import's crops were tuned on.
+  async function imagesToPdf(item){
+    const J=window.jspdf&&window.jspdf.jsPDF;
+    if(!J)throw new Error('PDF library not loaded — check the connection and press Retry.');
+    const A3_LONG=1191,MAX_PX=4000;let doc=null;
+    for(const im of item.blobs){
+      let bmp;
+      try{bmp=await createImageBitmap(im.blob,{imageOrientation:'from-image'});}
+      catch(e){try{bmp=await createImageBitmap(im.blob);}catch(e2){throw new Error('Could not read image "'+im.name+'" — share it as JPG or PNG.');}}
+      const k=Math.min(1,MAX_PX/Math.max(bmp.width,bmp.height));
+      const cw=Math.max(1,Math.round(bmp.width*k)),ch=Math.max(1,Math.round(bmp.height*k));
+      const cv=document.createElement('canvas');cv.width=cw;cv.height=ch;
+      const cx=cv.getContext('2d');cx.fillStyle='#fff';cx.fillRect(0,0,cw,ch);cx.drawImage(bmp,0,0,cw,ch);
+      if(bmp.close)bmp.close();
+      const sc=A3_LONG/Math.max(cw,ch),pw=cw*sc,ph=ch*sc,orient=pw>=ph?'landscape':'portrait';
+      const jpg=cv.toDataURL('image/jpeg',0.92);cv.width=cv.height=0;
+      if(!doc)doc=new J({orientation:orient,unit:'pt',format:[pw,ph],compress:true});
+      else doc.addPage([pw,ph],orient);
+      doc.addImage(jpg,'JPEG',0,0,pw,ph);
+    }
+    return new File([doc.output('blob')],item.name,{type:'application/pdf'});
   }
   function onImportClosed(reason,err){
     if(!st.resolve)return;           // a normal in-app import — nothing to do
@@ -761,7 +795,7 @@ const JMCPwa=(function(){
   <div class="topbar">
     <div class="tb-left">
       <div class="tb-logo" id="tb-logo-wrap">JMC</div>
-      <div><div class="tb-brand">JMC Engineering</div><div class="tb-sub" id="tb-sub">Order Management · <span style="color:var(--accent);font-weight:700">v3.2</span></div></div>
+      <div><div class="tb-brand">JMC Engineering</div><div class="tb-sub" id="tb-sub">Order Management · <span style="color:var(--accent);font-weight:700">v3.3</span></div></div>
     </div>
     <div class="tb-right">
       <div class="tb-chip">
@@ -1179,6 +1213,11 @@ const JMCPwa=(function(){
 </div>
 <script>
 // ═══════════════════════════════════════════════════════════════
+// v3.3 — Installed app stays signed in between shares (localStorage
+//        only in the installed app; browser tabs unchanged)
+//      — Share drawing images (JPG/PNG/WebP): all images from one share
+//        are combined into one PDF → same startPDFImport() → 1 parent + parts
+// ═══════════════════════════════════════════════════════════════
 // v3.2 — Share to Order Tracker (PWA)
 //   • Installable PWA (manifest.webmanifest, sw.js, icons/)
 //   • Android Web Share Target: share PDFs from WhatsApp → same
@@ -1215,7 +1254,7 @@ const C = {
   adminEmail:'info@jmcengg.com',
   redirectUri:'https://jmcengineering.github.io/jmc-order-tracker/jmc_order_tracker.html'
 };
-const APP_VERSION='v3.2';
+const APP_VERSION='v3.3';
 const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // Excel column map — the single source of truth for every write.
@@ -1508,9 +1547,15 @@ function appendActivityLog(existingRemarks,summary){
 // ═══════════════════════════════════════════════════════════════
 // MSAL — Microsoft Authentication
 // ═══════════════════════════════════════════════════════════════
+// v3.3: the installed app opens a fresh window for every WhatsApp share, and a fresh
+// window has an empty sessionStorage, so it asked to sign in every time. Inside the
+// installed app the sign-in is kept in localStorage (until Sign out). A normal browser
+// tab keeps sessionStorage exactly as before. MSAL's short-lived "login in progress"
+// state stays in sessionStorage either way, so clearMSALLocks() is unaffected.
+const RUNNING_AS_INSTALLED_APP=(()=>{try{return matchMedia('(display-mode: standalone)').matches||matchMedia('(display-mode: fullscreen)').matches||navigator.standalone===true;}catch(e){return false;}})();
 const msalCfg={
   auth:{clientId:C.clientId,authority:'https://login.microsoftonline.com/common',redirectUri:C.redirectUri},
-  cache:{cacheLocation:'sessionStorage',storeAuthStateInCookie:false}
+  cache:{cacheLocation:RUNNING_AS_INSTALLED_APP?'localStorage':'sessionStorage',storeAuthStateInCookie:false}
 };
 async function initMSAL(){
   let attempts=0;

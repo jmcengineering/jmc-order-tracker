@@ -1,5 +1,5 @@
 // JMC Order Tracker — service worker
-// 1. Receives PDFs shared from Android (Web Share Target, POST ./share-target),
+// 1. Receives PDFs and drawing images shared from Android (Web Share Target, POST ./share-target),
 //    stores them in IndexedDB, and 303-redirects to the app's shared-PDF screen.
 //    GitHub Pages cannot accept a POST, so this worker is the only handler.
 // 2. Caches the app shell + pinned CDN libraries so the app opens offline and
@@ -7,7 +7,7 @@
 //    NEVER cached or intercepted.
 importScripts('./share-queue.js');
 
-const VERSION='v3.2';
+const VERSION='v3.3';
 const SHELL_CACHE='jmc-shell-'+VERSION;
 const CDN_CACHE='jmc-cdn-'+VERSION;
 const SHELL=[
@@ -36,12 +36,19 @@ async function handleShare(request){
   let accepted=0,rejected=0;
   try{
     const form=await request.formData();
-    const files=form.getAll('pdf').filter(f=>f&&typeof f==='object'&&'size' in f);
+    // Chrome puts PDFs in "pdf" and images in "image" (see manifest), but sort by type anyway.
+    // Skip the empty placeholder a file field posts when it has no file (no name, 0 bytes).
+    const files=[...form.getAll('pdf'),...form.getAll('image')].filter(f=>f&&typeof f==='object'&&'size' in f&&(f.name||f.size>0));
+    if(!files.length)return Response.redirect(APP_URL+'?share=nofile',303);
+    const images=[];
     for(const f of files){
-      const rec=await self.JMCShareQueue.add(f);
+      const c=self.JMCShareQueue.classify(f);
+      if(c.kind==='image'){images.push(f);continue;}
+      const rec=await self.JMCShareQueue.add(f);     // a PDF, or a refused file with its reason
       if(rec.status==='pending')accepted++;else rejected++;
     }
-    if(!files.length)return Response.redirect(APP_URL+'?share=nofile',303);
+    // Every readable image shared together = one drawing set (1 parent + 1 part per image).
+    if(images.length){await self.JMCShareQueue.addImageSet(images);accepted++;}
   }catch(err){
     console.error('[sw] share-target failed',err);
     return Response.redirect(APP_URL+'?share=error',303);

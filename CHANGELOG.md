@@ -1,5 +1,17 @@
 # Changelog
 
+## v3.3 — Stay signed in, share drawing photos (2026-11-24)
+
+**Fixed**
+- **The installed app no longer asks you to sign in on every share.** Each WhatsApp share opens a fresh app window, and a fresh window starts with an empty `sessionStorage`, so the sign-in was lost. Inside the installed app the Microsoft sign-in is now kept in `localStorage` until you press **Sign out**. A normal browser tab, such as desktop Chrome or Edge, still uses `sessionStorage` exactly as before.
+
+**New**
+- **Share drawing photos** (JPG, PNG, WebP) from WhatsApp → JMC Orders. All photos shared together are combined into **one PDF** (one page per photo) and go through the same Claude Vision import (`startPDFImport`), giving **1 parent + 1 part per photo**. A single photo becomes one order. The combined PDF is saved to `drawings/`, and its name (e.g. `IMG-…-WA0001 +2 images.pdf`) is recorded as `Source PDF:` for the duplicate check.
+- Photo formats the browser can't read (HEIC/HEIF, GIF, …) are listed as "Not accepted" with the reason.
+
+**Changed**
+- The service worker ignores the empty placeholder entry a share form can contain, so it doesn't show up as a refused file.
+
 ## v3.2 — Share to Order Tracker (2026-11-02)
 
 **New**
